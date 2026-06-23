@@ -106,7 +106,7 @@ export function AdminDashboardView({
 
   const eventColumns: Column<AdminEvent>[] = [
     { key: 'title', label: 'Title', render: (e) => <span className="font-medium">{e.title}</span>, sortable: true },
-    { key: 'org', label: 'Organizer', render: (e) => <span className="text-gray-500">{(e as any).organization_name || '-'}</span> },
+    { key: 'org', label: 'Organizer', render: (e) => <span className="text-gray-500">{e.organization_name || '-'}</span> },
     { key: 'event_date', label: 'Date', render: (e) => <span className="text-gray-500">{new Date(e.event_date).toLocaleDateString()}</span>, sortable: true },
     { key: 'venue', label: 'Venue', render: (e) => <span className="text-gray-500">{e.venue}</span> },
     { key: 'budget', label: 'Budget', render: (e) => <span className="text-gray-500">${Number(e.budget).toLocaleString()}</span>, sortable: true },
