@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
@@ -30,6 +30,14 @@ interface VendorB2BDashboardViewProps {
   onSignVendorContract: (contractId: string) => Promise<void>
 }
 
+interface ActionCard {
+  title: string
+  description: string
+  label: string
+  action: () => void
+  priority: 'high' | 'medium'
+}
+
 export function VendorB2BDashboardView({
   bookings,
   selectedBooking,
@@ -51,6 +59,31 @@ export function VendorB2BDashboardView({
   const [confirmDecline, setConfirmDecline] = useState<string | null>(null)
 
   useEffect(() => { onLoadBookings() }, [])
+
+  const actionCards = useMemo((): ActionCard[] => {
+    const cards: ActionCard[] = []
+    const pendingCount = bookings.filter((b) => b.status === 'pending').length
+    if (pendingCount > 0) {
+      cards.push({
+        title: `${pendingCount} pending booking${pendingCount > 1 ? 's' : ''}`,
+        description: 'Review and respond to organizer booking requests.',
+        label: 'Review Now',
+        action: () => onSetTab('pending'),
+        priority: 'high',
+      })
+    }
+    const acceptedCount = bookings.filter((b) => b.status === 'accepted').length
+    if (acceptedCount > 0) {
+      cards.push({
+        title: `${acceptedCount} accepted booking${acceptedCount > 1 ? 's' : ''}`,
+        description: 'Contracts may be needed for accepted bookings.',
+        label: 'View Bookings',
+        action: () => onSetTab('accepted'),
+        priority: 'medium',
+      })
+    }
+    return cards
+  }, [bookings, onSetTab])
 
   const handleDecline = async () => {
     if (confirmDecline) {
@@ -88,13 +121,40 @@ export function VendorB2BDashboardView({
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
         <SummaryCard label="Total" value={bookings.length} />
         <SummaryCard label="Pending" value={bookings.filter((b) => b.status === 'pending').length} color="text-yellow-600" borderColor="border-yellow-200" />
         <SummaryCard label="Accepted" value={bookings.filter((b) => b.status === 'accepted').length} color="text-green-600" borderColor="border-green-200" />
         <SummaryCard label="Declined" value={bookings.filter((b) => b.status === 'rejected').length} color="text-red-600" borderColor="border-red-200" />
         <SummaryCard label="Completed" value={bookings.filter((b) => b.status === 'completed').length} color="text-blue-600" borderColor="border-blue-200" />
       </div>
+
+      {actionCards.length > 0 && (
+        <div className="mb-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            {actionCards.map((card, i) => (
+              <div
+                key={i}
+                className={`rounded-xl border p-4 transition-all hover:shadow-md cursor-pointer ${
+                  card.priority === 'high'
+                    ? 'bg-brand-50 border-brand-200 hover:border-brand-300'
+                    : 'bg-white border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={card.action}
+              >
+                <div className="flex items-start justify-between mb-1">
+                  <h4 className="font-medium text-gray-900 text-sm">{card.title}</h4>
+                  {card.priority === 'high' && (
+                    <span className="text-xs bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded font-medium">NOW</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mb-2">{card.description}</p>
+                <span className="text-xs text-brand-600 font-medium">{card.label} &rarr;</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2 mb-6 border-b pb-2 overflow-x-auto">
         {B2B_TABS.map((tab) => (
