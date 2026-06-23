@@ -1,9 +1,14 @@
 const { Router } = require('express');
+const authenticate = require('../shared/middleware/auth.middleware');
+const validate = require('../shared/middleware/validate.middleware');
+const controller = require('./auth.controller');
+const { registerSchema, loginSchema, syncProfileSchema } = require('./auth.validator');
+
 const router = Router();
 
-router.get('/me', (req, res) => res.json({ success: true, data: null }));
-router.post('/register', (req, res) => res.status(201).json({ success: true, data: null }));
-router.post('/login', (req, res) => res.json({ success: true, data: null }));
-router.post('/sync-profile', (req, res) => res.json({ success: true, data: null }));
+router.post('/register', validate(registerSchema), controller.register);
+router.post('/login', validate(loginSchema), controller.login);
+router.get('/me', authenticate, controller.getMe);
+router.post('/sync-profile', authenticate, validate(syncProfileSchema), controller.syncProfile);
 
 module.exports = router;
