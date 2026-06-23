@@ -8,6 +8,8 @@ import { getSidebarByRole, type RouteConfig } from '../../routes/routeConstants'
 import { DemoRoleSwitcher } from './DemoRoleSwitcher'
 import { CommandPalette } from './CommandPalette'
 import { useCommandPalette } from '../hooks/useCommandPalette'
+import { RoleHelpDrawer } from './GuidanceComponents'
+import { helpService } from '../../services/helpService'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -23,7 +25,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const commandPalette = useCommandPalette(userRole)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
+  const roleHelp = helpService.getRoleHelp(userRole)
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -90,12 +94,20 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
             <div className="flex items-center gap-2">
               {userRole && (
-                <button
-                  onClick={commandPalette.openPalette}
-                  className="hidden rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 md:inline-flex"
-                >
-                  Search / actions
-                </button>
+                <>
+                  <button
+                    onClick={commandPalette.openPalette}
+                    className="hidden rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 md:inline-flex"
+                  >
+                    Search / actions
+                  </button>
+                  <button
+                    onClick={() => setHelpOpen(true)}
+                    className="hidden rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 sm:inline-flex"
+                  >
+                    Help
+                  </button>
+                </>
               )}
               <NotificationDropdown
                 unreadCount={unreadCount}
@@ -198,6 +210,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
               onClose={commandPalette.closePalette}
               onSelect={handleCommandSelect}
             />
+            <RoleHelpDrawer open={helpOpen} content={roleHelp} onClose={() => setHelpOpen(false)} />
             {children}
           </main>
         </div>

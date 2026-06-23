@@ -10,6 +10,7 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { ValidationSummary } from '../../../shared/components/ValidationSummary'
 import { AvailabilityCalendar, AvailabilityStatusPill, DateConflictBanner } from '../../../shared/components/AvailabilityComponents'
+import { GuidedEmptyState } from '../../../shared/components/GuidanceComponents'
 import type { EventRequirement } from '../../../services/eventService'
 import type { VendorSearchResult, VendorService } from '../../../services/vendorService'
 import type { VendorAvailabilityPreview } from '../../../services/availabilityService'
@@ -162,7 +163,15 @@ export function VendorProcurementView({
     return (
       <DashboardShell>
         <PageHeader title="Vendor Procurement" subtitle="Select an event first" />
-        <EmptyState title="No event selected" description="Go to your dashboard and select an event to start procurement" />
+        <GuidedEmptyState
+          title="No event selected"
+          description="Start from an organizer event before adding requirements or discovering vendors."
+          steps={[
+            { title: 'Create or select event', description: 'Choose the Large Event that owns this procurement.' },
+            { title: 'Add requirements', description: 'Define vendor categories and budget ranges.' },
+            { title: 'Discover vendors', description: 'Compare matches and send booking requests.' }
+          ]}
+        />
       </DashboardShell>
     )
   }
