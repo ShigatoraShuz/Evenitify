@@ -70,9 +70,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 <button
                   onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
                   className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
-                  aria-label="Toggle sidebar"
+                  aria-label={mobileSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+                  aria-expanded={mobileSidebarOpen}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
@@ -105,6 +106,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
                     onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                     className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100"
                     aria-label="Account menu"
+                    aria-expanded={profileMenuOpen}
                   >
                     <span className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold">
                       {userRole.charAt(0).toUpperCase()}

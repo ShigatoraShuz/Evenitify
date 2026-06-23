@@ -21,8 +21,9 @@ const AdminSettingsView = lazy(() => import('../features/user-settings/views/Adm
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="animate-spin h-8 w-8 border-4 border-brand-500 border-t-transparent rounded-full" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50" role="status" aria-live="polite">
+      <div className="animate-spin h-8 w-8 border-4 border-brand-500 border-t-transparent rounded-full" aria-hidden="true" />
+      <span className="sr-only">Loading...</span>
     </div>
   )
 }
