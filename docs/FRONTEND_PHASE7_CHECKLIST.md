@@ -35,5 +35,5 @@ Phase 7 scope is frontend-only. Backend and Supabase database changes are intent
 - [x] 6. Forms and workflow validation hardening.
 - [x] 7. Role dashboard final polish.
 - [x] 8. Acceptance test documentation and smoke checklist.
-- [ ] 9. Deployment preview readiness.
+- [x] 9. Deployment preview readiness.
 - [ ] 10. Final QA, documentation, build verification, and push.
