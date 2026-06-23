@@ -1,0 +1,146 @@
+-- Seed Data for Development
+-- Note: auth.users must exist first. These IDs are placeholders for local dev.
+
+-- 1. User Profiles (expects auth.users to be created via Supabase Auth UI or API)
+-- These INSERTs assume auth.users already exist with matching IDs.
+-- For local development, create users via Supabase Auth first, then run this seed.
+
+-- Helper: Insert user_profiles (run after creating users in Supabase Auth)
+-- The actual inserts are commented out because UUIDs depend on auth.users.
+-- Replace the UUIDs below with actual auth.users IDs from your Supabase project.
+
+-- Example (uncomment and update UUIDs after creating auth users):
+-- insert into public.user_profiles (id, email, role, display_name) values
+--   ('ORG_USER_ID', 'organizer@eventify.test', 'organizer', 'Alice Organizer'),
+--   ('ORG2_USER_ID', 'organizer2@eventify.test', 'organizer', 'Bob Organizer'),
+--   ('VENDOR1_USER_ID', 'vendor1@eventify.test', 'vendor', 'Charlie Caterer'),
+--   ('VENDOR2_USER_ID', 'vendor2@eventify.test', 'vendor', 'Diana DJ'),
+--   ('VENDOR3_USER_ID', 'vendor3@eventify.test', 'vendor', 'Edward Events'),
+--   ('ADMIN_USER_ID', 'admin@eventify.test', 'admin', 'Admin User');
+
+-- Organizer Profiles (run after user_profiles exist)
+-- insert into public.organizer_profiles (user_id, organization_name, contact_number, business_address) values
+--   ('ORG_USER_ID', 'Alpha Events Inc.', '+1-555-0100', '123 Main St, New York, NY'),
+--   ('ORG2_USER_ID', 'Beta Conferences LLC', '+1-555-0200', '456 Oak Ave, Los Angeles, CA');
+
+-- Vendor Profiles (run after user_profiles exist)
+-- insert into public.vendor_profiles (user_id, business_name, contact_number, service_area, rating, verification_status) values
+--   ('VENDOR1_USER_ID', 'Gourmet Catering Co.', '+1-555-0300', 'New York Metro', 4.5, 'verified'),
+--   ('VENDOR2_USER_ID', 'SoundWave Productions', '+1-555-0400', 'Los Angeles Area', 4.2, 'verified'),
+--   ('VENDOR3_USER_ID', 'CaptureTheMoment Photography', '+1-555-0500', 'San Francisco Bay', 4.8, 'verified');
+
+-- Large Events
+-- insert into public.large_events (organizer_id, title, event_date, venue, budget, expected_guests, status) values
+--   ((select id from public.organizer_profiles where organization_name = 'Alpha Events Inc.'), 'Tech Summit 2026', '2026-09-15', 'Convention Center NYC', 250000.00, 2000, 'planning'),
+--   ((select id from public.organizer_profiles where organization_name = 'Alpha Events Inc.'), 'Corporate Gala Night', '2026-12-20', 'Grand Ballroom NYC', 150000.00, 500, 'draft'),
+--   ((select id from public.organizer_profiles where organization_name = 'Beta Conferences LLC'), 'Startup Pitch Day', '2026-08-01', 'Innovation Hub LA', 75000.00, 300, 'planning');
+
+-- Event Requirements
+-- insert into public.event_requirements (event_id, category, quantity, min_budget, max_budget, requirement_status) values
+--   ((select id from public.large_events where title = 'Tech Summit 2026'), 'Catering', 2000, 30000.00, 50000.00, 'open'),
+--   ((select id from public.large_events where title = 'Tech Summit 2026'), 'Lights and Sounds', 1, 20000.00, 40000.00, 'open'),
+--   ((select id from public.large_events where title = 'Tech Summit 2026'), 'Photo/Video', 1, 8000.00, 15000.00, 'open'),
+--   ((select id from public.large_events where title = 'Corporate Gala Night'), 'Catering', 500, 15000.00, 25000.00, 'open'),
+--   ((select id from public.large_events where title = 'Corporate Gala Night'), 'Lights and Sounds', 1, 10000.00, 20000.00, 'open'),
+--   ((select id from public.large_events where title = 'Corporate Gala Night'), 'Staff', 20, 5000.00, 10000.00, 'open'),
+--   ((select id from public.large_events where title = 'Startup Pitch Day'), 'Venue', 1, 5000.00, 15000.00, 'open'),
+--   ((select id from public.large_events where title = 'Startup Pitch Day'), 'Catering', 300, 5000.00, 10000.00, 'open'),
+--   ((select id from public.large_events where title = 'Startup Pitch Day'), 'Photo/Video', 1, 3000.00, 8000.00, 'open'),
+--   ((select id from public.large_events where title = 'Startup Pitch Day'), 'Transport', 2, 2000.00, 5000.00, 'open');
+
+-- Vendor Services
+-- insert into public.vendor_services (vendor_id, category, service_name, description, base_price, availability_status) values
+--   ((select id from public.vendor_profiles where business_name = 'Gourmet Catering Co.'), 'Catering', 'Premium Buffet Service', 'Full-service buffet for large events', 25000.00, 'available'),
+--   ((select id from public.vendor_profiles where business_name = 'Gourmet Catering Co.'), 'Catering', 'Plated Dinner Service', 'Elegant plated dinner service', 35000.00, 'available'),
+--   ((select id from public.vendor_profiles where business_name = 'SoundWave Productions'), 'Lights and Sounds', 'Premium Sound System', 'High-end audio setup for 2000+ guests', 25000.00, 'available'),
+--   ((select id from public.vendor_profiles where business_name = 'SoundWave Productions'), 'Lights and Sounds', 'Stage Lighting Package', 'Professional stage lighting', 15000.00, 'available'),
+--   ((select id from public.vendor_profiles where business_name = 'SoundWave Productions'), 'Lights and Sounds', 'LED Wall Rental', 'Large LED video wall', 20000.00, 'limited'),
+--   ((select id from public.vendor_profiles where business_name = 'CaptureTheMoment Photography'), 'Photo/Video', 'Event Photography', 'Full-day event photography', 5000.00, 'available'),
+--   ((select id from public.vendor_profiles where business_name = 'CaptureTheMoment Photography'), 'Photo/Video', 'Videography Package', 'Professional video coverage', 8000.00, 'available'),
+--   ((select id from public.vendor_profiles where business_name = 'CaptureTheMoment Photography'), 'Photo/Video', 'Photo Booth Rental', 'Interactive photo booth', 2000.00, 'available'),
+--   ((select id from public.vendor_profiles where business_name = 'Gourmet Catering Co.'), 'Catering', 'Basic Catering', 'Simple catering for small events', 5000.00, 'available'),
+--   ((select id from public.vendor_profiles where business_name = 'Gourmet Catering Co.'), 'Staff', 'Waitstaff Service', 'Professional waitstaff', 3000.00, 'available'),
+--   ((select id from public.vendor_profiles where business_name = 'SoundWave Productions'), 'Staff', 'Sound Technician', 'Experienced sound technician', 2000.00, 'limited'),
+--   ((select id from public.vendor_profiles where business_name = 'Gourmet Catering Co.'), 'Transport', 'Catering Transport', 'Food transport and setup', 2500.00, 'available');
+
+-- Bookings
+-- insert into public.bookings (event_id, requirement_id, vendor_id, organizer_id, booking_type, status, requested_budget, notes) values
+--   (
+--     (select id from public.large_events where title = 'Tech Summit 2026'),
+--     (select id from public.event_requirements where event_id = (select id from public.large_events where title = 'Tech Summit 2026') and category = 'Catering' limit 1),
+--     (select id from public.vendor_profiles where business_name = 'Gourmet Catering Co.'),
+--     (select id from public.organizer_profiles where organization_name = 'Alpha Events Inc.'),
+--     'B2B', 'pending', 35000.00, 'Looking for premium catering for 2000 guests'
+--   ),
+--   (
+--     (select id from public.large_events where title = 'Tech Summit 2026'),
+--     (select id from public.event_requirements where event_id = (select id from public.large_events where title = 'Tech Summit 2026') and category = 'Lights and Sounds' limit 1),
+--     (select id from public.vendor_profiles where business_name = 'SoundWave Productions'),
+--     (select id from public.organizer_profiles where organization_name = 'Alpha Events Inc.'),
+--     'B2B', 'accepted', 25000.00, 'Need full sound system for main hall'
+--   ),
+--   (
+--     (select id from public.large_events where title = 'Tech Summit 2026'),
+--     (select id from public.event_requirements where event_id = (select id from public.large_events where title = 'Tech Summit 2026') and category = 'Photo/Video' limit 1),
+--     (select id from public.vendor_profiles where business_name = 'CaptureTheMoment Photography'),
+--     (select id from public.organizer_profiles where organization_name = 'Alpha Events Inc.'),
+--     'B2B', 'confirmed', 8000.00, 'Full event photo and video coverage'
+--   ),
+--   (
+--     (select id from public.large_events where title = 'Corporate Gala Night'),
+--     (select id from public.event_requirements where event_id = (select id from public.large_events where title = 'Corporate Gala Night') and category = 'Catering' limit 1),
+--     (select id from public.vendor_profiles where business_name = 'Gourmet Catering Co.'),
+--     (select id from public.organizer_profiles where organization_name = 'Alpha Events Inc.'),
+--     'B2B', 'pending', 20000.00, 'Plated dinner for 500 guests'
+--   ),
+--   (
+--     (select id from public.large_events where title = 'Startup Pitch Day'),
+--     (select id from public.event_requirements where event_id = (select id from public.large_events where title = 'Startup Pitch Day') and category = 'Catering' limit 1),
+--     (select id from public.vendor_profiles where business_name = 'Gourmet Catering Co.'),
+--     (select id from public.organizer_profiles where organization_name = 'Beta Conferences LLC'),
+--     'B2B', 'changes_requested', 8000.00, 'Light lunch for 300 attendees'
+--   ),
+--   (
+--     (select id from public.large_events where title = 'Startup Pitch Day'),
+--     (select id from public.event_requirements where event_id = (select id from public.large_events where title = 'Startup Pitch Day') and category = 'Photo/Video' limit 1),
+--     (select id from public.vendor_profiles where business_name = 'CaptureTheMoment Photography'),
+--     (select id from public.organizer_profiles where organization_name = 'Beta Conferences LLC'),
+--     'B2B', 'completed', 5000.00, 'Event photography coverage'
+--   ),
+--   (
+--     (select id from public.large_events where title = 'Startup Pitch Day'),
+--     (select id from public.event_requirements where event_id = (select id from public.large_events where title = 'Startup Pitch Day') and category = 'Venue' limit 1),
+--     (select id from public.vendor_profiles where business_name = 'Gourmet Catering Co.'),
+--     (select id from public.organizer_profiles where organization_name = 'Beta Conferences LLC'),
+--     'B2B', 'rejected', 10000.00, 'Need venue space'
+--   ),
+--   (
+--     (select id from public.large_events where title = 'Corporate Gala Night'),
+--     (select id from public.event_requirements where event_id = (select id from public.large_events where title = 'Corporate Gala Night') and category = 'Lights and Sounds' limit 1),
+--     (select id from public.vendor_profiles where business_name = 'SoundWave Productions'),
+--     (select id from public.organizer_profiles where organization_name = 'Alpha Events Inc.'),
+--     'B2B', 'pending', 15000.00, 'Stage lighting for ballroom'
+--   );
+
+-- Contracts
+-- insert into public.contracts (booking_id, contract_status, sent_at) values
+--   (
+--     (select b.id from public.bookings b join public.large_events le on le.id = b.event_id where le.title = 'Tech Summit 2026' and b.status = 'confirmed' limit 1),
+--     'sent', now()
+--   ),
+--   (
+--     (select b.id from public.bookings b join public.large_events le on le.id = b.event_id where le.title = 'Tech Summit 2026' and b.status = 'accepted' limit 1),
+--     'draft', null
+--   ),
+--   (
+--     (select b.id from public.bookings b join public.large_events le on le.id = b.event_id where le.title = 'Startup Pitch Day' and b.status = 'completed' limit 1),
+--     'signed', now()
+--   ),
+--   (
+--     (select b.id from public.bookings b join public.large_events le on le.id = b.event_id where le.title = 'Startup Pitch Day' and b.status = 'completed' limit 1),
+--     'signed', now()
+--   ),
+--   (
+--     (select b.id from public.bookings b join public.large_events le on le.id = b.event_id where le.title = 'Corporate Gala Night' and b.status = 'pending' and b.notes like '%Catering%' limit 1),
+--     'draft', null
+--   );
