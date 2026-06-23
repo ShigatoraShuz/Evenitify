@@ -20,6 +20,7 @@ export default function AdminDashboardViewWrapper() {
       selectedVendor={vm.selectedVendor}
       selectedBooking={vm.selectedBooking}
       auditActivities={vm.auditActivities}
+      analytics={vm.analytics}
       actionQueue={vm.actionQueue}
       riskFlags={vm.riskFlags}
       realtimeSnapshot={realtime.snapshot}

@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { adminService } from '../../../services/adminService'
 import { auditService, type AuditActivity } from '../../../services/auditService'
+import { analyticsService, type OperationalAnalytics } from '../../../services/analyticsService'
 import type { OperationQueueItem } from '../../../shared/components/OperationsPanels'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 import type {
@@ -25,6 +26,7 @@ interface AdminDashboardState {
   selectedVendor: AdminVendor | null
   selectedBooking: AdminBooking | null
   auditActivities: AuditActivity[]
+  analytics: OperationalAnalytics | null
 }
 
 export function useAdminDashboard() {
@@ -41,7 +43,8 @@ export function useAdminDashboard() {
     activeSection: 'summary',
     selectedVendor: null,
     selectedBooking: null,
-    auditActivities: []
+    auditActivities: [],
+    analytics: null
   })
 
   const loadSummary = useCallback(async () => {
@@ -51,7 +54,8 @@ export function useAdminDashboard() {
         adminService.getDashboardSummary(),
         auditService.listActivities('admin:operations')
       ])
-      setState((s) => ({ ...s, summary, auditActivities, loading: false }))
+      const analytics = await analyticsService.getOperationalAnalytics(summary)
+      setState((s) => ({ ...s, summary, auditActivities, analytics, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }

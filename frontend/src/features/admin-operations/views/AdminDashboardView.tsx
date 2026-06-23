@@ -12,8 +12,10 @@ import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { ActionQueuePanel, RiskFlagsPanel, type OperationQueueItem } from '../../../shared/components/OperationsPanels'
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { DashboardCommandPanel } from '../../../shared/components/DashboardCommandPanel'
+import { AdminTrendPlaceholder, AnalyticsMetricGrid, OperationsInsightCard, StatusDistributionPanel } from '../../../shared/components/AnalyticsComponents'
 import type { AuditActivity } from '../../../services/auditService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
+import type { OperationalAnalytics } from '../../../services/analyticsService'
 import type {
   AdminDashboardSummary,
   AdminUser,
@@ -35,6 +37,7 @@ interface AdminDashboardViewProps {
   selectedVendor: AdminVendor | null
   selectedBooking: AdminBooking | null
   auditActivities: AuditActivity[]
+  analytics: OperationalAnalytics | null
   actionQueue: OperationQueueItem[]
   riskFlags: OperationQueueItem[]
   realtimeSnapshot: RealtimeSnapshot | null
@@ -74,6 +77,7 @@ export function AdminDashboardView({
   selectedVendor,
   selectedBooking,
   auditActivities,
+  analytics,
   actionQueue,
   riskFlags,
   realtimeSnapshot,
@@ -228,6 +232,21 @@ export function AdminDashboardView({
               <SummaryCard label="Total Events" value={summary.total_events} color="text-slate-600" />
               <SummaryCard label="Rejected Bookings" value={summary.rejected_bookings} color="text-red-600" />
             </div>
+            {analytics && (
+              <>
+                <AnalyticsMetricGrid metrics={analytics.metrics} />
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <StatusDistributionPanel title="Bookings by status" items={analytics.bookingStatus} />
+                  <StatusDistributionPanel title="Vendors by verification" items={analytics.vendorVerification} />
+                  <StatusDistributionPanel title="Contracts by status" items={analytics.contractStatus} />
+                  <StatusDistributionPanel title="Events by timeline stage" items={analytics.eventTimelineStage} />
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <OperationsInsightCard insights={analytics.insights} />
+                  <AdminTrendPlaceholder />
+                </div>
+              </>
+            )}
             <div className="grid gap-4 lg:grid-cols-2">
               <ActionQueuePanel items={actionQueue} />
               <RiskFlagsPanel flags={riskFlags} />
