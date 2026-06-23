@@ -97,9 +97,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 <>
                   <button
                     onClick={commandPalette.openPalette}
-                    className="hidden rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 md:inline-flex"
+                    className="inline-flex rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   >
-                    Search / actions
+                    Search
                   </button>
                   <button
                     onClick={() => setHelpOpen(true)}
