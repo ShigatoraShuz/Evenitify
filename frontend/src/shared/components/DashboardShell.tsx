@@ -6,6 +6,8 @@ import { NotificationDropdown } from '../../features/notifications/components/No
 import { ToastProvider } from './ToastContext'
 import { getSidebarByRole, type RouteConfig } from '../../routes/routeConstants'
 import { DemoRoleSwitcher } from './DemoRoleSwitcher'
+import { CommandPalette } from './CommandPalette'
+import { useCommandPalette } from '../hooks/useCommandPalette'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -18,6 +20,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const userRole = user?.role || null
   const sidebarItems = getSidebarByRole(userRole)
   const { notifications, unreadCount, loading, loadNotifications, markAsRead } = useNotifications()
+  const commandPalette = useCommandPalette(userRole)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -42,6 +45,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const handleNavigation = (path: string) => {
     navigate(path)
     setMobileSidebarOpen(false)
+  }
+
+  const handleCommandSelect = (path: string) => {
+    commandPalette.closePalette()
+    handleNavigation(path)
   }
 
   const profileRoute = userRole === 'vendor' ? '/vendor/profile' : userRole === 'admin' ? '/admin/settings' : '/organizer/profile'
@@ -81,6 +89,14 @@ export function DashboardShell({ children }: DashboardShellProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              {userRole && (
+                <button
+                  onClick={commandPalette.openPalette}
+                  className="hidden rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 md:inline-flex"
+                >
+                  Search / actions
+                </button>
+              )}
               <NotificationDropdown
                 unreadCount={unreadCount}
                 notifications={notifications}
@@ -173,6 +189,15 @@ export function DashboardShell({ children }: DashboardShellProps) {
             <div className="mb-4">
               <DemoRoleSwitcher compact />
             </div>
+            <CommandPalette
+              open={commandPalette.open}
+              query={commandPalette.query}
+              results={commandPalette.results}
+              quickActions={commandPalette.quickActions}
+              onQueryChange={commandPalette.updateQuery}
+              onClose={commandPalette.closePalette}
+              onSelect={handleCommandSelect}
+            />
             {children}
           </main>
         </div>
