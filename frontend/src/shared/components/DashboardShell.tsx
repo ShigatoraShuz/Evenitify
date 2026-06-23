@@ -48,6 +48,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
   return (
     <ToastProvider>
       <div className="min-h-screen bg-slate-50">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-lg">
+          Skip to main content
+        </a>
         <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -130,12 +133,15 @@ export function DashboardShell({ children }: DashboardShellProps) {
         <div className="flex max-w-7xl mx-auto relative">
           {sidebarItems.length > 0 && (
             <>
-              <aside className={`
+              <aside
+                className={`
                 fixed lg:sticky top-16 lg:top-16 z-30 h-[calc(100vh-64px)] w-64 bg-white border-r border-slate-200 
                 transition-transform duration-200 ease-in-out
                 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-              `}>
-                <nav className="p-4 space-y-1" aria-label="Sidebar navigation">
+              `}
+                aria-label="Sidebar navigation"
+              >
+                <nav className="p-4 space-y-1">
                   {sidebarItems.map((item: RouteConfig) => (
                     <button
                       key={item.path}
@@ -162,7 +168,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
             </>
           )}
 
-          <main className={`flex-1 p-4 md:p-6 lg:p-8 min-h-[calc(100vh-64px)] ${sidebarItems.length > 0 ? '' : ''}`}>
+          <main id="main-content" className={`flex-1 p-4 md:p-6 lg:p-8 min-h-[calc(100vh-64px)] ${sidebarItems.length > 0 ? '' : ''}`}>
             {children}
           </main>
         </div>

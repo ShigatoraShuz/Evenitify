@@ -110,20 +110,22 @@ export function DataTable<T>({
       {paginated.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDescription} />
       ) : (
-        <div className="bg-white rounded-xl border overflow-x-auto">
+        <div className="bg-white rounded-xl border overflow-x-auto" role="table">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
                 {columns.map((col) => (
                   <th
                     key={col.key}
+                    scope="col"
                     className={`text-left px-4 py-3 font-medium text-gray-600 ${col.sortable ? 'cursor-pointer hover:text-gray-900 select-none' : ''}`}
+                    aria-sort={col.sortable && sortKey === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
                     onClick={() => col.sortable && handleSort(col.key)}
                   >
                     <span className="flex items-center gap-1">
                       {col.label}
                       {col.sortable && sortKey === col.key && (
-                        <span className="text-xs">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                        <span className="text-xs" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
                       )}
                     </span>
                   </th>
