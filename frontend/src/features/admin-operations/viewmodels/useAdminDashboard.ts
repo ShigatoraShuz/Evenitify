@@ -18,7 +18,7 @@ interface AdminDashboardState {
   loading: boolean
   submitting: boolean
   error: string | null
-  activeSection: 'summary' | 'users' | 'events' | 'bookings' | 'vendors'
+  activeSection: string
   selectedVendor: AdminVendor | null
   selectedBooking: AdminBooking | null
 }
