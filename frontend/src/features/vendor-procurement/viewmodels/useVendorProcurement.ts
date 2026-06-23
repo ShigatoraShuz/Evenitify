@@ -50,7 +50,7 @@ export function useVendorProcurement() {
 
   const getDraftKey = useCallback(() => {
     return state.eventId ? `${DRAFT_KEY_PREFIX}${state.eventId}` : null
-  }, [])
+  }, [state.eventId])
 
   const saveDraft = useCallback(() => {
     const key = getDraftKey()
@@ -91,11 +91,11 @@ export function useVendorProcurement() {
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
-  }, [state.eventId])
+  }, [])
 
   const setStep = useCallback((step: ProcurementStep) => {
     setState((s) => ({ ...s, currentStep: step, validationErrors: [] }))
-  }, [state.eventId])
+  }, [])
 
   const selectRequirement = useCallback((req: EventRequirement) => {
     setState((s) => ({ ...s, selectedRequirement: req, currentStep: 'vendors' }))
@@ -134,7 +134,7 @@ export function useVendorProcurement() {
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
-  }, [])
+  }, [state.eventId])
 
   const createRequirement = useCallback(async (payload: {
     category: RequirementCategory

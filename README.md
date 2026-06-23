@@ -77,6 +77,16 @@ A full-stack platform connecting event organizers with verified vendors for larg
 - **Dashboard polish**: Role-specific command panels for Organizer, Vendor B2B, and Admin/Operations dashboards
 - **Acceptance and deployment docs**: Manual acceptance test checklist and Vercel/Netlify/static hosting preview notes
 
+### Phase 8
+- **Event timeline/calendar UI**: Organizer portfolio planning tab with event dates, booking deadlines, contract due dates, requirement deadlines, and upcoming vendor actions
+- **Budget center**: Organizer portfolio budget tab with total budget, allocation, accepted/pending spend, remaining budget, category breakdown, and over-budget warning
+- **Vendor availability scheduler**: Organizer-side vendor availability preview plus Vendor-side availability calendar, quick status update, and blocked-date list
+- **Communication placeholders**: Booking message thread UI for organizer, vendor, admin note, and system update message types with disabled composer until backend messaging exists
+- **Operational analytics**: Admin/Operations metrics, status distribution panels, insights, and response-time trend placeholder
+- **Global search and commands**: Dashboard shell search palette for events, vendors, bookings, contracts, notifications, and role-scoped quick actions
+- **Role guidance**: Organizer, Vendor, and Admin help drawer plus guided empty journey states
+- **Presentation polish**: Mock role switching clearly marked as development/demo only and mock mode ready for deployable frontend presentations
+
 ## Project Structure
 
 ```
@@ -183,6 +193,14 @@ VITE_API_MODE=mock npm run dev
 ```
 
 Or set `VITE_USE_MOCKS=true`. The landing page and dashboards show demo role switching for Organizer, Vendor, and Admin journeys.
+
+Phase 8 demo tools:
+
+- Use the dashboard `Search` button for global mock search and quick actions.
+- Use the dashboard `Help` button for role-specific guidance.
+- See `docs/FRONTEND_DEMO_GUIDE.md` for Organizer, Vendor, and Admin walkthroughs.
+- See `docs/FRONTEND_ADVANCED_UI_FEATURES.md` for timeline, budget, availability, communication, analytics, and command UI notes.
+- See `docs/FRONTEND_MOCK_MODE_GUIDE.md` for mock-mode deployment behavior.
 
 ### API Mode Switching
 
