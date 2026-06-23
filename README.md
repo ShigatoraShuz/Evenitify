@@ -68,6 +68,15 @@ A full-stack platform connecting event organizers with verified vendors for larg
 - **Audit/activity visibility**: Typed mock audit timelines for portfolio, vendor booking detail, and admin operations
 - **Advanced admin operations**: Pending action queue, risk flags, recent actions timeline, and event date range filtering
 
+### Phase 7
+- **Demo journeys**: Mock-mode Organizer, Vendor, and Admin demo role switching from landing and dashboard screens
+- **Scenario data**: Typed mock scenarios for new organizers, active procurement, completed events, vendor request queues, active contracts, and admin operations
+- **ViewModel state readiness**: Shared ViewModel status vocabulary for idle/loading/success/empty/error/submitting/refreshing
+- **API mode switching**: `VITE_API_MODE=mock|local|production` with documented endpoint contracts and placeholder integration paths
+- **Validation hardening**: Validation summaries for auth, event creation, requirements, booking requests, and vendor profile updates
+- **Dashboard polish**: Role-specific command panels for Organizer, Vendor B2B, and Admin/Operations dashboards
+- **Acceptance and deployment docs**: Manual acceptance test checklist and Vercel/Netlify/static hosting preview notes
+
 ## Project Structure
 
 ```
@@ -160,9 +169,36 @@ eventify/
 
 ```bash
 cd frontend
-npm test          # Run smoke tests (7 tests)
+npm test          # Run smoke tests and Phase 7 helper tests
 npm run test:watch  # Watch mode
 ```
+
+### Frontend Demo Mode
+
+For a frontend-only presentation:
+
+```bash
+cd frontend
+VITE_API_MODE=mock npm run dev
+```
+
+Or set `VITE_USE_MOCKS=true`. The landing page and dashboards show demo role switching for Organizer, Vendor, and Admin journeys.
+
+### API Mode Switching
+
+| Mode | Environment | Behavior |
+|---|---|---|
+| mock | `VITE_API_MODE=mock` | Uses typed mock adapter and scenarios |
+| local | `VITE_API_MODE=local` | Calls `VITE_API_BASE_URL` or `http://localhost:4000/api` |
+| production | `VITE_API_MODE=production` | Calls `VITE_API_BASE_URL` or `/api` |
+
+### Acceptance Checklist
+
+See `docs/FRONTEND_ACCEPTANCE_TESTS.md` for Organizer, Vendor, Admin, contract, notification, profile, responsive, unauthorized, and not-found checks.
+
+### Deployment Preview
+
+See `docs/FRONTEND_DEPLOYMENT_PREVIEW.md` for Vercel, Netlify, static hosting, and mock-mode preview settings.
 
 ### Lint
 
