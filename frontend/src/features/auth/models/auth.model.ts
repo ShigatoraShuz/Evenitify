@@ -1,3 +1,5 @@
+export type AuthState = 'loading' | 'authenticated' | 'unauthenticated' | 'unauthorized' | 'incomplete_profile'
+
 export type UserRole = 'organizer' | 'vendor' | 'admin'
 
 export interface AuthUser {

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuthSession } from '../../features/auth/viewmodels/useAuthSession'
 import { useNotifications } from '../../features/notifications/viewmodels/useNotifications'
 import { NotificationDropdown } from '../../features/notifications/components/NotificationDropdown'
 import { ToastProvider } from './ToastContext'
@@ -9,27 +10,11 @@ interface DashboardShellProps {
   children: React.ReactNode
 }
 
-function getUserRole(): string | null {
-  try {
-    const raw = localStorage.getItem('auth_user_cache')
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      return parsed?.role || null
-    }
-  } catch {}
-  return null
-}
-
-function logout() {
-  localStorage.removeItem('supabase.auth.token')
-  localStorage.removeItem('onboarding_complete')
-  window.location.href = '/login'
-}
-
 export function DashboardShell({ children }: DashboardShellProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  const userRole = getUserRole()
+  const { user, logout } = useAuthSession()
+  const userRole = user?.role || null
   const sidebarItems = getSidebarByRole(userRole)
   const { notifications, unreadCount, loading, loadNotifications, markAsRead } = useNotifications()
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
@@ -129,7 +114,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
                       </button>
                       <hr className="my-1 border-slate-100" />
                       <button
-                        onClick={() => { logout(); setProfileMenuOpen(false) }}
+                        onClick={async () => { await logout(); navigate('/login'); setProfileMenuOpen(false) }}
                         className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                       >
                         Sign Out

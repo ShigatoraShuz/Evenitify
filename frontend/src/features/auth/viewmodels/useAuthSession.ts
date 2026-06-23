@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { authService, type UserProfile } from '../../../services/authService'
 import { onboardingService } from '../../../services/onboardingService'
+import type { AuthState } from '../models/auth.model'
 
 const USER_CACHE_KEY = 'auth_user_cache'
 
@@ -28,10 +29,26 @@ function getCachedUser(): UserProfile | null {
   }
 }
 
+function getStoredSession(): boolean {
+  try {
+    const raw = localStorage.getItem('supabase.auth.token')
+    return !!raw
+  } catch {
+    return false
+  }
+}
+
+export function getAuthState(user: UserProfile | null, loading: boolean, profileComplete: boolean): AuthState {
+  if (loading) return 'loading'
+  if (!user) return 'unauthenticated'
+  if (!profileComplete) return 'incomplete_profile'
+  return 'authenticated'
+}
+
 export function useAuthSession() {
   const [state, setState] = useState<AuthSessionState>({
     user: getCachedUser(),
-    loading: true,
+    loading: getStoredSession(),
     error: null,
     profileComplete: true
   })
@@ -56,7 +73,8 @@ export function useAuthSession() {
       setState({ user, loading: false, error: null, profileComplete })
     } catch {
       const cached = getCachedUser()
-      setState({ user: cached, loading: false, error: null, profileComplete: true })
+      const hasSession = getStoredSession()
+      setState({ user: hasSession ? cached : null, loading: false, error: null, profileComplete: true })
     }
   }, [checkProfileComplete])
 
@@ -90,7 +108,12 @@ export function useAuthSession() {
     }
   }, [login])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout()
+    } catch {
+      // Server-side logout is best-effort; always clear local state
+    }
     localStorage.removeItem('supabase.auth.token')
     localStorage.removeItem('onboarding_complete')
     cacheUser(null)
@@ -102,11 +125,14 @@ export function useAuthSession() {
     setState((s) => ({ ...s, profileComplete: true }))
   }, [])
 
+  const authState = getAuthState(state.user, state.loading, state.profileComplete)
+
   return {
     user: state.user,
     loading: state.loading,
     error: state.error,
     profileComplete: state.profileComplete,
+    authState,
     login,
     register,
     logout,

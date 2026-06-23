@@ -21,6 +21,12 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
     const payload = body as { role?: string } | undefined
     return { id: 'usr-001', email: 'organizer@eventify.com', role: payload?.role || 'organizer', display_name: 'TechCorp Events' }
   },
+  'POST /auth/logout': () => ({ message: 'Logged out successfully' }),
+  'POST /auth/refresh': () => {
+    const cached = localStorage.getItem('supabase.auth.token')
+    const session = cached ? JSON.parse(cached) : {}
+    return { session: { access_token: 'mock-token-refreshed-' + Date.now(), refresh_token: 'mock-refresh-' + Date.now() }, user: { id: 'usr-001', email: 'organizer@eventify.com', role: 'organizer' } }
+  },
 
   // Events
   'GET /events': () => MOCK_EVENTS,

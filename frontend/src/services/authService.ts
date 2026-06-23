@@ -33,9 +33,9 @@ export const authService = {
   syncProfile: (payload?: { role?: string }) =>
     api.post<UserProfile>('/auth/sync-profile', payload || {}),
 
-  // TODO: Implement refreshSession when backend endpoint is available
-  // refreshSession: () => api.post<AuthResult>('/auth/refresh', {}),
+  refreshSession: () =>
+    api.post<AuthResult>('/auth/refresh', {}),
 
-  // TODO: Implement logout when backend endpoint is available
-  // logout: () => api.post<void>('/auth/logout', {})
+  logout: () =>
+    api.post<void>('/auth/logout', {}),
 }
