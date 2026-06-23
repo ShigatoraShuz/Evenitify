@@ -146,6 +146,58 @@ async function getVendorWithServices(vendorId) {
   return { ...vendor, services: services || [] };
 }
 
+async function listB2BBookings(vendorId, statusFilter) {
+  let query = supabase
+    .from('bookings')
+    .select(`
+      *,
+      large_events!inner(title, event_date, venue, expected_guests, status),
+      event_requirements!inner(category, quantity),
+      organizer_profiles!inner(organization_name)
+    `)
+    .eq('vendor_id', vendorId)
+    .eq('booking_type', 'B2B')
+    .order('requested_at', { ascending: false });
+
+  if (statusFilter) {
+    query = query.eq('status', statusFilter);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function findBookingById(bookingId) {
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(`
+      *,
+      large_events!inner(title, event_date, venue, expected_guests, budget, status),
+      event_requirements!inner(category, quantity, min_budget, max_budget),
+      organizer_profiles!inner(organization_name, contact_number)
+    `)
+    .eq('id', bookingId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+async function updateBookingStatus(bookingId, vendorId, status, reason) {
+  const { data, error } = await supabase
+    .from('bookings')
+    .update({ status })
+    .eq('id', bookingId)
+    .eq('vendor_id', vendorId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 module.exports = {
   findByUserId,
   findById,
@@ -155,5 +207,8 @@ module.exports = {
   updateService,
   searchVendors,
   searchVendorServices,
-  getVendorWithServices
+  getVendorWithServices,
+  listB2BBookings,
+  findBookingById,
+  updateBookingStatus
 };

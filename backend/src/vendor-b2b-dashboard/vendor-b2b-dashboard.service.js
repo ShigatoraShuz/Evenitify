@@ -89,6 +89,64 @@ async function getVendorProfile(vendorId) {
   return vendor;
 }
 
+const VALID_TRANSITIONS = {
+  pending: ['accepted', 'rejected', 'changes_requested']
+};
+
+async function listB2BBookings(actor, statusFilter) {
+  const profile = await vendorRepository.findByUserId(actor.id);
+  if (!profile) {
+    throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
+  }
+
+  return vendorRepository.listB2BBookings(profile.id, statusFilter);
+}
+
+async function getBookingDetail(actor, bookingId) {
+  const profile = await vendorRepository.findByUserId(actor.id);
+  if (!profile) {
+    throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
+  }
+
+  const booking = await vendorRepository.findBookingById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+  }
+
+  if (booking.vendor_id !== profile.id) {
+    throw new AppError('Access denied', 403, 'FORBIDDEN');
+  }
+
+  return booking;
+}
+
+async function updateBookingStatus(actor, bookingId, payload) {
+  const profile = await vendorRepository.findByUserId(actor.id);
+  if (!profile) {
+    throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
+  }
+
+  const booking = await vendorRepository.findBookingById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+  }
+
+  if (booking.vendor_id !== profile.id) {
+    throw new AppError('Access denied', 403, 'FORBIDDEN');
+  }
+
+  const allowed = VALID_TRANSITIONS[booking.status];
+  if (!allowed || !allowed.includes(payload.status)) {
+    throw new AppError(
+      `Cannot transition from '${booking.status}' to '${payload.status}'`,
+      400,
+      'INVALID_STATUS_TRANSITION'
+    );
+  }
+
+  return vendorRepository.updateBookingStatus(bookingId, profile.id, payload.status, payload.reason);
+}
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -96,5 +154,8 @@ module.exports = {
   createService,
   updateService,
   searchVendors,
-  getVendorProfile
+  getVendorProfile,
+  listB2BBookings,
+  getBookingDetail,
+  updateBookingStatus
 };
