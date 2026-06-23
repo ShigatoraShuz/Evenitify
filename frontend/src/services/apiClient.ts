@@ -1,11 +1,9 @@
-const API_BASE = '/api';
+import { getMockResponse } from './mock/mockAdapter'
+import type { ApiResponse } from './types'
 
-interface ApiResponse<T> {
-  success: boolean
-  data: T
-  meta?: Record<string, unknown>
-  error?: { code: string; message: string }
-}
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true' || !import.meta.env.VITE_USE_MOCKS
+
+const API_BASE = '/api'
 
 async function request<T>(
   endpoint: string,
@@ -22,6 +20,18 @@ async function request<T>(
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
+  }
+
+  if (USE_MOCKS) {
+    const mockResult = getMockResponse<T>(
+      options.method || 'GET',
+      endpoint,
+      options.body ? JSON.parse(options.body as string) : undefined
+    )
+    if (mockResult !== undefined) {
+      await new Promise((r) => setTimeout(r, 200))
+      return mockResult
+    }
   }
 
   const res = await fetch(`${API_BASE}${endpoint}`, {
