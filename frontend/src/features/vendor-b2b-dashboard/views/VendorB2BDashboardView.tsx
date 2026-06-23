@@ -10,6 +10,7 @@ import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { ContractTimeline, buildContractTimeline } from '../../contract-booking/components/ContractTimeline'
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
+import { DashboardCommandPanel } from '../../../shared/components/DashboardCommandPanel'
 import { B2B_TABS } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
 import type { ContractDetail } from '../../../services/contractService'
@@ -128,6 +129,25 @@ export function VendorB2BDashboardView({
       <div className="mb-4">
         <RealtimeIndicator snapshot={realtimeSnapshot} refreshing={realtimeRefreshing || loading} onRefresh={() => { void onRefreshRealtime(); void onLoadBookings(activeTab === 'all' ? undefined : activeTab) }} />
       </div>
+
+      <DashboardCommandPanel
+        meta="Vendor B2B queue"
+        title="Respond to organizer booking requests"
+        description="Keep Large Event requests separate from personal bookings and act on the highest-priority B2B work first."
+        action={
+          <>
+            <Button onClick={() => onSetTab('pending')}>Review Pending</Button>
+            <Button variant="secondary" onClick={() => navigate('/vendor/profile')}>Update Availability</Button>
+          </>
+        }
+        secondary={
+          <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
+            <div><span className="font-semibold text-slate-900">{bookings.filter((b) => b.status === 'pending').length}</span> pending requests</div>
+            <div><span className="font-semibold text-slate-900">{bookings.filter((b) => b.status === 'accepted').length}</span> accepted bookings</div>
+            <div><span className="font-semibold text-slate-900">{bookings.filter((b) => b.status === 'confirmed').length}</span> confirmed events</div>
+          </div>
+        }
+      />
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex justify-between items-center">

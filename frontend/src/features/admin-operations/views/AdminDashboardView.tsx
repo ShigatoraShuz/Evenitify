@@ -11,6 +11,7 @@ import { DataTable, type Column } from '../../../shared/components/DataTable'
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { ActionQueuePanel, RiskFlagsPanel, type OperationQueueItem } from '../../../shared/components/OperationsPanels'
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
+import { DashboardCommandPanel } from '../../../shared/components/DashboardCommandPanel'
 import type { AuditActivity } from '../../../services/auditService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
 import type {
@@ -163,6 +164,25 @@ export function AdminDashboardView({
       <div className="mb-4">
         <RealtimeIndicator snapshot={realtimeSnapshot} refreshing={realtimeRefreshing || loading} onRefresh={() => { void onRefreshRealtime(); void onLoadSummary() }} />
       </div>
+
+      <DashboardCommandPanel
+        meta="Operations control"
+        title="Resolve the highest-impact platform actions"
+        description="Use the queue, risk flags, and audit timeline to keep vendor verification and booking oversight moving."
+        action={
+          <>
+            <Button onClick={() => onSetActiveSection('vendors')}>Verify Vendors</Button>
+            <Button variant="secondary" onClick={() => onSetActiveSection('bookings')}>Inspect Bookings</Button>
+          </>
+        }
+        secondary={
+          <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
+            <div><span className="font-semibold text-slate-900">{summary.pending_verifications}</span> pending verifications</div>
+            <div><span className="font-semibold text-slate-900">{summary.pending_bookings}</span> pending bookings</div>
+            <div><span className="font-semibold text-slate-900">{summary.rejected_bookings + summary.cancelled_bookings}</span> risk reviews</div>
+          </div>
+        }
+      />
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex justify-between items-center">

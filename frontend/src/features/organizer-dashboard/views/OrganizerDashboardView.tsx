@@ -10,6 +10,7 @@ import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { SummaryCard } from '../../../shared/components/SummaryCard'
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { ValidationSummary } from '../../../shared/components/ValidationSummary'
+import { DashboardCommandPanel } from '../../../shared/components/DashboardCommandPanel'
 import type { LargeEvent, DashboardSummary } from '../../../services/eventService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
 
@@ -187,6 +188,25 @@ export function OrganizerDashboardView({
       <div className="mb-4">
         <RealtimeIndicator snapshot={realtimeSnapshot} refreshing={realtimeRefreshing || loading} onRefresh={() => { void onRefreshRealtime(); void onLoadEvents() }} />
       </div>
+
+      <DashboardCommandPanel
+        meta="Organizer workspace"
+        title="Plan the next procurement move"
+        description="Create a Large Event, open procurement, or review portfolio progress from one event-first dashboard."
+        action={
+          <>
+            <Button onClick={() => setShowCreate(true)}>New Event</Button>
+            {events[0] && <Button variant="secondary" onClick={() => navigate(`/organizer/procurement?eventId=${events[0].id}`)}>Continue Procurement</Button>}
+          </>
+        }
+        secondary={
+          <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
+            <div><span className="font-semibold text-slate-900">{summary?.requirementSummary?.open ?? 0}</span> open requirements</div>
+            <div><span className="font-semibold text-slate-900">{summary?.bookingSummary?.pending ?? 0}</span> pending bookings</div>
+            <div><span className="font-semibold text-slate-900">{summary?.bookingSummary?.contractSent ?? 0}</span> contracts to review</div>
+          </div>
+        }
+      />
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
