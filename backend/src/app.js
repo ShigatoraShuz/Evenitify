@@ -38,6 +38,7 @@ app.use('/events', require('./organizer-events/organizer-events.routes'));
 app.use('/', require('./vendor-procurement/vendor-procurement.routes'));
 app.use('/procurement-requests', require('./contract-booking/contract-booking.routes'));
 app.use('/vendor', require('./vendor-b2b-dashboard/vendor-b2b-dashboard.routes'));
+app.use('/admin', require('./admin-operations/admin-operations.routes'));
 
 app.use((_req, res) => {
   res.status(404).json({
