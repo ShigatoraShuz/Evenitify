@@ -21,6 +21,7 @@ export const ROUTES: Record<string, RouteConfig> = {
   ADMIN_DASHBOARD: { path: '/admin', label: 'Dashboard', roles: ['admin'], sidebar: true },
   ADMIN_SETTINGS: { path: '/admin/settings', label: 'Settings', roles: ['admin'], sidebar: true },
   NOTIFICATIONS: { path: '/notifications', label: 'Notifications', roles: [], sidebar: false },
+  NOT_FOUND: { path: '/404', label: 'Not Found', roles: [], sidebar: false },
 }
 
 export const ORGANIZER_SIDEBAR: RouteConfig[] = [
