@@ -8,13 +8,13 @@ export default function LoginViewWrapper() {
 
   const handleLogin = async (email: string, password: string) => {
     await login(email, password)
-    navigate('/')
+    navigate('/choose-role')
   }
 
   return (
     <LoginView
       onLogin={handleLogin}
-      onSwitchToRegister={() => navigate('/register')}
+      onSwitchToRegister={() => navigate('/register?entry=landing')}
       loading={loading}
       error={error}
     />

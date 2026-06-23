@@ -1,4 +1,4 @@
-const { supabase, supabaseAdmin } = require('../config/supabase');
+const { supabaseAdmin } = require('../config/supabase');
 const AppError = require('../shared/utils/appError');
 const authRepository = require('./auth.repository');
 
@@ -13,37 +13,42 @@ async function register({ email, password, role, displayName }) {
     throw new AppError(authError.message, 400, 'AUTH_REGISTER_FAILED');
   }
 
-  const profile = await authRepository.createProfile(
-    authData.user.id,
-    email,
-    role,
-    displayName
-  );
-
-  if (role === 'organizer') {
-    await authRepository.upsertOrganizerProfile(
-      authData.user.id,
-      displayName || `${email.split('@')[0]} Organization`,
-      null,
-      null
-    );
-  }
-
-  if (role === 'vendor') {
-    await authRepository.upsertVendorProfile(
-      authData.user.id,
-      displayName || `${email.split('@')[0]} Business`,
-      null,
-      null
-    );
-  }
-
-  const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'magiclink',
-    email
-  });
+  const profile = role
+    ? await authRepository.createProfile(authData.user.id, email, role, displayName)
+    : null;
 
   return { user: authData.user, profile };
+}
+
+function buildRoles(profile, organizerProfile, vendorProfile) {
+  if (profile?.role === 'admin') return ['admin'];
+  const roles = [];
+  if (organizerProfile) roles.push('organizer');
+  if (vendorProfile) roles.push('vendor');
+  if (roles.length === 0 && profile?.role) roles.push(profile.role);
+  return roles;
+}
+
+function buildUserResponse(authUser, profile, organizerProfile, vendorProfile) {
+  const roles = buildRoles(profile, organizerProfile, vendorProfile);
+  const selectedRole = profile?.role || null;
+  const activeRole = roles.includes(selectedRole) ? selectedRole : roles[0] || null;
+
+  return {
+    id: authUser.id,
+    email: authUser.email,
+    role: activeRole,
+    selectedRole,
+    roles,
+    display_name: profile?.display_name || null,
+    organizerProfile,
+    vendorProfile,
+    hasOrganizerProfile: !!organizerProfile,
+    hasVendorProfile: !!vendorProfile,
+    setupComplete: roles.length > 0 && (roles.includes('admin') || roles.every((role) => (
+      role === 'organizer' ? !!organizerProfile : role === 'vendor' ? !!vendorProfile : false
+    )))
+  };
 }
 
 async function login({ email, password }) {
@@ -57,61 +62,27 @@ async function login({ email, password }) {
   }
 
   const profile = await authRepository.findByUserId(data.user.id);
-
-  if (!profile) {
-    await authRepository.createProfile(
-      data.user.id,
-      data.user.email,
-      'organizer',
-      null
-    );
-  }
-
-  const fullProfile = profile || await authRepository.findByUserId(data.user.id);
+  const organizerProfile = await authRepository.findOrganizerProfile(data.user.id);
+  const vendorProfile = await authRepository.findVendorProfile(data.user.id);
 
   return {
     session: data.session,
-    user: {
-      id: data.user.id,
-      email: data.user.email,
-      role: fullProfile?.role || 'organizer'
-    }
+    user: buildUserResponse(data.user, profile, organizerProfile, vendorProfile)
   };
 }
 
 async function getMe(userId) {
   const profile = await authRepository.findByUserId(userId);
 
-  if (!profile) {
-    throw new AppError('User profile not found', 404, 'PROFILE_NOT_FOUND');
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+  if (!userData?.user) {
+    throw new AppError('Supabase user not found', 404, 'USER_NOT_FOUND');
   }
 
-  let organizerProfile = null;
-  let vendorProfile = null;
+  const organizerProfile = await authRepository.findOrganizerProfile(userId);
+  const vendorProfile = await authRepository.findVendorProfile(userId);
 
-  if (profile.role === 'organizer') {
-    const { data } = await supabase
-      .from('organizer_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    organizerProfile = data;
-  }
-
-  if (profile.role === 'vendor') {
-    const { data } = await supabase
-      .from('vendor_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    vendorProfile = data;
-  }
-
-  return {
-    ...profile,
-    organizerProfile,
-    vendorProfile
-  };
+  return buildUserResponse(userData.user, profile, organizerProfile, vendorProfile);
 }
 
 async function syncProfile(userId, { role }) {
@@ -119,9 +90,10 @@ async function syncProfile(userId, { role }) {
 
   if (existing) {
     if (role && role !== existing.role) {
-      return authRepository.updateRole(userId, role);
+      await authRepository.updateRole(userId, role);
+      return getMe(userId);
     }
-    return existing;
+    return getMe(userId);
   }
 
   const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
@@ -130,7 +102,8 @@ async function syncProfile(userId, { role }) {
   }
 
   const newRole = role || 'organizer';
-  return authRepository.createProfile(userId, userData.user.email, newRole, null);
+  await authRepository.createProfile(userId, userData.user.email, newRole, null);
+  return getMe(userId);
 }
 
 module.exports = { register, login, getMe, syncProfile };

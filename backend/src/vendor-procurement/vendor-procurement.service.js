@@ -72,7 +72,7 @@ async function updateRequirement(actor, requirementId, payload) {
     throw new AppError('Minimum budget must be less than or equal to maximum budget', 400, 'INVALID_BUDGET_RANGE');
   }
 
-  return requirementRepository.update(requirementId, payload);
+  return requirementRepository.update(requirementId, { ...payload, requirementStatus: payload.requirementStatus });
 }
 
 async function deleteRequirement(actor, requirementId) {

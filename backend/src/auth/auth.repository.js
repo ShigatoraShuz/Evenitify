@@ -1,13 +1,35 @@
-const { supabase, supabaseAdmin } = require('../config/supabase');
+const { supabaseAdmin } = require('../config/supabase');
 
 async function findByUserId(userId) {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('user_profiles')
     .select('*')
     .eq('id', userId)
     .single();
 
   if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+async function findOrganizerProfile(userId) {
+  const { data, error } = await supabaseAdmin
+    .from('organizer_profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+async function findVendorProfile(userId) {
+  const { data, error } = await supabaseAdmin
+    .from('vendor_profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
   return data;
 }
 
@@ -28,7 +50,7 @@ async function createProfile(userId, email, role, displayName) {
 }
 
 async function updateRole(userId, role) {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('user_profiles')
     .update({ role })
     .eq('id', userId)
@@ -73,6 +95,8 @@ async function upsertVendorProfile(userId, businessName, contactNumber, serviceA
 
 module.exports = {
   findByUserId,
+  findOrganizerProfile,
+  findVendorProfile,
   createProfile,
   updateRole,
   upsertOrganizerProfile,

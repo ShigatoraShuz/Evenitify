@@ -11,6 +11,7 @@ import { CommandPalette } from './CommandPalette'
 import { useCommandPalette } from '../hooks/useCommandPalette'
 import { RoleHelpDrawer } from './GuidanceComponents'
 import { helpService } from '../../services/helpService'
+import type { UserRole } from '../../services/authService'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -19,8 +20,8 @@ interface DashboardShellProps {
 export function DashboardShell({ children }: DashboardShellProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, logout } = useAuthSession()
-  const userRole = user?.role || null
+  const { logout, activeRole, userRoles, setActiveRole } = useAuthSession()
+  const userRole = activeRole
   const sidebarItems = getSidebarByRole(userRole)
   const { notifications, unreadCount, loading, loadNotifications, markAsRead } = useNotifications()
   const commandPalette = useCommandPalette(userRole)
@@ -58,6 +59,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }
 
   const profileRoute = userRole === 'vendor' ? '/vendor/profile' : userRole === 'admin' ? '/admin/settings' : '/organizer/profile'
+  const switchableRoles = userRoles.filter((role) => role === 'organizer' || role === 'vendor')
+
+  const handleRoleSwitch = (role: UserRole) => {
+    setActiveRole(role)
+    navigate(role === 'vendor' ? '/vendor' : role === 'admin' ? '/admin' : '/organizer')
+  }
 
   return (
     <ToastProvider>
@@ -91,6 +98,22 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 Eventify
               </h1>
               <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-medium hidden sm:inline">B2B</span>
+              {switchableRoles.length > 1 && (
+                <div className="hidden md:flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+                  {switchableRoles.map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => handleRoleSwitch(role)}
+                      className={`px-3 py-1 text-xs font-semibold capitalize rounded-md ${
+                        userRole === role ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                      }`}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -135,6 +158,16 @@ export function DashboardShell({ children }: DashboardShellProps) {
                   </button>
                   {profileMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-slate-200 shadow-lg z-50 py-1">
+                      {switchableRoles.length > 1 && switchableRoles.map((role) => (
+                        <button
+                          key={role}
+                          onClick={() => { handleRoleSwitch(role); setProfileMenuOpen(false) }}
+                          className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 capitalize"
+                        >
+                          Switch to {role}
+                        </button>
+                      ))}
+                      {switchableRoles.length > 1 && <hr className="my-1 border-slate-100" />}
                       <button
                         onClick={() => { handleNavigation(profileRoute); setProfileMenuOpen(false) }}
                         className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"

@@ -8,6 +8,11 @@ const { createBookingSchema, bookingIdSchema, eventBookingsSchema } = require('.
 const router = Router();
 
 router.post('/', authenticate, requireRole('organizer'), validate(createBookingSchema), controller.createBooking);
+
+// Contract endpoints are intentionally mounted under /contracts in app.js
+// Booking organizer/vendor/admin access is enforced in the service and route middleware.
+
+
 router.get('/:bookingId', authenticate, requireRole('organizer', 'vendor', 'admin'), validate(bookingIdSchema), controller.getBooking);
 
 module.exports = router;

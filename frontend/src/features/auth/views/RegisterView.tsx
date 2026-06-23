@@ -3,26 +3,19 @@ import { motion } from 'framer-motion'
 import { ClipboardCheck } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { Input } from '../../../shared/components/Input'
-import { Select } from '../../../shared/components/Select'
 import { ValidationSummary } from '../../../shared/components/ValidationSummary'
 
 interface RegisterViewProps {
-  onRegister: (email: string, password: string, role: string, displayName: string) => Promise<void>
+  onRegister: (email: string, password: string, displayName: string) => Promise<void>
   onSwitchToLogin: () => void
   loading: boolean
   error: string | null
 }
 
-const ROLE_OPTIONS = [
-  { value: 'organizer', label: 'Organizer' },
-  { value: 'vendor', label: 'Vendor' }
-]
-
 export function RegisterView({ onRegister, onSwitchToLogin, loading, error }: RegisterViewProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [role, setRole] = useState('organizer')
   const [validationErrors, setValidationErrors] = useState<string[]>([])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,7 +28,7 @@ export function RegisterView({ onRegister, onSwitchToLogin, loading, error }: Re
     ].filter(Boolean)
     setValidationErrors(nextErrors)
     if (nextErrors.length > 0 || loading) return
-    await onRegister(email, password, role, displayName)
+    await onRegister(email, password, displayName)
   }
 
   return (
@@ -147,18 +140,6 @@ export function RegisterView({ onRegister, onSwitchToLogin, loading, error }: Re
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.19 }}
-            >
-              <Select
-                label="I am a..."
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                options={ROLE_OPTIONS}
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.22 }}
             >
               <Button type="submit" loading={loading} fullWidth>
                 Create account

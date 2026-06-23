@@ -6,12 +6,22 @@ type MockHandler = (endpoint: string, body?: unknown) => unknown
 const MOCK_REGISTRY: Record<string, MockHandler> = {
   // Auth
   'POST /auth/register': (_, body) => {
-    const payload = body as { email: string; password: string; role: string }
-    return { session: { access_token: 'mock-token-' + Date.now(), refresh_token: 'mock-refresh-' + Date.now() }, user: { id: 'usr-new', email: payload.email, role: payload.role } }
+    const payload = body as { email: string; password: string; role?: string; displayName?: string }
+    const user = { id: 'usr-new', email: payload.email, role: payload.role || null, selectedRole: payload.role || null, roles: payload.role ? [payload.role] : [], display_name: payload.displayName || null, setupComplete: false }
+    localStorage.setItem('eventify_mock_registered_user', JSON.stringify(user))
+    return { session: { access_token: 'mock-token-' + Date.now(), refresh_token: 'mock-refresh-' + Date.now() }, user }
   },
   'POST /auth/login': (_, body) => {
     const payload = body as { email: string; password: string }
-    return { session: { access_token: 'mock-token-' + Date.now(), refresh_token: 'mock-refresh-' + Date.now() }, user: { id: payload.email === 'admin@eventify.com' ? 'usr-003' : payload.email === 'vendor@eventify.com' ? 'usr-002' : 'usr-001', email: payload.email, role: payload.email === 'admin@eventify.com' ? 'admin' : payload.email === 'vendor@eventify.com' ? 'vendor' : 'organizer' } }
+    const registered = localStorage.getItem('eventify_mock_registered_user')
+    if (registered) {
+      const user = JSON.parse(registered)
+      if (user.email === payload.email) {
+        return { session: { access_token: 'mock-token-' + Date.now(), refresh_token: 'mock-refresh-' + Date.now() }, user }
+      }
+    }
+    const role = payload.email === 'admin@eventify.com' ? 'admin' : payload.email === 'vendor@eventify.com' ? 'vendor' : 'organizer'
+    return { session: { access_token: 'mock-token-' + Date.now(), refresh_token: 'mock-refresh-' + Date.now() }, user: { id: role === 'admin' ? 'usr-003' : role === 'vendor' ? 'usr-002' : 'usr-001', email: payload.email, role, selectedRole: role, roles: [role], hasOrganizerProfile: role === 'organizer', hasVendorProfile: role === 'vendor', setupComplete: true } }
   },
   'GET /auth/me': () => {
     const cached = localStorage.getItem('auth_user_cache')
@@ -20,7 +30,9 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
   },
   'POST /auth/sync-profile': (_, body) => {
     const payload = body as { role?: string } | undefined
-    return { id: 'usr-001', email: 'organizer@eventify.com', role: payload?.role || 'organizer', display_name: 'TechCorp Events' }
+    const cached = localStorage.getItem('auth_user_cache')
+    const current = cached ? JSON.parse(cached) : { id: 'usr-001', email: 'organizer@eventify.com', display_name: 'TechCorp Events' }
+    return { ...current, role: payload?.role || current.role || null, selectedRole: payload?.role || current.selectedRole || null, roles: payload?.role ? [payload.role] : current.roles || [], setupComplete: false }
   },
   'POST /auth/logout': () => ({ message: 'Logged out successfully' }),
   'POST /auth/refresh': () => {
@@ -182,7 +194,13 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
   },
   // Onboarding
   'GET /onboarding/status': () => {
-    const completed = localStorage.getItem('onboarding_complete') === 'true'
+    const organizer = localStorage.getItem('profile_organizer')
+    const vendor = localStorage.getItem('profile_vendor') || localStorage.getItem('onboarding_vendor_complete')
+    const chosenRaw = localStorage.getItem('eventify_chosen_roles')
+    const requiredRoles = chosenRaw ? JSON.parse(chosenRaw) : []
+    const completed = requiredRoles.length > 0
+      ? requiredRoles.every((role: string) => role === 'organizer' ? !!organizer : role === 'vendor' ? !!vendor : true)
+      : localStorage.getItem('onboarding_complete') === 'true'
     const cached = localStorage.getItem('auth_user_cache')
     let role: 'organizer' | 'vendor' | 'admin' = 'organizer'
     if (cached) {
@@ -191,13 +209,41 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
         role = parsed?.role || 'organizer'
       } catch { /* ignore parse errors */ }
     }
-    return { completed, role }
+    return { completed, role, selectedRole: role, roles: requiredRoles.length > 0 ? requiredRoles : [role], requiredRoles, hasOrganizerProfile: !!organizer, hasVendorProfile: !!vendor }
   },
   'POST /onboarding/complete': (_, body) => {
     const payload = body as { role?: string } | undefined
-    localStorage.setItem('onboarding_complete', 'true')
     if (payload) {
       localStorage.setItem('onboarding_data', JSON.stringify(payload))
+      if (payload.role === 'organizer') localStorage.setItem('profile_organizer', JSON.stringify(payload))
+      if (payload.role === 'vendor') {
+        localStorage.setItem('profile_vendor', JSON.stringify(payload))
+        localStorage.setItem('onboarding_vendor_complete', 'true')
+      }
+    }
+    const chosenRaw = localStorage.getItem('eventify_chosen_roles')
+    const requiredRoles = chosenRaw ? JSON.parse(chosenRaw) : payload?.role ? [payload.role] : []
+    const completed = requiredRoles.every((role: string) => (
+      role === 'organizer' ? !!localStorage.getItem('profile_organizer') :
+      role === 'vendor' ? !!localStorage.getItem('profile_vendor') :
+      true
+    ))
+    if (completed) localStorage.setItem('onboarding_complete', 'true')
+    const cached = localStorage.getItem('auth_user_cache')
+    if (cached) {
+      const current = JSON.parse(cached)
+      const roles = requiredRoles.length > 0 ? requiredRoles : payload?.role ? [payload.role] : current.roles || []
+      localStorage.setItem('auth_user_cache', JSON.stringify({
+        ...current,
+        role: current.role || roles[0] || null,
+        selectedRole: current.selectedRole || roles[0] || null,
+        roles,
+        hasOrganizerProfile: !!localStorage.getItem('profile_organizer'),
+        hasVendorProfile: !!localStorage.getItem('profile_vendor'),
+        organizerProfile: localStorage.getItem('profile_organizer') ? JSON.parse(localStorage.getItem('profile_organizer') as string) : current.organizerProfile,
+        vendorProfile: localStorage.getItem('profile_vendor') ? JSON.parse(localStorage.getItem('profile_vendor') as string) : current.vendorProfile,
+        setupComplete: completed
+      }))
     }
     return { message: 'Onboarding completed' }
   },

@@ -10,6 +10,7 @@ export const ROUTES: Record<string, RouteConfig> = {
   LANDING: { path: '/', label: 'Home', roles: [], sidebar: false },
   LOGIN: { path: '/login', label: 'Login', roles: [], sidebar: false },
   REGISTER: { path: '/register', label: 'Register', roles: [], sidebar: false },
+  CHOOSE_ROLE: { path: '/choose-role', label: 'Choose Role', roles: [], sidebar: false },
   ONBOARDING: { path: '/onboarding', label: 'Onboarding', roles: [], sidebar: false },
   ORGANIZER_DASHBOARD: { path: '/organizer', label: 'Dashboard', roles: ['organizer', 'admin'], sidebar: true, icon: 'LayoutDashboard' },
   ORGANIZER_PROCUREMENT: { path: '/organizer/procurement', label: 'Procurement', roles: ['organizer', 'admin'], sidebar: true, icon: 'Search' },

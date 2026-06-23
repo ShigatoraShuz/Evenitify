@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Building2, Store, Repeat2 } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { Input } from '../../../shared/components/Input'
 import { Select } from '../../../shared/components/Select'
@@ -15,6 +16,34 @@ interface OnboardingViewProps {
   onUpdateVendorForm: (next: Partial<VendorOnboardingForm>) => void
   onSubmit: () => Promise<void>
   onClearError: () => void
+  onBackToRoleChoice: () => void
+}
+
+function getRolePreview(role: string | null) {
+  if (role === 'vendor') {
+    return {
+      title: 'Vendor workspace preview',
+      description: 'Service listings, availability, and booking requests in one place.',
+      icon: Store,
+      gradient: 'from-teal-500 via-cyan-500 to-sky-500'
+    }
+  }
+
+  if (role === 'admin') {
+    return {
+      title: 'Admin workspace preview',
+      description: 'Operations overview, review queue, and booking oversight.',
+      icon: Repeat2,
+      gradient: 'from-slate-700 via-slate-600 to-slate-500'
+    }
+  }
+
+  return {
+    title: 'Organizer workspace preview',
+    description: 'Large events, vendor search, and booking coordination.',
+    icon: Building2,
+    gradient: 'from-brand-700 via-brand-600 to-cyan-500'
+  }
 }
 
 export function OnboardingView({
@@ -26,10 +55,17 @@ export function OnboardingView({
   onUpdateOrganizerForm,
   onUpdateVendorForm,
   onSubmit,
-  onClearError
+  onClearError,
+  onBackToRoleChoice
 }: OnboardingViewProps) {
   const [step, setStep] = useState(1)
   const totalSteps = role === 'admin' ? 1 : 3
+  const preview = getRolePreview(role)
+  const PreviewIcon = preview.icon
+
+  useEffect(() => {
+    setStep(1)
+  }, [role])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,6 +98,21 @@ export function OnboardingView({
               <button onClick={onClearError} className="text-red-500 hover:text-red-700">&times;</button>
             </div>
           )}
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
+            <div className={`h-40 bg-gradient-to-br ${preview.gradient} relative`}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_80%_25%,rgba(255,255,255,0.18),transparent_24%),radial-gradient(circle_at_50%_80%,rgba(255,255,255,0.12),transparent_32%)]" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20">
+                  <PreviewIcon className="h-9 w-9 text-white" />
+                </div>
+              </div>
+            </div>
+            <div className="p-4">
+              <h2 className="text-sm font-semibold text-slate-900">{preview.title}</h2>
+              <p className="mt-1 text-sm text-slate-500">{preview.description}</p>
+            </div>
+          </div>
 
           {role === 'organizer' && (
             <>
@@ -107,7 +158,7 @@ export function OnboardingView({
                   />
                   <div className="flex justify-between pt-2">
                     <Button type="button" variant="secondary" onClick={() => setStep(1)}>Back</Button>
-                    <Button type="submit" loading={submitting}>Complete Setup</Button>
+                    <Button type="submit" loading={submitting}>Complete Organizer Setup</Button>
                   </div>
                 </>
               )}
@@ -162,7 +213,7 @@ export function OnboardingView({
                   </div>
                   <div className="flex justify-between pt-2">
                     <Button type="button" variant="secondary" onClick={() => setStep(1)}>Back</Button>
-                    <Button type="submit" loading={submitting}>Complete Setup</Button>
+                    <Button type="submit" loading={submitting}>Complete Vendor Setup</Button>
                   </div>
                 </>
               )}
@@ -176,6 +227,12 @@ export function OnboardingView({
               <Button type="submit" loading={submitting} fullWidth>Go to Dashboard</Button>
             </>
           )}
+
+          <div className="pt-2 flex justify-start">
+            <Button type="button" variant="secondary" onClick={onBackToRoleChoice}>
+              Change selected role
+            </Button>
+          </div>
         </form>
       </div>
     </div>
