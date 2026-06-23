@@ -9,8 +9,10 @@ import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { ValidationSummary } from '../../../shared/components/ValidationSummary'
+import { AvailabilityCalendar, AvailabilityStatusPill, DateConflictBanner } from '../../../shared/components/AvailabilityComponents'
 import type { EventRequirement } from '../../../services/eventService'
 import type { VendorSearchResult, VendorService } from '../../../services/vendorService'
+import type { VendorAvailabilityPreview } from '../../../services/availabilityService'
 import type { RequirementCategory, ProcurementStep } from '../models/vendor-procurement.model'
 import { REQUIREMENT_CATEGORIES } from '../models/vendor-procurement.model'
 
@@ -30,11 +32,12 @@ interface VendorProcurementViewProps {
   draftSaved: boolean
   validationErrors: string[]
   recommendations: VendorRecommendation[]
+  selectedVendorAvailability: VendorAvailabilityPreview | null
   onInitEvent: (eventId: string) => Promise<void>
   onSetStep: (step: ProcurementStep) => void
   onSelectRequirement: (req: EventRequirement) => void
   onSearchVendors: () => Promise<void>
-  onSelectVendor: (vendor: VendorSearchResult) => void
+  onSelectVendor: (vendor: VendorSearchResult) => Promise<void>
   onCreateRequirement: (payload: { category: RequirementCategory; quantity: number; minBudget?: number | null; maxBudget?: number | null; notes?: string | null }) => Promise<void>
   onDeleteRequirement: (id: string) => Promise<void>
   onUpdateFilters: (next: Partial<VendorFilterState>) => void
@@ -68,6 +71,7 @@ export function VendorProcurementView({
   draftSaved,
   validationErrors,
   recommendations,
+  selectedVendorAvailability,
   onInitEvent,
   onSetStep,
   onSelectRequirement,
@@ -380,6 +384,17 @@ export function VendorProcurementView({
                     </div>
                   )}
                   <p className="text-sm text-gray-500 mb-2">{vendor.service_area}</p>
+                  <div className="mb-2">
+                    <AvailabilityStatusPill
+                      status={
+                        vendor.services?.some((svc) => svc.availability_status === 'unavailable')
+                          ? 'unavailable'
+                          : vendor.services?.some((svc) => svc.availability_status === 'limited')
+                          ? 'limited'
+                          : 'available'
+                      }
+                    />
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {vendor.services?.map((svc: VendorService) => (
                       <span key={svc.id} className="text-xs bg-gray-100 px-2 py-1 rounded">
@@ -403,6 +418,10 @@ export function VendorProcurementView({
             {selectedRequirement && (
               <p className="text-sm text-gray-500 mt-1">Category: {selectedRequirement.category} | Qty: {selectedRequirement.quantity}</p>
             )}
+          </div>
+          <div className="mb-4 space-y-3">
+            <DateConflictBanner preview={selectedVendorAvailability} />
+            <AvailabilityCalendar preview={selectedVendorAvailability} />
           </div>
           <form onSubmit={handleBooking} className="space-y-4 max-w-md">
             <ValidationSummary errors={localErrors} />

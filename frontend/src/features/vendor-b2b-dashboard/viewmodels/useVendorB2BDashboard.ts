@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { bookingService, type BookingRequest } from '../../../services/bookingService'
 import { contractService, type ContractDetail } from '../../../services/contractService'
 import { auditService, type AuditActivity } from '../../../services/auditService'
+import { availabilityService, type AvailabilityStatus, type VendorAvailabilityPreview } from '../../../services/availabilityService'
 import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
@@ -15,6 +16,7 @@ interface VendorB2BDashboardState {
   contract: ContractDetail | null
   contractLoading: boolean
   auditActivities: AuditActivity[]
+  availability: VendorAvailabilityPreview | null
 }
 
 export function useVendorB2BDashboard() {
@@ -28,14 +30,18 @@ export function useVendorB2BDashboard() {
     error: null,
     contract: null,
     contractLoading: false,
-    auditActivities: []
+    auditActivities: [],
+    availability: null
   })
 
   const loadBookings = useCallback(async (status?: string) => {
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
-      const bookings = await bookingService.listVendorB2BBookings(status)
-      setState((s) => ({ ...s, bookings, loading: false }))
+      const [bookings, availability] = await Promise.all([
+        bookingService.listVendorB2BBookings(status),
+        availabilityService.getMyAvailability()
+      ])
+      setState((s) => ({ ...s, bookings, availability, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
@@ -104,6 +110,20 @@ export function useVendorB2BDashboard() {
     }
   }, [])
 
+  const updateAvailabilityStatus = useCallback(async (status: AvailabilityStatus) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
+    setState((s) => ({ ...s, submitting: true, error: null }))
+    try {
+      const availability = await availabilityService.updateMyAvailabilityStatus(status)
+      setState((s) => ({ ...s, availability, submitting: false }))
+    } catch (err) {
+      setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
+    }
+  }, [])
+
   const clearError = useCallback(() => {
     setState((s) => ({ ...s, error: null }))
   }, [])
@@ -124,6 +144,7 @@ export function useVendorB2BDashboard() {
     updateStatus,
     loadContract,
     signVendorContract,
+    updateAvailabilityStatus,
     clearError
   }
 }

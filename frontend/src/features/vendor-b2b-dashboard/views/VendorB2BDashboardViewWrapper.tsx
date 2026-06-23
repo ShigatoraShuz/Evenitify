@@ -18,6 +18,7 @@ export default function VendorB2BDashboardViewWrapper() {
       contract={vm.contract}
       contractLoading={vm.contractLoading}
       auditActivities={vm.auditActivities}
+      availability={vm.availability}
       realtimeSnapshot={realtime.snapshot}
       realtimeRefreshing={realtime.refreshing}
       onLoadBookings={vm.loadBookings}
@@ -28,6 +29,7 @@ export default function VendorB2BDashboardViewWrapper() {
       onClearError={vm.clearError}
       onLoadContract={vm.loadContract}
       onSignVendorContract={vm.signVendorContract}
+      onUpdateAvailabilityStatus={vm.updateAvailabilityStatus}
     />
   )
 }

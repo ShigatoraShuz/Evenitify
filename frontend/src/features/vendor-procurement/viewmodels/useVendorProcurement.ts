@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { vendorService, type VendorSearchResult } from '../../../services/vendorService'
 import { bookingService } from '../../../services/bookingService'
+import { availabilityService, type VendorAvailabilityPreview } from '../../../services/availabilityService'
 import type { EventRequirement } from '../../../services/eventService'
 import type {
   RequirementCategory,
@@ -24,6 +25,7 @@ interface VendorProcurementState {
   error: string | null
   draftSaved: boolean
   validationErrors: string[]
+  selectedVendorAvailability: VendorAvailabilityPreview | null
 }
 
 const DRAFT_KEY_PREFIX = 'procurement_draft_'
@@ -42,12 +44,13 @@ export function useVendorProcurement() {
     submitting: false,
     error: null,
     draftSaved: false,
-    validationErrors: []
+    validationErrors: [],
+    selectedVendorAvailability: null
   })
 
   const getDraftKey = useCallback(() => {
     return state.eventId ? `${DRAFT_KEY_PREFIX}${state.eventId}` : null
-  }, [state.eventId])
+  }, [])
 
   const saveDraft = useCallback(() => {
     const key = getDraftKey()
@@ -88,11 +91,11 @@ export function useVendorProcurement() {
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
-  }, [])
+  }, [state.eventId])
 
   const setStep = useCallback((step: ProcurementStep) => {
     setState((s) => ({ ...s, currentStep: step, validationErrors: [] }))
-  }, [])
+  }, [state.eventId])
 
   const selectRequirement = useCallback((req: EventRequirement) => {
     setState((s) => ({ ...s, selectedRequirement: req, currentStep: 'vendors' }))
@@ -123,8 +126,14 @@ export function useVendorProcurement() {
     }
   }, [state.selectedRequirement, state.filters])
 
-  const selectVendor = useCallback((vendor: VendorSearchResult) => {
-    setState((s) => ({ ...s, selectedVendor: vendor, currentStep: 'booking' }))
+  const selectVendor = useCallback(async (vendor: VendorSearchResult) => {
+    setState((s) => ({ ...s, selectedVendor: vendor, selectedVendorAvailability: null, currentStep: 'booking', loading: true }))
+    try {
+      const selectedVendorAvailability = await availabilityService.getVendorAvailabilityPreview(vendor.id, state.eventId)
+      setState((s) => ({ ...s, selectedVendorAvailability, loading: false }))
+    } catch (err) {
+      setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
+    }
   }, [])
 
   const createRequirement = useCallback(async (payload: {

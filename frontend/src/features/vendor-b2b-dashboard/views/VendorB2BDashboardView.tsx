@@ -11,11 +11,13 @@ import { ContractTimeline, buildContractTimeline } from '../../contract-booking/
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { DashboardCommandPanel } from '../../../shared/components/DashboardCommandPanel'
+import { AvailabilityCalendar, AvailabilityQuickUpdate, BlockedDateList } from '../../../shared/components/AvailabilityComponents'
 import { B2B_TABS } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
 import type { ContractDetail } from '../../../services/contractService'
 import type { AuditActivity } from '../../../services/auditService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
+import type { AvailabilityStatus, VendorAvailabilityPreview } from '../../../services/availabilityService'
 
 interface VendorB2BDashboardViewProps {
   bookings: BookingRequest[]
@@ -27,6 +29,7 @@ interface VendorB2BDashboardViewProps {
   contract: ContractDetail | null
   contractLoading: boolean
   auditActivities: AuditActivity[]
+  availability: VendorAvailabilityPreview | null
   realtimeSnapshot: RealtimeSnapshot | null
   realtimeRefreshing: boolean
   onLoadBookings: (status?: string) => Promise<void>
@@ -37,6 +40,7 @@ interface VendorB2BDashboardViewProps {
   onClearError: () => void
   onLoadContract: (bookingId: string) => Promise<void>
   onSignVendorContract: (contractId: string) => Promise<void>
+  onUpdateAvailabilityStatus: (status: AvailabilityStatus) => Promise<void>
 }
 
 interface ActionCard {
@@ -57,6 +61,7 @@ export function VendorB2BDashboardView({
   contract,
   contractLoading,
   auditActivities,
+  availability,
   realtimeSnapshot,
   realtimeRefreshing,
   onLoadBookings,
@@ -66,7 +71,8 @@ export function VendorB2BDashboardView({
   onUpdateStatus,
   onClearError,
   onLoadContract,
-  onSignVendorContract
+  onSignVendorContract,
+  onUpdateAvailabilityStatus
 }: VendorB2BDashboardViewProps) {
   const navigate = useNavigate()
   const [confirmDecline, setConfirmDecline] = useState<string | null>(null)
@@ -148,6 +154,25 @@ export function VendorB2BDashboardView({
           </div>
         }
       />
+
+      <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)]">
+        <AvailabilityCalendar preview={availability} />
+        <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-4">
+            <h3 className="font-semibold text-gray-950">Service availability</h3>
+            <p className="text-sm text-gray-500">Frontend-only scheduler placeholder for demo mode.</p>
+          </div>
+          <AvailabilityQuickUpdate
+            status={availability?.status || 'available'}
+            updating={submitting}
+            onUpdate={(status) => { void onUpdateAvailabilityStatus(status) }}
+          />
+          <div className="mt-4">
+            <h4 className="mb-2 text-sm font-semibold text-gray-900">Blocked dates</h4>
+            <BlockedDateList dates={availability?.blockedDates || []} />
+          </div>
+        </section>
+      </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex justify-between items-center">

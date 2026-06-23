@@ -30,12 +30,13 @@ export default function VendorProcurementViewWrapper() {
       draftSaved={vm.draftSaved}
       validationErrors={vm.validationErrors}
       recommendations={vm.recommendations}
+      selectedVendorAvailability={vm.selectedVendorAvailability}
       onInitEvent={vm.initEvent}
       onSetStep={vm.setStep}
       onSelectRequirement={vm.selectRequirement}
       onSearchVendors={vm.searchVendors}
-      onSelectVendor={(vendor) => {
-        vm.selectVendor(vendor)
+      onSelectVendor={async (vendor) => {
+        await vm.selectVendor(vendor)
       }}
       onCreateRequirement={vm.createRequirement}
       onDeleteRequirement={vm.deleteRequirement}
