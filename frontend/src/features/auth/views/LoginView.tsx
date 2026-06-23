@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { ClipboardCheck } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { Input } from '../../../shared/components/Input'
+import { ValidationSummary } from '../../../shared/components/ValidationSummary'
 
 interface LoginViewProps {
   onLogin: (email: string, password: string) => Promise<void>
@@ -14,9 +15,17 @@ interface LoginViewProps {
 export function LoginView({ onLogin, onSwitchToRegister, loading, error }: LoginViewProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const nextErrors = [
+      !email.trim() ? 'Email is required.' : '',
+      email && !email.includes('@') ? 'Enter a valid email address.' : '',
+      !password ? 'Password is required.' : ''
+    ].filter(Boolean)
+    setValidationErrors(nextErrors)
+    if (nextErrors.length > 0 || loading) return
     await onLogin(email, password)
   }
 
@@ -82,6 +91,7 @@ export function LoginView({ onLogin, onSwitchToRegister, loading, error }: Login
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            <ValidationSummary errors={validationErrors} />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

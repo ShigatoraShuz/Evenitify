@@ -4,6 +4,7 @@ import { Input } from '../../../shared/components/Input'
 import { Select } from '../../../shared/components/Select'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
+import { ValidationSummary } from '../../../shared/components/ValidationSummary'
 import type { VendorProfileForm } from '../models/user-settings.model'
 import { SERVICE_AREAS } from '../models/user-settings.model'
 
@@ -14,6 +15,7 @@ interface VendorProfileViewProps {
   error: string | null
   saved: boolean
   hasChanges: boolean
+  validationErrors: string[]
   onUpdateProfile: (next: Partial<VendorProfileForm>) => void
   onSaveProfile: () => Promise<void>
   onClearError: () => void
@@ -26,6 +28,7 @@ export function VendorProfileView({
   error,
   saved,
   hasChanges,
+  validationErrors,
   onUpdateProfile,
   onSaveProfile,
   onClearError
@@ -78,6 +81,7 @@ export function VendorProfileView({
       )}
 
       <div className="bg-white rounded-xl border border-gray-200 p-6 max-w-lg space-y-4">
+        <ValidationSummary errors={validationErrors} />
         <Input
           label="Business Name"
           value={profile.businessName}

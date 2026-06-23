@@ -9,6 +9,7 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { SummaryCard } from '../../../shared/components/SummaryCard'
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
+import { ValidationSummary } from '../../../shared/components/ValidationSummary'
 import type { LargeEvent, DashboardSummary } from '../../../services/eventService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
 
@@ -56,6 +57,7 @@ export function OrganizerDashboardView({
   const [venue, setVenue] = useState('')
   const [budget, setBudget] = useState('')
   const [guests, setGuests] = useState('')
+  const [formErrors, setFormErrors] = useState<string[]>([])
 
   useEffect(() => { onLoadEvents() }, [])
 
@@ -145,12 +147,24 @@ export function OrganizerDashboardView({
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
+    const parsedBudget = parseFloat(budget)
+    const parsedGuests = parseInt(guests, 10)
+    const nextErrors = [
+      !title.trim() ? 'Event title is required.' : '',
+      !eventDate ? 'Event date is required.' : '',
+      eventDate && new Date(eventDate).getTime() < new Date(new Date().toDateString()).getTime() ? 'Event date cannot be in the past.' : '',
+      !venue.trim() ? 'Venue is required.' : '',
+      !Number.isFinite(parsedBudget) || parsedBudget <= 0 ? 'Budget must be greater than 0.' : '',
+      !Number.isFinite(parsedGuests) || parsedGuests < 500 ? 'Large Event guest count must be at least 500.' : ''
+    ].filter(Boolean)
+    setFormErrors(nextErrors)
+    if (nextErrors.length > 0 || submitting) return
     await onCreateEvent({
       title,
       eventDate,
       venue,
-      budget: parseFloat(budget) || 0,
-      expectedGuests: parseInt(guests, 10) || 1
+      budget: parsedBudget,
+      expectedGuests: parsedGuests
     })
     setShowCreate(false)
     setTitle('')
@@ -158,6 +172,7 @@ export function OrganizerDashboardView({
     setVenue('')
     setBudget('')
     setGuests('')
+    setFormErrors([])
   }
 
   return (
@@ -286,6 +301,7 @@ export function OrganizerDashboardView({
 
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create Large Event">
         <form onSubmit={handleCreate} className="space-y-4">
+          <ValidationSummary errors={formErrors} />
           <Input label="Event Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
           <Input label="Event Date" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} required />
           <Input label="Venue" value={venue} onChange={(e) => setVenue(e.target.value)} required />

@@ -12,6 +12,7 @@ export default function VendorProfileViewWrapper() {
       error={vm.error}
       saved={vm.saved}
       hasChanges={vm.hasChanges}
+      validationErrors={vm.validationErrors}
       onUpdateProfile={vm.updateProfile}
       onSaveProfile={vm.saveProfile}
       onClearError={vm.clearError}

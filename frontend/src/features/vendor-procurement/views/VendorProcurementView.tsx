@@ -8,6 +8,7 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
+import { ValidationSummary } from '../../../shared/components/ValidationSummary'
 import type { EventRequirement } from '../../../services/eventService'
 import type { VendorSearchResult, VendorService } from '../../../services/vendorService'
 import type { RequirementCategory, ProcurementStep } from '../models/vendor-procurement.model'
@@ -90,6 +91,7 @@ export function VendorProcurementView({
   const [bookingNotes, setBookingNotes] = useState('')
   const [requestedBudget, setRequestedBudget] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [localErrors, setLocalErrors] = useState<string[]>([])
 
   useEffect(() => {
     if (eventId) onInitEvent(eventId)
@@ -107,11 +109,22 @@ export function VendorProcurementView({
 
   const handleCreateReq = async (e: React.FormEvent) => {
     e.preventDefault()
+    const qty = parseInt(quantity, 10)
+    const min = minBudget ? parseFloat(minBudget) : null
+    const max = maxBudget ? parseFloat(maxBudget) : null
+    const nextErrors = [
+      !Number.isFinite(qty) || qty <= 0 ? 'Requirement quantity must be greater than 0.' : '',
+      min !== null && min < 0 ? 'Minimum budget cannot be negative.' : '',
+      max !== null && max < 0 ? 'Maximum budget cannot be negative.' : '',
+      min !== null && max !== null && min > max ? 'Maximum budget must be greater than minimum budget.' : ''
+    ].filter(Boolean)
+    setLocalErrors(nextErrors)
+    if (nextErrors.length > 0 || submitting) return
     await onCreateRequirement({
       category,
-      quantity: parseInt(quantity, 10) || 1,
-      minBudget: minBudget ? parseFloat(minBudget) : null,
-      maxBudget: maxBudget ? parseFloat(maxBudget) : null,
+      quantity: qty,
+      minBudget: min,
+      maxBudget: max,
       notes: reqNotes || null
     })
     setShowReqForm(false)
@@ -120,13 +133,24 @@ export function VendorProcurementView({
     setMinBudget('')
     setMaxBudget('')
     setReqNotes('')
+    setLocalErrors([])
   }
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault()
+    const budget = requestedBudget ? parseFloat(requestedBudget) : undefined
+    const nextErrors = [
+      !selectedRequirement ? 'Select a requirement before booking.' : '',
+      !selectedVendor ? 'Select a vendor before booking.' : '',
+      budget !== undefined && budget < 0 ? 'Requested budget cannot be negative.' : '',
+      budget !== undefined && selectedRequirement?.min_budget && budget < selectedRequirement.min_budget ? 'Requested budget is below the requirement minimum.' : '',
+      budget !== undefined && selectedRequirement?.max_budget && budget > selectedRequirement.max_budget && !bookingNotes.trim() ? 'Add notes when requested budget exceeds the requirement maximum.' : ''
+    ].filter(Boolean)
+    setLocalErrors(nextErrors)
+    if (nextErrors.length > 0 || submitting) return
     await onSubmitBooking({
       notes: bookingNotes || undefined,
-      requestedBudget: requestedBudget ? parseFloat(requestedBudget) : undefined
+      requestedBudget: budget
     })
   }
 
@@ -261,6 +285,7 @@ export function VendorProcurementView({
 
           <Modal open={showReqForm} onClose={() => setShowReqForm(false)} title="Add Requirement">
             <form onSubmit={handleCreateReq} className="space-y-4">
+              <ValidationSummary errors={localErrors} />
               <Select
                 label="Category"
                 value={category}
@@ -380,6 +405,7 @@ export function VendorProcurementView({
             )}
           </div>
           <form onSubmit={handleBooking} className="space-y-4 max-w-md">
+            <ValidationSummary errors={localErrors} />
             <Input label="Requested Budget ($)" type="number" min="0" step="0.01" value={requestedBudget} onChange={(e) => setRequestedBudget(e.target.value)} />
             <Input label="Notes for Vendor" value={bookingNotes} onChange={(e) => setBookingNotes(e.target.value)} />
             <Button type="submit" loading={submitting}>Submit Booking Request</Button>

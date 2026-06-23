@@ -4,6 +4,7 @@ import { ClipboardCheck } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { Input } from '../../../shared/components/Input'
 import { Select } from '../../../shared/components/Select'
+import { ValidationSummary } from '../../../shared/components/ValidationSummary'
 
 interface RegisterViewProps {
   onRegister: (email: string, password: string, role: string, displayName: string) => Promise<void>
@@ -22,9 +23,18 @@ export function RegisterView({ onRegister, onSwitchToLogin, loading, error }: Re
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [role, setRole] = useState('organizer')
+  const [validationErrors, setValidationErrors] = useState<string[]>([])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const nextErrors = [
+      !email.trim() ? 'Email is required.' : '',
+      email && !email.includes('@') ? 'Enter a valid email address.' : '',
+      password.length < 6 ? 'Password must be at least 6 characters.' : '',
+      !displayName.trim() ? 'Organization or business name is required.' : ''
+    ].filter(Boolean)
+    setValidationErrors(nextErrors)
+    if (nextErrors.length > 0 || loading) return
     await onRegister(email, password, role, displayName)
   }
 
@@ -90,6 +100,7 @@ export function RegisterView({ onRegister, onSwitchToLogin, loading, error }: Re
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            <ValidationSummary errors={validationErrors} />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

@@ -11,6 +11,7 @@ interface VendorProfileState {
   submitting: boolean
   error: string | null
   saved: boolean
+  validationErrors: string[]
 }
 
 export function useVendorProfile() {
@@ -20,7 +21,8 @@ export function useVendorProfile() {
     loading: false,
     submitting: false,
     error: null,
-    saved: false
+    saved: false,
+    validationErrors: []
   })
 
   const loadProfile = useCallback(async () => {
@@ -42,10 +44,20 @@ export function useVendorProfile() {
   useEffect(() => { loadProfile() }, [loadProfile])
 
   const updateProfile = useCallback((next: Partial<VendorProfileForm>) => {
-    setState((s) => ({ ...s, saved: false, profile: { ...s.profile, ...next } }))
+    setState((s) => ({ ...s, saved: false, validationErrors: [], profile: { ...s.profile, ...next } }))
   }, [])
 
   const saveProfile = useCallback(async () => {
+    const nextErrors = [
+      !state.profile.businessName.trim() ? 'Business name is required.' : '',
+      !state.profile.serviceArea.trim() ? 'Service area is required.' : '',
+      !state.profile.phone.trim() ? 'Phone number is required.' : '',
+      state.profile.businessDescription.trim().length < 20 ? 'Business description should be at least 20 characters.' : ''
+    ].filter(Boolean)
+    if (nextErrors.length > 0) {
+      setState((s) => ({ ...s, validationErrors: nextErrors }))
+      return
+    }
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       await profileService.updateVendorProfile(state.profile)
@@ -69,6 +81,7 @@ export function useVendorProfile() {
     error: state.error,
     saved: state.saved,
     hasChanges,
+    validationErrors: state.validationErrors,
     ...buildViewModelStateMeta({
       loading: state.loading,
       submitting: state.submitting,
