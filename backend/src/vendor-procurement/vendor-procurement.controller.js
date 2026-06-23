@@ -36,4 +36,24 @@ const deleteRequirement = asyncHandler(async (req, res) => {
   return sendNoContent(res);
 });
 
-module.exports = { listRequirements, createRequirement, updateRequirement, deleteRequirement };
+const vendorService = require('../vendor-b2b-dashboard/vendor-b2b-dashboard.service');
+
+const searchVendors = asyncHandler(async (req, res) => {
+  const filters = {
+    category: req.query.category,
+    location: req.query.location,
+    minBudget: req.query.minBudget ? parseFloat(req.query.minBudget) : undefined,
+    maxBudget: req.query.maxBudget ? parseFloat(req.query.maxBudget) : undefined,
+    minRating: req.query.minRating ? parseFloat(req.query.minRating) : undefined
+  };
+
+  const vendors = await vendorService.searchVendors(filters);
+  return sendSuccess(res, vendors);
+});
+
+const getVendorProfile = asyncHandler(async (req, res) => {
+  const vendor = await vendorService.getVendorProfile(req.params.vendorId);
+  return sendSuccess(res, vendor);
+});
+
+module.exports = { listRequirements, createRequirement, updateRequirement, deleteRequirement, searchVendors, getVendorProfile };

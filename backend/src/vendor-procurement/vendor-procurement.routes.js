@@ -7,10 +7,15 @@ const {
   createRequirementSchema,
   updateRequirementSchema,
   requirementIdSchema,
-  eventIdSchema
+  eventIdSchema,
+  vendorSearchSchema,
+  vendorIdSchema
 } = require('./vendor-procurement.validator');
 
 const router = Router();
+
+router.get('/vendors', authenticate, requireRole('organizer', 'admin'), controller.searchVendors);
+router.get('/vendors/:vendorId', authenticate, requireRole('organizer', 'vendor', 'admin'), controller.getVendorProfile);
 
 router.get('/events/:eventId/requirements', authenticate, requireRole('organizer', 'admin'), validate(eventIdSchema), controller.listRequirements);
 router.post('/events/:eventId/requirements', authenticate, requireRole('organizer'), validate(createRequirementSchema), controller.createRequirement);

@@ -49,9 +49,31 @@ const eventIdSchema = z.object({
   query: z.object({}).optional()
 });
 
+const vendorSearchSchema = z.object({
+  body: z.object({}).optional(),
+  params: z.object({}).optional(),
+  query: z.object({
+    category: z.string().optional(),
+    location: z.string().optional(),
+    minBudget: z.string().optional(),
+    maxBudget: z.string().optional(),
+    minRating: z.string().optional()
+  }).optional()
+});
+
+const vendorIdSchema = z.object({
+  body: z.object({}).optional(),
+  params: z.object({
+    vendorId: z.string().uuid('Invalid vendor ID')
+  }),
+  query: z.object({}).optional()
+});
+
 module.exports = {
   createRequirementSchema,
   updateRequirementSchema,
   requirementIdSchema,
-  eventIdSchema
+  eventIdSchema,
+  vendorSearchSchema,
+  vendorIdSchema
 };
