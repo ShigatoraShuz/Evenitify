@@ -8,6 +8,7 @@ const OrganizerDashboardView = lazy(() => import('../features/organizer-dashboar
 const VendorProcurementView = lazy(() => import('../features/vendor-procurement/views/VendorProcurementViewWrapper'))
 const VendorB2BDashboardView = lazy(() => import('../features/vendor-b2b-dashboard/views/VendorB2BDashboardViewWrapper'))
 const EventPortfolioView = lazy(() => import('../features/contract-booking/views/EventPortfolioViewWrapper'))
+const AdminDashboardView = lazy(() => import('../features/admin-operations/views/AdminDashboardViewWrapper'))
 
 function LoadingFallback() {
   return (
@@ -76,6 +77,13 @@ export function AppRoutes({ userRole, loading }: { userRole: string | null; load
           </RouteGuard>
         </SuspenseWrapper>
       } />
+      <Route path="/admin" element={
+        <SuspenseWrapper>
+          <RouteGuard role={userRole} requiredRole={['admin']}>
+            <AdminDashboardView />
+          </RouteGuard>
+        </SuspenseWrapper>
+      } />
       <Route path="/vendor" element={
         <SuspenseWrapper>
           <RouteGuard role={userRole} requiredRole={['vendor']}>
@@ -84,7 +92,7 @@ export function AppRoutes({ userRole, loading }: { userRole: string | null; load
         </SuspenseWrapper>
       } />
       <Route path="*" element={
-        loading ? <LoadingFallback /> : <Navigate to={userRole ? (userRole === 'vendor' ? '/vendor' : '/organizer') : '/login'} replace />
+        loading ? <LoadingFallback /> : <Navigate to={userRole ? (userRole === 'vendor' ? '/vendor' : userRole === 'admin' ? '/admin' : '/organizer') : '/login'} replace />
       } />
     </Routes>
   )
@@ -92,5 +100,6 @@ export function AppRoutes({ userRole, loading }: { userRole: string | null; load
 
 function RoleRedirect({ role }: { role: string }) {
   if (role === 'vendor') return <Navigate to="/vendor" replace />
+  if (role === 'admin') return <Navigate to="/admin" replace />
   return <Navigate to="/organizer" replace />
 }
