@@ -1,4 +1,5 @@
 import { MOCK_EVENTS, MOCK_REQUIREMENTS, MOCK_VENDORS, MOCK_VENDOR_SERVICES, MOCK_BOOKINGS, MOCK_CONTRACTS, MOCK_NOTIFICATIONS, MOCK_ADMIN_SUMMARY, MOCK_ADMIN_USERS, MOCK_ADMIN_EVENTS, MOCK_ADMIN_BOOKINGS, MOCK_ADMIN_VENDORS, MOCK_DASHBOARD_SUMMARY, buildMockPortfolio } from './mockData'
+import { getActiveMockScenario } from './mockScenarios'
 
 type MockHandler = (endpoint: string, body?: unknown) => unknown
 
@@ -27,8 +28,8 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
   },
 
   // Events
-  'GET /events': () => MOCK_EVENTS,
-  'GET /events/dashboard/summary': () => MOCK_DASHBOARD_SUMMARY,
+  'GET /events': () => getActiveMockScenario().events,
+  'GET /events/dashboard/summary': () => getActiveMockScenario().dashboardSummary,
   'POST /events': (_, body) => {
     const payload = body as { title: string; eventDate: string; venue: string; budget: number; expectedGuests: number }
     return { id: 'evt-new', organizer_id: 'org-001', title: payload.title, event_date: payload.eventDate, venue: payload.venue, budget: payload.budget, expected_guests: payload.expectedGuests, status: 'draft', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
@@ -45,13 +46,13 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
   'GET /events/': (endpoint) => {
     const eventId = endpoint.split('/')[2]
     if (endpoint.endsWith('/portfolio')) {
-      return buildMockPortfolio(eventId)
+      return getActiveMockScenario().buildPortfolio(eventId)
     }
     if (endpoint.endsWith('/requirements')) {
-      return MOCK_REQUIREMENTS.filter((r) => r.event_id === eventId)
+      return getActiveMockScenario().requirements.filter((r) => r.event_id === eventId)
     }
     if (endpoint.endsWith('/bookings')) {
-      return MOCK_BOOKINGS.filter((b) => b.event_id === eventId)
+      return getActiveMockScenario().bookings.filter((b) => b.event_id === eventId)
     }
     return MOCK_EVENTS.find((e) => e.id === eventId) || null
   },
@@ -75,12 +76,12 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
   },
 
   // Vendors
-  'GET /vendors': () => MOCK_VENDORS,
+  'GET /vendors': () => getActiveMockScenario().vendors,
   'GET /vendor/profile': () => ({
     id: 'ven-001', user_id: 'usr-002', business_name: 'Elite Catering Co.', contact_number: '+63 912 345 6789', service_area: 'Metro Manila', rating: 4.8, verification_status: 'verified', services: MOCK_VENDOR_SERVICES.filter((s) => s.vendor_id === 'ven-001')
   }),
   'PATCH /vendor/profile': (_, body) => body,
-  'GET /vendor/services': () => MOCK_VENDOR_SERVICES,
+  'GET /vendor/services': () => getActiveMockScenario().vendorServices,
   'POST /vendor/services': (_, body) => {
     const payload = body as { category: string; serviceName: string; description?: string | null; basePrice: number; availabilityStatus?: string }
     return { id: 'svc-new', vendor_id: 'ven-001', category: payload.category, service_name: payload.serviceName, description: payload.description ?? null, base_price: payload.basePrice, availability_status: payload.availabilityStatus ?? 'available' }
@@ -93,7 +94,7 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
   },
   'GET /vendors/': (endpoint) => {
     const vendorId = endpoint.split('/')[2]
-    return MOCK_VENDORS.find((v) => v.id === vendorId) || null
+    return getActiveMockScenario().vendors.find((v) => v.id === vendorId) || null
   },
 
   // Bookings
@@ -108,10 +109,10 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
     const bookingId = endpoint.split('/')[2]
     return MOCK_BOOKINGS.find((b) => b.id === bookingId) || null
   },
-  'GET /vendor/bookings': () => MOCK_BOOKINGS,
+  'GET /vendor/bookings': () => getActiveMockScenario().bookings,
   'GET /vendor/bookings/': (endpoint) => {
     const bookingId = endpoint.split('/')[3]
-    return MOCK_BOOKINGS.find((b) => b.id === bookingId) || null
+    return getActiveMockScenario().bookings.find((b) => b.id === bookingId) || null
   },
   'PATCH /vendor/bookings/': (endpoint, body) => {
     const parts = endpoint.split('/')
@@ -152,8 +153,8 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
   },
 
   // Notifications
-  'GET /notifications': () => MOCK_NOTIFICATIONS,
-  'GET /notifications/unread-count': () => ({ count: MOCK_NOTIFICATIONS.filter((n) => !n.is_read).length }),
+  'GET /notifications': () => getActiveMockScenario().notifications,
+  'GET /notifications/unread-count': () => ({ count: getActiveMockScenario().notifications.filter((n) => !n.is_read).length }),
   'PATCH /notifications/': (endpoint) => {
     if (endpoint.endsWith('/read-all')) return { message: 'All notifications marked as read' }
     const notifId = endpoint.split('/')[2]
@@ -163,11 +164,11 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
   },
 
   // Admin
-  'GET /admin/dashboard/summary': () => MOCK_ADMIN_SUMMARY,
-  'GET /admin/users': () => MOCK_ADMIN_USERS,
-  'GET /admin/events': () => MOCK_ADMIN_EVENTS,
-  'GET /admin/bookings': () => MOCK_ADMIN_BOOKINGS,
-  'GET /admin/vendors': () => MOCK_ADMIN_VENDORS,
+  'GET /admin/dashboard/summary': () => getActiveMockScenario().adminSummary,
+  'GET /admin/users': () => getActiveMockScenario().adminUsers,
+  'GET /admin/events': () => getActiveMockScenario().adminEvents,
+  'GET /admin/bookings': () => getActiveMockScenario().adminBookings,
+  'GET /admin/vendors': () => getActiveMockScenario().adminVendors,
   'PATCH /admin/vendors/': (endpoint, body) => {
     const parts = endpoint.split('/')
     const vendorId = parts[3]
