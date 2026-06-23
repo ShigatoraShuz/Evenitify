@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import { useAuthSession } from '../../auth/viewmodels/useAuthSession'
 import { eventService, type EventPortfolio } from '../../../services/eventService'
 import { contractService, type ContractDetail } from '../../../services/contractService'
@@ -120,12 +120,12 @@ export function useEventPortfolio() {
     setState((s) => ({ ...s, error: null }))
   }, [])
 
-  const vendors = state.portfolio?.bookings
+  const vendors = useMemo(() => state.portfolio?.bookings
     ? [...new Map(state.portfolio.bookings.map((b) => [b.vendor_id, b.vendor_profiles])).entries()]
         .map(([vendorId, profile]) => ({ vendorId, ...profile }))
-    : []
+    : [], [state.portfolio?.bookings])
 
-  const contracts = state.portfolio?.bookings
+  const contracts = useMemo(() => state.portfolio?.bookings
     ? state.portfolio.bookings.flatMap((b) =>
         (b.contracts || []).map((c) => ({
           ...c,
@@ -134,9 +134,9 @@ export function useEventPortfolio() {
           category: b.event_requirements?.category
         }))
       )
-    : []
+    : [], [state.portfolio?.bookings])
 
-  const activity = state.portfolio?.bookings
+  const activity = useMemo(() => state.portfolio?.bookings
     ? state.portfolio.bookings.flatMap((b) =>
         (b.statusHistory || []).map((h) => ({
           ...h,
@@ -144,7 +144,7 @@ export function useEventPortfolio() {
           category: b.event_requirements?.category
         }))
       ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    : []
+    : [], [state.portfolio?.bookings])
 
   return {
     ...state,
