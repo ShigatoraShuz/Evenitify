@@ -6,6 +6,7 @@ import { auditService, type AuditActivity } from '../../../services/auditService
 import { documentService, type DocumentMetadata } from '../../../services/documentService'
 import { planningService, type EventPlanningTimeline } from '../../../services/planningService'
 import { budgetService, type BudgetSummary } from '../../../services/budgetService'
+import { communicationService, type BookingMessage } from '../../../services/communicationService'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
 export type PortfolioTab = 'overview' | 'timeline' | 'budget' | 'requirements' | 'vendors' | 'bookings' | 'contracts' | 'documents' | 'activity'
@@ -23,6 +24,7 @@ interface EventPortfolioState {
   auditActivities: AuditActivity[]
   planningTimeline: EventPlanningTimeline | null
   budgetSummary: BudgetSummary | null
+  bookingMessages: Record<string, BookingMessage[]>
 }
 
 export function useEventPortfolio() {
@@ -40,7 +42,8 @@ export function useEventPortfolio() {
     documents: [],
     auditActivities: [],
     planningTimeline: null,
-    budgetSummary: null
+    budgetSummary: null,
+    bookingMessages: {}
   })
 
   const loadPortfolio = useCallback(async (eventId: string) => {
@@ -70,8 +73,16 @@ export function useEventPortfolio() {
     if (expanded) {
       setState((s) => ({ ...s, contractLoading: true, error: null }))
       try {
-        const contract = await contractService.getContractByBooking(bookingId)
-        setState((s) => ({ ...s, contractLoading: false, detailedContract: contract }))
+        const [contract, messages] = await Promise.all([
+          contractService.getContractByBooking(bookingId),
+          communicationService.listBookingMessages(bookingId)
+        ])
+        setState((s) => ({
+          ...s,
+          contractLoading: false,
+          detailedContract: contract,
+          bookingMessages: { ...s.bookingMessages, [bookingId]: messages }
+        }))
       } catch (err) {
         setState((s) => ({ ...s, contractLoading: false, error: (err as Error).message }))
       }

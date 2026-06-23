@@ -19,6 +19,7 @@ export default function VendorB2BDashboardViewWrapper() {
       contractLoading={vm.contractLoading}
       auditActivities={vm.auditActivities}
       availability={vm.availability}
+      bookingMessages={vm.bookingMessages}
       realtimeSnapshot={realtime.snapshot}
       realtimeRefreshing={realtime.refreshing}
       onLoadBookings={vm.loadBookings}

@@ -12,12 +12,14 @@ import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { DashboardCommandPanel } from '../../../shared/components/DashboardCommandPanel'
 import { AvailabilityCalendar, AvailabilityQuickUpdate, BlockedDateList } from '../../../shared/components/AvailabilityComponents'
+import { BookingMessageThread } from '../../../shared/components/CommunicationComponents'
 import { B2B_TABS } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
 import type { ContractDetail } from '../../../services/contractService'
 import type { AuditActivity } from '../../../services/auditService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
 import type { AvailabilityStatus, VendorAvailabilityPreview } from '../../../services/availabilityService'
+import type { BookingMessage } from '../../../services/communicationService'
 
 interface VendorB2BDashboardViewProps {
   bookings: BookingRequest[]
@@ -30,6 +32,7 @@ interface VendorB2BDashboardViewProps {
   contractLoading: boolean
   auditActivities: AuditActivity[]
   availability: VendorAvailabilityPreview | null
+  bookingMessages: BookingMessage[]
   realtimeSnapshot: RealtimeSnapshot | null
   realtimeRefreshing: boolean
   onLoadBookings: (status?: string) => Promise<void>
@@ -62,6 +65,7 @@ export function VendorB2BDashboardView({
   contractLoading,
   auditActivities,
   availability,
+  bookingMessages,
   realtimeSnapshot,
   realtimeRefreshing,
   onLoadBookings,
@@ -293,6 +297,10 @@ export function VendorB2BDashboardView({
             ) : (
               <p className="text-sm text-gray-500">No contract yet. Contracts appear after the organizer creates one.</p>
             )}
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <BookingMessageThread messages={bookingMessages} />
           </div>
 
           <div className="border-t pt-4 mt-4">

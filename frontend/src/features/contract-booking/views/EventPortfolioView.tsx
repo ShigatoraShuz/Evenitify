@@ -12,6 +12,7 @@ import { AttachmentList, DocumentPreviewModal, UploadDocumentDropzone } from '..
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { EventCalendarPreview, EventTimelineBoard, TimelineMilestoneCard } from '../../../shared/components/EventPlanningComponents'
 import { BudgetBreakdownChart, BudgetOverviewCard, BudgetWarningBanner } from '../../../shared/components/BudgetComponents'
+import { BookingMessageThread } from '../../../shared/components/CommunicationComponents'
 import { ContractTimeline, buildContractTimeline } from '../components/ContractTimeline'
 import type { BookingWithDetails, EventPortfolio, EventRequirement } from '../../../services/eventService'
 import type { ContractDetail } from '../../../services/contractService'
@@ -20,6 +21,7 @@ import type { DocumentMetadata } from '../../../services/documentService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
 import type { EventPlanningTimeline } from '../../../services/planningService'
 import type { BudgetSummary } from '../../../services/budgetService'
+import type { BookingMessage } from '../../../services/communicationService'
 import type { PortfolioTab } from '../viewmodels/useEventPortfolio'
 
 interface VendorInfo {
@@ -67,6 +69,7 @@ interface EventPortfolioViewProps {
   auditActivities: AuditActivity[]
   planningTimeline: EventPlanningTimeline | null
   budgetSummary: BudgetSummary | null
+  bookingMessages: Record<string, BookingMessage[]>
   realtimeSnapshot: RealtimeSnapshot | null
   realtimeRefreshing: boolean
   onLoadPortfolio: (eventId: string) => Promise<void>
@@ -111,6 +114,7 @@ export function EventPortfolioView({
   auditActivities,
   planningTimeline,
   budgetSummary,
+  bookingMessages,
   realtimeSnapshot,
   realtimeRefreshing,
   onLoadPortfolio,
@@ -411,6 +415,9 @@ export function EventPortfolioView({
                             )}
                           </div>
                         )}
+                        <div className="mt-4">
+                          <BookingMessageThread messages={bookingMessages[booking.id] || []} />
+                        </div>
                       </div>
                     )}
                   </div>

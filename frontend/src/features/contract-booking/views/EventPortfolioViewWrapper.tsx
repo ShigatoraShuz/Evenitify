@@ -32,6 +32,7 @@ export default function EventPortfolioViewWrapper() {
       auditActivities={vm.auditActivities}
       planningTimeline={vm.planningTimeline}
       budgetSummary={vm.budgetSummary}
+      bookingMessages={vm.bookingMessages}
       realtimeSnapshot={realtime.snapshot}
       realtimeRefreshing={realtime.refreshing}
       onLoadPortfolio={vm.loadPortfolio}

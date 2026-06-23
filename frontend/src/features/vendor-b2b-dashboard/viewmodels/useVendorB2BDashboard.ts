@@ -3,6 +3,7 @@ import { bookingService, type BookingRequest } from '../../../services/bookingSe
 import { contractService, type ContractDetail } from '../../../services/contractService'
 import { auditService, type AuditActivity } from '../../../services/auditService'
 import { availabilityService, type AvailabilityStatus, type VendorAvailabilityPreview } from '../../../services/availabilityService'
+import { communicationService, type BookingMessage } from '../../../services/communicationService'
 import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
@@ -17,6 +18,7 @@ interface VendorB2BDashboardState {
   contractLoading: boolean
   auditActivities: AuditActivity[]
   availability: VendorAvailabilityPreview | null
+  bookingMessages: BookingMessage[]
 }
 
 export function useVendorB2BDashboard() {
@@ -31,7 +33,8 @@ export function useVendorB2BDashboard() {
     contract: null,
     contractLoading: false,
     auditActivities: [],
-    availability: null
+    availability: null,
+    bookingMessages: []
   })
 
   const loadBookings = useCallback(async (status?: string) => {
@@ -48,7 +51,7 @@ export function useVendorB2BDashboard() {
   }, [])
 
   const setTab = useCallback((tab: VendorB2BBookingStatus | 'all') => {
-    setState((s) => ({ ...s, activeTab: tab, selectedBooking: null }))
+    setState((s) => ({ ...s, activeTab: tab, selectedBooking: null, bookingMessages: [] }))
     const statusFilter = tab === 'all' ? undefined : tab
     loadBookings(statusFilter)
   }, [loadBookings])
@@ -56,11 +59,12 @@ export function useVendorB2BDashboard() {
   const selectBooking = useCallback(async (bookingId: string) => {
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
-      const [booking, auditActivities] = await Promise.all([
+      const [booking, auditActivities, bookingMessages] = await Promise.all([
         bookingService.getVendorBookingDetail(bookingId),
-        auditService.listActivities(`vendor-booking:${bookingId}`)
+        auditService.listActivities(`vendor-booking:${bookingId}`),
+        communicationService.listBookingMessages(bookingId)
       ])
-      setState((s) => ({ ...s, selectedBooking: booking, auditActivities, loading: false }))
+      setState((s) => ({ ...s, selectedBooking: booking, auditActivities, bookingMessages, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
