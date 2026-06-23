@@ -22,4 +22,9 @@ const updateEvent = asyncHandler(async (req, res) => {
   return sendSuccess(res, event);
 });
 
-module.exports = { listEvents, getEvent, createEvent, updateEvent };
+const getEventPortfolio = asyncHandler(async (req, res) => {
+  const portfolio = await eventService.getEventPortfolio(req.user, req.validated.params.eventId);
+  return sendSuccess(res, portfolio);
+});
+
+module.exports = { listEvents, getEvent, createEvent, updateEvent, getEventPortfolio };
