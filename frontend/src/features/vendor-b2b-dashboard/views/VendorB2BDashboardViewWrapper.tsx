@@ -1,8 +1,11 @@
 import { useVendorB2BDashboard } from '../viewmodels/useVendorB2BDashboard'
 import { VendorB2BDashboardView } from './VendorB2BDashboardView'
+import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
+import { useRealtimeSnapshot } from '../../../shared/hooks/useRealtimeSnapshot'
 
 export default function VendorB2BDashboardViewWrapper() {
   const vm = useVendorB2BDashboard()
+  const realtime = useRealtimeSnapshot('vendor:bookings')
 
   return (
     <VendorB2BDashboardView
@@ -14,8 +17,12 @@ export default function VendorB2BDashboardViewWrapper() {
       error={vm.error}
       contract={vm.contract}
       contractLoading={vm.contractLoading}
+      auditActivities={vm.auditActivities}
+      realtimeSnapshot={realtime.snapshot}
+      realtimeRefreshing={realtime.refreshing}
       onLoadBookings={vm.loadBookings}
-      onSetTab={vm.setTab}
+      onRefreshRealtime={realtime.refresh}
+      onSetTab={(tab: string) => vm.setTab(tab as VendorB2BBookingStatus | 'all')}
       onSelectBooking={vm.selectBooking}
       onUpdateStatus={vm.updateStatus}
       onClearError={vm.clearError}

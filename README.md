@@ -60,6 +60,14 @@ A full-stack platform connecting event organizers with verified vendors for larg
 - **Accessibility**: Semantic HTML, aria attributes, skip-to-content link
 - **Documentation**: API contracts, environment setup, smoke test procedures, phase summary
 
+### Phase 6
+- **Realtime-ready UI**: Shared realtime status indicators with manual refresh metadata across organizer, vendor, admin, notification, portfolio, and report surfaces
+- **Reports/export screens**: Dedicated organizer, vendor, and admin reports with CSV export, print support, and documented PDF placeholder behavior
+- **Procurement decision support**: ViewModel-derived vendor match scoring with budget, rating, availability, verification, and service-area insights
+- **Document metadata UI**: Frontend-only mock upload metadata, attachment cards, and document preview modal for contract/portfolio workflows
+- **Audit/activity visibility**: Typed mock audit timelines for portfolio, vendor booking detail, and admin operations
+- **Advanced admin operations**: Pending action queue, risk flags, recent actions timeline, and event date range filtering
+
 ## Project Structure
 
 ```
@@ -209,10 +217,13 @@ npm run lint      # ESLint check
 | /organizer/procurement | Organizer, Admin | Vendor procurement workflow |
 | /organizer/portfolio | Organizer, Admin | Event portfolio (tabs) |
 | /organizer/compare | Organizer, Admin | Vendor comparison |
+| /organizer/reports | Organizer, Admin | Organizer reports and CSV export |
 | /organizer/profile | Organizer, Admin | Organizer profile settings |
 | /vendor | Vendor | Vendor B2B dashboard |
+| /vendor/reports | Vendor | Vendor reports and CSV export |
 | /vendor/profile | Vendor | Vendor profile settings |
 | /admin | Admin | Admin operations dashboard |
+| /admin/reports | Admin | Admin reports and CSV export |
 | /admin/settings | Admin | Admin settings |
 | /notifications | Auth | Notification center |
 

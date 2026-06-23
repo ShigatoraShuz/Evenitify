@@ -8,7 +8,9 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { SummaryCard } from '../../../shared/components/SummaryCard'
+import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import type { LargeEvent, DashboardSummary } from '../../../services/eventService'
+import type { RealtimeSnapshot } from '../../../services/realtimeService'
 
 interface OrganizerDashboardViewProps {
   events: LargeEvent[]
@@ -16,7 +18,10 @@ interface OrganizerDashboardViewProps {
   loading: boolean
   submitting: boolean
   error: string | null
+  realtimeSnapshot: RealtimeSnapshot | null
+  realtimeRefreshing: boolean
   onLoadEvents: () => Promise<void>
+  onRefreshRealtime: () => Promise<void>
   onCreateEvent: (payload: { title: string; eventDate: string; venue: string; budget: number; expectedGuests: number }) => Promise<void>
   onSelectEvent: (eventId: string) => void
   onNavigateToPortfolio?: (eventId: string) => void
@@ -36,7 +41,10 @@ export function OrganizerDashboardView({
   loading,
   submitting,
   error,
+  realtimeSnapshot,
+  realtimeRefreshing,
   onLoadEvents,
+  onRefreshRealtime,
   onCreateEvent,
   onSelectEvent,
   onNavigateToPortfolio
@@ -161,6 +169,9 @@ export function OrganizerDashboardView({
           <Button onClick={() => setShowCreate(true)}>+ New Event</Button>
         }
       />
+      <div className="mb-4">
+        <RealtimeIndicator snapshot={realtimeSnapshot} refreshing={realtimeRefreshing || loading} onRefresh={() => { void onRefreshRealtime(); void onLoadEvents() }} />
+      </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>

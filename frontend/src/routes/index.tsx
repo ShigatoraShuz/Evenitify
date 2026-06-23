@@ -18,6 +18,9 @@ const VendorComparisonView = lazy(() => import('../features/vendor-comparison/vi
 const OrganizerProfileView = lazy(() => import('../features/user-settings/views/OrganizerProfileViewWrapper'))
 const VendorProfileView = lazy(() => import('../features/user-settings/views/VendorProfileViewWrapper'))
 const AdminSettingsView = lazy(() => import('../features/user-settings/views/AdminSettingsViewWrapper'))
+const OrganizerReportsView = lazy(() => import('../features/reports/views/OrganizerReportsViewWrapper'))
+const VendorReportsView = lazy(() => import('../features/reports/views/VendorReportsViewWrapper'))
+const AdminReportsView = lazy(() => import('../features/reports/views/AdminReportsViewWrapper'))
 
 function LoadingFallback() {
   return (
@@ -107,10 +110,24 @@ export function AppRoutes({ userRole, profileComplete, loading }: { userRole: st
             </RouteGuard>
           </SuspenseWrapper>
         } />
+        <Route path="/organizer/reports" element={
+          <SuspenseWrapper>
+            <RouteGuard role={userRole} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+              <PageTransition><OrganizerReportsView /></PageTransition>
+            </RouteGuard>
+          </SuspenseWrapper>
+        } />
         <Route path="/admin" element={
           <SuspenseWrapper>
             <RouteGuard role={userRole} requiredRole={['admin']} profileComplete={profileComplete}>
               <PageTransition><AdminDashboardView /></PageTransition>
+            </RouteGuard>
+          </SuspenseWrapper>
+        } />
+        <Route path="/admin/reports" element={
+          <SuspenseWrapper>
+            <RouteGuard role={userRole} requiredRole={['admin']} profileComplete={profileComplete}>
+              <PageTransition><AdminReportsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
@@ -130,6 +147,13 @@ export function AppRoutes({ userRole, profileComplete, loading }: { userRole: st
           <SuspenseWrapper>
             <RouteGuard role={userRole} requiredRole={['vendor']} profileComplete={profileComplete}>
               <PageTransition><VendorProfileView /></PageTransition>
+            </RouteGuard>
+          </SuspenseWrapper>
+        } />
+        <Route path="/vendor/reports" element={
+          <SuspenseWrapper>
+            <RouteGuard role={userRole} requiredRole={['vendor']} profileComplete={profileComplete}>
+              <PageTransition><VendorReportsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />

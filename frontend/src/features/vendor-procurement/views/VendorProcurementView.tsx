@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '../../../shared/components/Button'
 import { Input } from '../../../shared/components/Input'
 import { Select } from '../../../shared/components/Select'
@@ -13,7 +13,7 @@ import type { VendorSearchResult, VendorService } from '../../../services/vendor
 import type { RequirementCategory, ProcurementStep } from '../models/vendor-procurement.model'
 import { REQUIREMENT_CATEGORIES } from '../models/vendor-procurement.model'
 
-import type { VendorFilterState } from '../models/vendor-procurement.model'
+import type { VendorFilterState, VendorRecommendation } from '../models/vendor-procurement.model'
 
 interface VendorProcurementViewProps {
   eventId: string | null
@@ -28,6 +28,7 @@ interface VendorProcurementViewProps {
   error: string | null
   draftSaved: boolean
   validationErrors: string[]
+  recommendations: VendorRecommendation[]
   onInitEvent: (eventId: string) => Promise<void>
   onSetStep: (step: ProcurementStep) => void
   onSelectRequirement: (req: EventRequirement) => void
@@ -65,6 +66,7 @@ export function VendorProcurementView({
   error,
   draftSaved,
   validationErrors,
+  recommendations,
   onInitEvent,
   onSetStep,
   onSelectRequirement,
@@ -94,6 +96,7 @@ export function VendorProcurementView({
   }, [eventId])
 
   const currentStepIndex = STEP_ORDER.indexOf(currentStep)
+  const recommendationByVendor = useMemo(() => new Map(recommendations.map((item) => [item.vendorId, item])), [recommendations])
 
   const handleDeleteReq = async () => {
     if (confirmDeleteId) {
@@ -333,6 +336,24 @@ export function VendorProcurementView({
                     <h3 className="font-medium text-gray-900">{vendor.business_name}</h3>
                     <span className="text-sm text-yellow-600">★ {vendor.rating}</span>
                   </div>
+                  {recommendationByVendor.get(vendor.id) && (
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between text-xs text-slate-500">
+                        <span>Match score</span>
+                        <span className="font-semibold text-slate-900">{recommendationByVendor.get(vendor.id)?.score}%</span>
+                      </div>
+                      <div className="mt-1 h-2 rounded-full bg-slate-100">
+                        <div className="h-2 rounded-full bg-brand-500" style={{ width: `${recommendationByVendor.get(vendor.id)?.score || 0}%` }} />
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {recommendationByVendor.get(vendor.id)?.insights.map((insight) => (
+                          <span key={insight.label} className={`rounded-full px-2 py-0.5 text-xs ${insight.tone === 'success' ? 'bg-emerald-50 text-emerald-700' : insight.tone === 'warning' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                            {insight.label}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <p className="text-sm text-gray-500 mb-2">{vendor.service_area}</p>
                   <div className="flex flex-wrap gap-2">
                     {vendor.services?.map((svc: VendorService) => (

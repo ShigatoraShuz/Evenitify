@@ -7,9 +7,15 @@ import { Input } from '../../../shared/components/Input'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
+import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
+import { AttachmentList, DocumentPreviewModal, UploadDocumentDropzone } from '../../../shared/components/DocumentComponents'
+import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { ContractTimeline, buildContractTimeline } from '../components/ContractTimeline'
-import type { EventPortfolio } from '../../../services/eventService'
+import type { BookingWithDetails, EventPortfolio, EventRequirement } from '../../../services/eventService'
 import type { ContractDetail } from '../../../services/contractService'
+import type { AuditActivity } from '../../../services/auditService'
+import type { DocumentMetadata } from '../../../services/documentService'
+import type { RealtimeSnapshot } from '../../../services/realtimeService'
 import type { PortfolioTab } from '../viewmodels/useEventPortfolio'
 
 interface VendorInfo {
@@ -53,13 +59,19 @@ interface EventPortfolioViewProps {
   vendors: VendorInfo[]
   contracts: ContractItem[]
   activity: ActivityItem[]
+  documents: DocumentMetadata[]
+  auditActivities: AuditActivity[]
+  realtimeSnapshot: RealtimeSnapshot | null
+  realtimeRefreshing: boolean
   onLoadPortfolio: (eventId: string) => Promise<void>
+  onRefreshRealtime: () => Promise<void>
   onSetActiveTab: (tab: PortfolioTab) => void
   onExpandBooking: (bookingId: string) => Promise<void>
   onCreateContract: (bookingId: string, termsSummary?: string) => Promise<void>
   onSendContract: (contractId: string) => Promise<void>
   onSignOrganizer: (contractId: string) => Promise<void>
   onSignVendor: (contractId: string) => Promise<void>
+  onMockUploadDocument: (fileName: string) => Promise<void>
   onClearError: () => void
 }
 
@@ -69,6 +81,7 @@ const TABS: { key: PortfolioTab; label: string }[] = [
   { key: 'vendors', label: 'Vendors' },
   { key: 'bookings', label: 'Bookings' },
   { key: 'contracts', label: 'Contracts' },
+  { key: 'documents', label: 'Documents' },
   { key: 'activity', label: 'Activity' }
 ]
 
@@ -86,18 +99,25 @@ export function EventPortfolioView({
   vendors,
   contracts,
   activity,
+  documents,
+  auditActivities,
+  realtimeSnapshot,
+  realtimeRefreshing,
   onLoadPortfolio,
+  onRefreshRealtime,
   onSetActiveTab,
   onExpandBooking,
   onCreateContract,
   onSendContract,
   onSignOrganizer,
   onSignVendor,
+  onMockUploadDocument,
   onClearError
 }: EventPortfolioViewProps) {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createBookingId, setCreateBookingId] = useState<string | null>(null)
   const [termsSummary, setTermsSummary] = useState('')
+  const [previewDocument, setPreviewDocument] = useState<DocumentMetadata | null>(null)
 
   useEffect(() => {
     if (eventId) onLoadPortfolio(eventId)
@@ -123,22 +143,22 @@ export function EventPortfolioView({
 
   const reqStats = {
     total: requirements?.length || 0,
-    open: requirements?.filter((r: Record<string, unknown>) => r.requirement_status === 'open').length || 0,
-    fulfilled: requirements?.filter((r: Record<string, unknown>) => r.requirement_status === 'fulfilled').length || 0
+    open: requirements?.filter((r: EventRequirement) => r.requirement_status === 'open').length || 0,
+    fulfilled: requirements?.filter((r: EventRequirement) => r.requirement_status === 'fulfilled').length || 0
   }
 
   const bkStats = {
     total: bookings?.length || 0,
-    pending: bookings?.filter((b: Record<string, unknown>) => b.status === 'pending').length || 0,
-    accepted: bookings?.filter((b: Record<string, unknown>) => b.status === 'accepted').length || 0,
-    confirmed: bookings?.filter((b: Record<string, unknown>) => b.status === 'confirmed').length || 0,
-    completed: bookings?.filter((b: Record<string, unknown>) => b.status === 'completed').length || 0,
-    cancelled: bookings?.filter((b: Record<string, unknown>) => b.status === 'cancelled').length || 0
+    pending: bookings?.filter((b: BookingWithDetails) => b.status === 'pending').length || 0,
+    accepted: bookings?.filter((b: BookingWithDetails) => b.status === 'accepted').length || 0,
+    confirmed: bookings?.filter((b: BookingWithDetails) => b.status === 'confirmed').length || 0,
+    completed: bookings?.filter((b: BookingWithDetails) => b.status === 'completed').length || 0,
+    cancelled: bookings?.filter((b: BookingWithDetails) => b.status === 'cancelled').length || 0
   }
 
   const completionPct = reqStats.total > 0 ? Math.round((reqStats.fulfilled / reqStats.total) * 100) : 0
   const totalBudget = Number(event.budget) || 0
-  const usedBudget = bookings?.reduce((sum: number, b: Record<string, unknown>) => sum + (Number(b.requested_budget) || 0), 0) || 0
+  const usedBudget = bookings?.reduce((sum: number, b: BookingWithDetails) => sum + (Number(b.requested_budget) || 0), 0) || 0
   const budgetPct = totalBudget > 0 ? Math.round((usedBudget / totalBudget) * 100) : 0
 
   return (
@@ -147,6 +167,9 @@ export function EventPortfolioView({
         title={event.title}
         subtitle={`${event.venue} | ${new Date(event.event_date).toLocaleDateString()} | ${event.expected_guests} guests`}
       />
+      <div className="mb-4">
+        <RealtimeIndicator snapshot={realtimeSnapshot} refreshing={realtimeRefreshing} onRefresh={onRefreshRealtime} />
+      </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex justify-between items-center">
@@ -232,7 +255,7 @@ export function EventPortfolioView({
 
           {requirements?.length > 0 ? (
             <div className="grid gap-3 md:grid-cols-2 mb-8">
-              {requirements.map((req: Record<string, unknown>) => (
+              {requirements.map((req: EventRequirement) => (
                 <div key={req.id} className="bg-white rounded-xl border p-4">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-medium text-gray-900">{req.category}</h3>
@@ -280,7 +303,7 @@ export function EventPortfolioView({
 
           {bookings?.length > 0 ? (
             <div className="space-y-4 mb-8">
-              {bookings.map((booking: Record<string, unknown>) => {
+              {bookings.map((booking: BookingWithDetails) => {
                 const isExpanded = expandedBookingId === booking.id
                 const contract = isExpanded ? detailedContract : null
                 const existingContract = booking.contracts?.[0]
@@ -381,10 +404,23 @@ export function EventPortfolioView({
         </div>
       )}
 
+      {activeTab === 'documents' && (
+        <div className="space-y-4">
+          <UploadDocumentDropzone onMockUpload={(fileName) => { void onMockUploadDocument(fileName) }} />
+          {documents.length > 0 ? (
+            <AttachmentList documents={documents} onPreview={setPreviewDocument} />
+          ) : (
+            <EmptyState title="No documents" description="Mock document metadata will appear after adding an attachment." />
+          )}
+        </div>
+      )}
+
       {activeTab === 'activity' && (
         <div>
           {activity.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-6">
+              <AuditTimeline activities={auditActivities} emptyText="No audit records for this event yet." />
+              <div className="space-y-3">
               {activity.map((item) => (
                 <div key={item.id} className="bg-white rounded-xl border border-gray-200 p-4">
                   <div className="flex items-start gap-3">
@@ -404,12 +440,15 @@ export function EventPortfolioView({
                   </div>
                 </div>
               ))}
+              </div>
             </div>
           ) : (
-            <EmptyState title="No activity" description="Activity will appear as bookings and contracts progress." />
+            <AuditTimeline activities={auditActivities} emptyText="No activity will appear until bookings or contracts progress." />
           )}
         </div>
       )}
+
+      <DocumentPreviewModal document={previewDocument} onClose={() => setPreviewDocument(null)} />
 
       <Modal open={showCreateModal} onClose={() => { setShowCreateModal(false); setCreateBookingId(null) }} title="Create Contract">
         <div className="space-y-4">
@@ -440,5 +479,3 @@ export function EventPortfolioView({
     </DashboardShell>
   )
 }
-
-

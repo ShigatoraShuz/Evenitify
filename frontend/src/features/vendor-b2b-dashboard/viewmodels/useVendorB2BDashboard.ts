@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { bookingService, type BookingRequest } from '../../../services/bookingService'
 import { contractService, type ContractDetail } from '../../../services/contractService'
+import { auditService, type AuditActivity } from '../../../services/auditService'
 import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
 
 interface VendorB2BDashboardState {
@@ -12,6 +13,7 @@ interface VendorB2BDashboardState {
   error: string | null
   contract: ContractDetail | null
   contractLoading: boolean
+  auditActivities: AuditActivity[]
 }
 
 export function useVendorB2BDashboard() {
@@ -24,7 +26,8 @@ export function useVendorB2BDashboard() {
     submitting: false,
     error: null,
     contract: null,
-    contractLoading: false
+    contractLoading: false,
+    auditActivities: []
   })
 
   const loadBookings = useCallback(async (status?: string) => {
@@ -46,8 +49,11 @@ export function useVendorB2BDashboard() {
   const selectBooking = useCallback(async (bookingId: string) => {
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
-      const booking = await bookingService.getVendorBookingDetail(bookingId)
-      setState((s) => ({ ...s, selectedBooking: booking, loading: false }))
+      const [booking, auditActivities] = await Promise.all([
+        bookingService.getVendorBookingDetail(bookingId),
+        auditService.listActivities(`vendor-booking:${bookingId}`)
+      ])
+      setState((s) => ({ ...s, selectedBooking: booking, auditActivities, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }

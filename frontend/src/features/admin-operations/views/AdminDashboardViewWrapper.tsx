@@ -1,8 +1,10 @@
 import { useAdminDashboard } from '../viewmodels/useAdminDashboard'
 import { AdminDashboardView } from './AdminDashboardView'
+import { useRealtimeSnapshot } from '../../../shared/hooks/useRealtimeSnapshot'
 
 export default function AdminDashboardViewWrapper() {
   const vm = useAdminDashboard()
+  const realtime = useRealtimeSnapshot('admin:dashboard')
 
   return (
     <AdminDashboardView
@@ -17,7 +19,13 @@ export default function AdminDashboardViewWrapper() {
       activeSection={vm.activeSection}
       selectedVendor={vm.selectedVendor}
       selectedBooking={vm.selectedBooking}
+      auditActivities={vm.auditActivities}
+      actionQueue={vm.actionQueue}
+      riskFlags={vm.riskFlags}
+      realtimeSnapshot={realtime.snapshot}
+      realtimeRefreshing={realtime.refreshing}
       onLoadSummary={vm.loadSummary}
+      onRefreshRealtime={realtime.refresh}
       onLoadUsers={vm.loadUsers}
       onLoadEvents={vm.loadEvents}
       onLoadBookings={vm.loadBookings}

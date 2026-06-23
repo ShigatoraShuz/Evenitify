@@ -1,5 +1,7 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { adminService } from '../../../services/adminService'
+import { auditService, type AuditActivity } from '../../../services/auditService'
+import type { OperationQueueItem } from '../../../shared/components/OperationsPanels'
 import type {
   AdminDashboardSummary,
   AdminUser,
@@ -21,6 +23,7 @@ interface AdminDashboardState {
   activeSection: string
   selectedVendor: AdminVendor | null
   selectedBooking: AdminBooking | null
+  auditActivities: AuditActivity[]
 }
 
 export function useAdminDashboard() {
@@ -36,14 +39,18 @@ export function useAdminDashboard() {
     error: null,
     activeSection: 'summary',
     selectedVendor: null,
-    selectedBooking: null
+    selectedBooking: null,
+    auditActivities: []
   })
 
   const loadSummary = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
-      const summary = await adminService.getDashboardSummary()
-      setState((s) => ({ ...s, summary, loading: false }))
+      const [summary, auditActivities] = await Promise.all([
+        adminService.getDashboardSummary(),
+        auditService.listActivities('admin:operations')
+      ])
+      setState((s) => ({ ...s, summary, auditActivities, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
@@ -143,6 +150,52 @@ export function useAdminDashboard() {
     setState((s) => ({ ...s, error: null }))
   }, [])
 
+  const actionQueue = useMemo<OperationQueueItem[]>(() => [
+    ...state.vendors
+      .filter((vendor) => vendor.verification_status === 'pending')
+      .slice(0, 4)
+      .map((vendor) => ({
+        id: `vendor-${vendor.id}`,
+        title: `Verify ${vendor.business_name}`,
+        detail: vendor.service_area || 'No service area provided',
+        status: vendor.verification_status,
+        priority: 'high' as const
+      })),
+    ...state.bookings
+      .filter((booking) => ['pending', 'changes_requested'].includes(booking.status))
+      .slice(0, 4)
+      .map((booking) => ({
+        id: `booking-${booking.id}`,
+        title: `Review ${booking.large_events?.title || 'booking'}`,
+        detail: `${booking.vendor_profiles?.business_name || 'Vendor'} | ${booking.event_requirements?.category || 'Category'}`,
+        status: booking.status,
+        priority: booking.status === 'pending' ? 'medium' as const : 'low' as const
+      }))
+  ], [state.bookings, state.vendors])
+
+  const riskFlags = useMemo<OperationQueueItem[]>(() => [
+    ...state.bookings
+      .filter((booking) => ['rejected', 'cancelled'].includes(booking.status))
+      .slice(0, 3)
+      .map((booking) => ({
+        id: `risk-booking-${booking.id}`,
+        title: `Booking ${booking.status}`,
+        detail: `${booking.large_events?.title || 'Event'} needs operations review`,
+        status: booking.status,
+        priority: 'medium' as const
+      })),
+    ...state.vendors
+      .filter((vendor) => vendor.verification_status === 'rejected')
+      .slice(0, 3)
+      .map((vendor) => ({
+        id: `risk-vendor-${vendor.id}`,
+        title: `Rejected vendor: ${vendor.business_name}`,
+        detail: 'Verification decision may affect open procurement.',
+        status: vendor.verification_status,
+        priority: 'high' as const
+      }))
+  ], [state.bookings, state.vendors])
+
   return {
     ...state,
     loadSummary,
@@ -155,6 +208,8 @@ export function useAdminDashboard() {
     selectBooking,
     updateVendorVerification,
     overrideBookingStatus,
-    clearError
+    clearError,
+    actionQueue,
+    riskFlags
   }
 }

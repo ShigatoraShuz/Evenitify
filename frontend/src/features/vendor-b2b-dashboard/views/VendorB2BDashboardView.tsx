@@ -8,9 +8,13 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { ContractTimeline, buildContractTimeline } from '../../contract-booking/components/ContractTimeline'
+import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
+import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { B2B_TABS } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
 import type { ContractDetail } from '../../../services/contractService'
+import type { AuditActivity } from '../../../services/auditService'
+import type { RealtimeSnapshot } from '../../../services/realtimeService'
 
 interface VendorB2BDashboardViewProps {
   bookings: BookingRequest[]
@@ -21,7 +25,11 @@ interface VendorB2BDashboardViewProps {
   error: string | null
   contract: ContractDetail | null
   contractLoading: boolean
+  auditActivities: AuditActivity[]
+  realtimeSnapshot: RealtimeSnapshot | null
+  realtimeRefreshing: boolean
   onLoadBookings: (status?: string) => Promise<void>
+  onRefreshRealtime: () => Promise<void>
   onSetTab: (tab: string) => void
   onSelectBooking: (bookingId: string) => Promise<void>
   onUpdateStatus: (bookingId: string, status: 'accepted' | 'rejected' | 'changes_requested', reason?: string) => Promise<void>
@@ -47,7 +55,11 @@ export function VendorB2BDashboardView({
   error,
   contract,
   contractLoading,
+  auditActivities,
+  realtimeSnapshot,
+  realtimeRefreshing,
   onLoadBookings,
+  onRefreshRealtime,
   onSetTab,
   onSelectBooking,
   onUpdateStatus,
@@ -113,6 +125,9 @@ export function VendorB2BDashboardView({
           </Button>
         }
       />
+      <div className="mb-4">
+        <RealtimeIndicator snapshot={realtimeSnapshot} refreshing={realtimeRefreshing || loading} onRefresh={() => { void onRefreshRealtime(); void onLoadBookings(activeTab === 'all' ? undefined : activeTab) }} />
+      </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex justify-between items-center">
@@ -233,6 +248,11 @@ export function VendorB2BDashboardView({
             ) : (
               <p className="text-sm text-gray-500">No contract yet. Contracts appear after the organizer creates one.</p>
             )}
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h4 className="font-medium text-gray-900 mb-3">Activity</h4>
+            <AuditTimeline activities={auditActivities} emptyText="No activity for this booking yet." />
           </div>
 
           <button onClick={() => onSelectBooking('')} className="mt-4 text-sm text-brand-600 hover:text-brand-700">← Back to list</button>

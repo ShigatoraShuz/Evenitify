@@ -8,6 +8,7 @@ import type {
   ProcurementStep
 } from '../models/vendor-procurement.model'
 import { DEFAULT_VENDOR_FILTERS } from '../models/vendor-procurement.model'
+import { buildVendorRecommendations } from './vendorScoring'
 
 interface VendorProcurementState {
   eventId: string | null
@@ -206,8 +207,11 @@ export function useVendorProcurement() {
     setState((s) => ({ ...s, error: null, validationErrors: [] }))
   }, [])
 
+  const recommendations = buildVendorRecommendations(state.vendors, state.selectedRequirement, state.filters)
+
   return {
     ...state,
+    recommendations,
     initEvent,
     setStep,
     selectRequirement,

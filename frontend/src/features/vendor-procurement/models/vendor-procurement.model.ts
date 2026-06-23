@@ -77,3 +77,22 @@ export const DEFAULT_VENDOR_FILTERS: VendorFilterState = {
 }
 
 export type ProcurementStep = 'requirements' | 'vendors' | 'booking' | 'confirm'
+
+export interface VendorRecommendationInsight {
+  label: string
+  tone: 'success' | 'warning' | 'neutral'
+}
+
+export interface VendorRecommendation {
+  vendorId: string
+  score: number
+  insights: VendorRecommendationInsight[]
+}
+
+export const PROCUREMENT_SCORING_WEIGHTS = {
+  rating: 25,
+  budgetFit: 25,
+  availability: 20,
+  verification: 15,
+  serviceArea: 15
+} as const

@@ -4,7 +4,9 @@ import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Button } from '../../../shared/components/Button'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import type { AppNotification } from '../models/notifications.model'
+import type { RealtimeSnapshot } from '../../../services/realtimeService'
 
 interface NotificationGroup {
   key: string
@@ -18,7 +20,10 @@ interface NotificationsViewProps {
   loading: boolean
   submitting: boolean
   error: string | null
+  realtimeSnapshot: RealtimeSnapshot | null
+  realtimeRefreshing: boolean
   onLoadNotifications: () => Promise<void>
+  onRefreshRealtime: () => Promise<void>
   onMarkAsRead: (notificationId: string) => Promise<void>
   onMarkAllAsRead: () => Promise<void>
   onClearError: () => void
@@ -30,7 +35,10 @@ export function NotificationsView({
   loading,
   submitting,
   error,
+  realtimeSnapshot,
+  realtimeRefreshing,
   onLoadNotifications,
+  onRefreshRealtime,
   onMarkAsRead,
   onMarkAllAsRead,
   onClearError
@@ -57,6 +65,9 @@ export function NotificationsView({
           </div>
         }
       />
+      <div className="mb-4">
+        <RealtimeIndicator snapshot={realtimeSnapshot} refreshing={realtimeRefreshing || loading} onRefresh={() => { void onRefreshRealtime(); void onLoadNotifications() }} />
+      </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex justify-between items-center">

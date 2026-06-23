@@ -29,6 +29,7 @@ export default function VendorProcurementViewWrapper() {
       error={vm.error}
       draftSaved={vm.draftSaved}
       validationErrors={vm.validationErrors}
+      recommendations={vm.recommendations}
       onInitEvent={vm.initEvent}
       onSetStep={vm.setStep}
       onSelectRequirement={vm.selectRequirement}

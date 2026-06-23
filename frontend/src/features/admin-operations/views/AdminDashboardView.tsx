@@ -8,6 +8,11 @@ import { Modal } from '../../../shared/components/Modal'
 import { Input } from '../../../shared/components/Input'
 import { Select } from '../../../shared/components/Select'
 import { DataTable, type Column } from '../../../shared/components/DataTable'
+import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
+import { ActionQueuePanel, RiskFlagsPanel, type OperationQueueItem } from '../../../shared/components/OperationsPanels'
+import { AuditTimeline } from '../../../shared/components/AuditTimeline'
+import type { AuditActivity } from '../../../services/auditService'
+import type { RealtimeSnapshot } from '../../../services/realtimeService'
 import type {
   AdminDashboardSummary,
   AdminUser,
@@ -28,7 +33,13 @@ interface AdminDashboardViewProps {
   activeSection: string
   selectedVendor: AdminVendor | null
   selectedBooking: AdminBooking | null
+  auditActivities: AuditActivity[]
+  actionQueue: OperationQueueItem[]
+  riskFlags: OperationQueueItem[]
+  realtimeSnapshot: RealtimeSnapshot | null
+  realtimeRefreshing: boolean
   onLoadSummary: () => Promise<void>
+  onRefreshRealtime: () => Promise<void>
   onLoadUsers: (params?: { role?: string; search?: string }) => Promise<void>
   onLoadEvents: (params?: { status?: string; search?: string }) => Promise<void>
   onLoadBookings: (params?: { status?: string; search?: string }) => Promise<void>
@@ -61,7 +72,13 @@ export function AdminDashboardView({
   activeSection,
   selectedVendor,
   selectedBooking,
+  auditActivities,
+  actionQueue,
+  riskFlags,
+  realtimeSnapshot,
+  realtimeRefreshing,
   onLoadSummary,
+  onRefreshRealtime,
   onLoadUsers,
   onLoadEvents,
   onLoadBookings,
@@ -76,6 +93,8 @@ export function AdminDashboardView({
   const [searchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [eventStartDate, setEventStartDate] = useState('')
+  const [eventEndDate, setEventEndDate] = useState('')
   const [verifyReason, setVerifyReason] = useState('')
   const [overrideStatus, setOverrideStatus] = useState('')
   const [overrideReason, setOverrideReason] = useState('')
@@ -131,9 +150,19 @@ export function AdminDashboardView({
     { key: 'actions', label: 'Actions', render: (v) => <Button variant="secondary" onClick={() => onSelectVendor(v)}>Verify</Button> },
   ]
 
+  const filteredEvents = events.filter((event) => {
+    const eventTime = new Date(event.event_date).getTime()
+    const startOk = eventStartDate ? eventTime >= new Date(eventStartDate).getTime() : true
+    const endOk = eventEndDate ? eventTime <= new Date(eventEndDate).getTime() : true
+    return startOk && endOk
+  })
+
   return (
     <DashboardShell>
       <PageHeader title="Admin Dashboard" subtitle="Operations overview and management" />
+      <div className="mb-4">
+        <RealtimeIndicator snapshot={realtimeSnapshot} refreshing={realtimeRefreshing || loading} onRefresh={() => { void onRefreshRealtime(); void onLoadSummary() }} />
+      </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex justify-between items-center">
@@ -164,19 +193,26 @@ export function AdminDashboardView({
             {Array.from({ length: 12 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <SummaryCard label="Organizers" value={summary.total_organizers} color="text-blue-600" />
-            <SummaryCard label="Vendors" value={summary.total_vendors} color="text-purple-600" />
-            <SummaryCard label="Events (500+)" value={summary.large_events_500plus} color="text-indigo-600" />
-            <SummaryCard label="Pending Bookings" value={summary.pending_bookings} color="text-yellow-600" />
-            <SummaryCard label="Accepted" value={summary.accepted_bookings} color="text-cyan-600" />
-            <SummaryCard label="Confirmed" value={summary.confirmed_bookings} color="text-blue-600" />
-            <SummaryCard label="Completed" value={summary.completed_bookings} color="text-emerald-600" />
-            <SummaryCard label="Pending Verifications" value={summary.pending_verifications} color="text-orange-600" />
-            <SummaryCard label="Draft Contracts" value={summary.draft_contracts} color="text-gray-600" />
-            <SummaryCard label="Active Contracts" value={summary.active_contracts} color="text-green-600" />
-            <SummaryCard label="Total Events" value={summary.total_events} color="text-slate-600" />
-            <SummaryCard label="Rejected Bookings" value={summary.rejected_bookings} color="text-red-600" />
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <SummaryCard label="Organizers" value={summary.total_organizers} color="text-blue-600" />
+              <SummaryCard label="Vendors" value={summary.total_vendors} color="text-purple-600" />
+              <SummaryCard label="Events (500+)" value={summary.large_events_500plus} color="text-indigo-600" />
+              <SummaryCard label="Pending Bookings" value={summary.pending_bookings} color="text-yellow-600" />
+              <SummaryCard label="Accepted" value={summary.accepted_bookings} color="text-cyan-600" />
+              <SummaryCard label="Confirmed" value={summary.confirmed_bookings} color="text-blue-600" />
+              <SummaryCard label="Completed" value={summary.completed_bookings} color="text-emerald-600" />
+              <SummaryCard label="Pending Verifications" value={summary.pending_verifications} color="text-orange-600" />
+              <SummaryCard label="Draft Contracts" value={summary.draft_contracts} color="text-gray-600" />
+              <SummaryCard label="Active Contracts" value={summary.active_contracts} color="text-green-600" />
+              <SummaryCard label="Total Events" value={summary.total_events} color="text-slate-600" />
+              <SummaryCard label="Rejected Bookings" value={summary.rejected_bookings} color="text-red-600" />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ActionQueuePanel items={actionQueue} />
+              <RiskFlagsPanel flags={riskFlags} />
+            </div>
+            <AuditTimeline activities={auditActivities} emptyText="Recent admin actions will appear here." />
           </div>
         )
       )}
@@ -202,9 +238,14 @@ export function AdminDashboardView({
       )}
 
       {activeSection === 'events' && (
-        <DataTable
+        <div className="space-y-4">
+          <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2">
+            <Input label="Event date from" type="date" value={eventStartDate} onChange={(e) => setEventStartDate(e.target.value)} />
+            <Input label="Event date to" type="date" value={eventEndDate} onChange={(e) => setEventEndDate(e.target.value)} />
+          </div>
+          <DataTable
           columns={eventColumns}
-          data={events}
+          data={filteredEvents}
           keyExtractor={(e) => e.id}
           searchable
           searchPlaceholder="Search events..."
@@ -221,7 +262,8 @@ export function AdminDashboardView({
           onFilterChange={setStatusFilter}
           onSearch={handleSearch}
           pageSize={10}
-        />
+          />
+        </div>
       )}
 
       {activeSection === 'bookings' && (

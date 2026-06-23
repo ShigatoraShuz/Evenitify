@@ -2,8 +2,10 @@ import { useState, useCallback, useRef, useMemo } from 'react'
 import { useAuthSession } from '../../auth/viewmodels/useAuthSession'
 import { eventService, type EventPortfolio } from '../../../services/eventService'
 import { contractService, type ContractDetail } from '../../../services/contractService'
+import { auditService, type AuditActivity } from '../../../services/auditService'
+import { documentService, type DocumentMetadata } from '../../../services/documentService'
 
-export type PortfolioTab = 'overview' | 'requirements' | 'vendors' | 'bookings' | 'contracts' | 'activity'
+export type PortfolioTab = 'overview' | 'requirements' | 'vendors' | 'bookings' | 'contracts' | 'documents' | 'activity'
 
 interface EventPortfolioState {
   portfolio: EventPortfolio | null
@@ -14,6 +16,8 @@ interface EventPortfolioState {
   detailedContract: ContractDetail | null
   contractLoading: boolean
   activeTab: PortfolioTab
+  documents: DocumentMetadata[]
+  auditActivities: AuditActivity[]
 }
 
 export function useEventPortfolio() {
@@ -27,14 +31,20 @@ export function useEventPortfolio() {
     expandedBookingId: null,
     detailedContract: null,
     contractLoading: false,
-    activeTab: 'overview'
+    activeTab: 'overview',
+    documents: [],
+    auditActivities: []
   })
 
   const loadPortfolio = useCallback(async (eventId: string) => {
     setState((s) => ({ ...s, loading: true, error: null, expandedBookingId: null, detailedContract: null }))
     try {
-      const portfolio = await eventService.getEventPortfolio(eventId)
-      setState((s) => ({ ...s, portfolio, loading: false }))
+      const [portfolio, documents, auditActivities] = await Promise.all([
+        eventService.getEventPortfolio(eventId),
+        documentService.listDocuments(eventId),
+        auditService.listActivities(`event:${eventId}`)
+      ])
+      setState((s) => ({ ...s, portfolio, documents, auditActivities, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
@@ -73,6 +83,12 @@ export function useEventPortfolio() {
       submittingRef.current = false
     }
   }, [])
+
+  const mockUploadDocument = useCallback(async (fileName: string) => {
+    const ownerId = state.portfolio?.event.id || 'system'
+    const document = await documentService.mockUpload(ownerId, fileName, 'Contract attachment')
+    setState((s) => ({ ...s, documents: [document, ...s.documents] }))
+  }, [state.portfolio?.event.id])
 
   const sendContract = useCallback(async (contractId: string) => {
     if (submittingRef.current) return
@@ -156,6 +172,7 @@ export function useEventPortfolio() {
     setActiveTab,
     expandBooking,
     createContract,
+    mockUploadDocument,
     sendContract,
     signContractAsOrganizer,
     signContractAsVendor,

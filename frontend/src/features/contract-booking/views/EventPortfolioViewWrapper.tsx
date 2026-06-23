@@ -1,11 +1,13 @@
 import { useEffect } from 'react'
 import { useEventPortfolio } from '../viewmodels/useEventPortfolio'
 import { EventPortfolioView } from './EventPortfolioView'
+import { useRealtimeSnapshot } from '../../../shared/hooks/useRealtimeSnapshot'
 
 export default function EventPortfolioViewWrapper() {
   const vm = useEventPortfolio()
   const params = new URLSearchParams(window.location.search)
   const eventId = params.get('eventId')
+  const realtime = useRealtimeSnapshot(`organizer:portfolio:${eventId || 'none'}`)
 
   useEffect(() => {
     if (eventId) vm.loadPortfolio(eventId)
@@ -26,13 +28,19 @@ export default function EventPortfolioViewWrapper() {
       vendors={vm.vendors}
       contracts={vm.contracts}
       activity={vm.activity}
+      documents={vm.documents}
+      auditActivities={vm.auditActivities}
+      realtimeSnapshot={realtime.snapshot}
+      realtimeRefreshing={realtime.refreshing}
       onLoadPortfolio={vm.loadPortfolio}
+      onRefreshRealtime={realtime.refresh}
       onSetActiveTab={vm.setActiveTab}
       onExpandBooking={vm.expandBooking}
       onCreateContract={vm.createContract}
       onSendContract={vm.sendContract}
       onSignOrganizer={vm.signContractAsOrganizer}
       onSignVendor={vm.signContractAsVendor}
+      onMockUploadDocument={vm.mockUploadDocument}
       onClearError={vm.clearError}
     />
   )
