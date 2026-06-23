@@ -7,7 +7,8 @@ import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
-import type { VendorSearchResult, EventRequirement } from '../../../services/eventService'
+import type { EventRequirement } from '../../../services/eventService'
+import type { VendorSearchResult, VendorService } from '../../../services/vendorService'
 import type { RequirementCategory, ProcurementStep } from '../models/vendor-procurement.model'
 import { REQUIREMENT_CATEGORIES } from '../models/vendor-procurement.model'
 
@@ -129,7 +130,7 @@ export function VendorProcurementView({
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Event Requirements</h2>
-            <Button onClick={() => setShowReqForm(true)} size="small">+ Add Requirement</Button>
+            <Button onClick={() => setShowReqForm(true)}>+ Add Requirement</Button>
           </div>
 
           {requirements.length === 0 ? (
@@ -213,7 +214,7 @@ export function VendorProcurementView({
                   </div>
                   <p className="text-sm text-gray-500 mb-2">{vendor.service_area}</p>
                   <div className="flex flex-wrap gap-2">
-                    {vendor.services?.map((svc) => (
+                    {vendor.services?.map((svc: VendorService) => (
                       <span key={svc.id} className="text-xs bg-gray-100 px-2 py-1 rounded">
                         {svc.service_name} (${svc.base_price})
                       </span>

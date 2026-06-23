@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 
+const LandingView = lazy(() => import('../features/landing/view/LandingView'))
 const LoginView = lazy(() => import('../features/auth/views/LoginViewWrapper'))
 const RegisterView = lazy(() => import('../features/auth/views/RegisterViewWrapper'))
 const OrganizerDashboardView = lazy(() => import('../features/organizer-dashboard/views/OrganizerDashboardViewWrapper'))
@@ -36,9 +37,14 @@ function RouteGuard({ role, requiredRole, children }: RouteGuardProps) {
   return <>{children}</>
 }
 
-export function AppRoutes({ userRole }: { userRole: string | null }) {
+export function AppRoutes({ userRole, loading }: { userRole: string | null; loading: boolean }) {
   return (
     <Routes>
+      <Route path="/" element={
+        <SuspenseWrapper>
+          <LandingView />
+        </SuspenseWrapper>
+      } />
       <Route path="/login" element={
         <SuspenseWrapper>
           {userRole ? <RoleRedirect role={userRole} /> : <LoginView />}
@@ -77,7 +83,9 @@ export function AppRoutes({ userRole }: { userRole: string | null }) {
           </RouteGuard>
         </SuspenseWrapper>
       } />
-      <Route path="*" element={<Navigate to={userRole ? (userRole === 'vendor' ? '/vendor' : '/organizer') : '/login'} replace />} />
+      <Route path="*" element={
+        loading ? <LoadingFallback /> : <Navigate to={userRole ? (userRole === 'vendor' ? '/vendor' : '/organizer') : '/login'} replace />
+      } />
     </Routes>
   )
 }
