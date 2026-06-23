@@ -1,16 +1,17 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ArrowRight, CalendarDays, FolderKanban, LayoutGrid, Sparkles, Users, Wallet, MapPin, Clock3, Activity, ShieldCheck } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
-import { Input } from '../../../shared/components/Input'
-import { Modal } from '../../../shared/components/Modal'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { SummaryCard } from '../../../shared/components/SummaryCard'
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
-import { ValidationSummary } from '../../../shared/components/ValidationSummary'
 import { DashboardCommandPanel } from '../../../shared/components/DashboardCommandPanel'
+import { PlaceholderMedia } from '../../../shared/components/PlaceholderMedia'
+import { EventSetupBuilder } from '../components/EventSetupBuilder'
+import type { EventSetupPayload } from '../models/event-setup-builder.model'
 import type { LargeEvent, DashboardSummary } from '../../../services/eventService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
 
@@ -24,7 +25,7 @@ interface OrganizerDashboardViewProps {
   realtimeRefreshing: boolean
   onLoadEvents: () => Promise<void>
   onRefreshRealtime: () => Promise<void>
-  onCreateEvent: (payload: { title: string; eventDate: string; venue: string; budget: number; expectedGuests: number }) => Promise<void>
+  onCreateEvent: (payload: EventSetupPayload) => Promise<void>
   onSelectEvent: (eventId: string) => void
   onNavigateToPortfolio?: (eventId: string) => void
 }
@@ -34,7 +35,11 @@ interface ActionCard {
   description: string
   label: string
   to: string
-  priority: 'high' | 'medium' | 'low'
+  tone: 'brand' | 'emerald' | 'slate'
+}
+
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 export function OrganizerDashboardView({
@@ -52,284 +57,370 @@ export function OrganizerDashboardView({
   onNavigateToPortfolio
 }: OrganizerDashboardViewProps) {
   const navigate = useNavigate()
-  const [showCreate, setShowCreate] = useState(false)
-  const [title, setTitle] = useState('')
-  const [eventDate, setEventDate] = useState('')
-  const [venue, setVenue] = useState('')
-  const [budget, setBudget] = useState('')
-  const [guests, setGuests] = useState('')
-  const [formErrors, setFormErrors] = useState<string[]>([])
 
-  useEffect(() => { onLoadEvents() }, [])
+  useEffect(() => {
+    void onLoadEvents()
+  }, [onLoadEvents])
 
-  const actions = useMemo((): ActionCard[] => {
-    const result: ActionCard[] = []
-    if (!summary?.eventStatusSummary) return result
+  const eventStatusSummary = summary?.eventStatusSummary
+  const requirementSummary = summary?.requirementSummary
+  const bookingSummary = summary?.bookingSummary
+  const actionCards = useMemo((): ActionCard[] => {
+    const cards: ActionCard[] = []
+    const totalEvents = eventStatusSummary?.total ?? events.length
+    const openReqs = requirementSummary?.open ?? 0
+    const pendingBookings = bookingSummary?.pending ?? 0
+    const contractSent = bookingSummary?.contractSent ?? 0
 
-    const draftEvents = summary.eventStatusSummary.draft ?? 0
-    const openReqs = summary.requirementSummary?.open ?? 0
-    const pendingBookings = summary.bookingSummary?.pending ?? 0
-    const changesRequested = summary.bookingSummary?.changesRequested ?? 0
-    const contractSent = summary.bookingSummary?.contractSent ?? 0
-
-    if (events.length === 0) {
-      result.push({
-        title: 'Create your first event',
-        description: 'Start by creating a Large Event to begin vendor procurement.',
-        label: 'Create Event',
-        to: '#create',
-        priority: 'high',
-      })
-    }
-
-    if (draftEvents > 0) {
-      result.push({
-        title: `${draftEvents} event${draftEvents > 1 ? 's' : ''} in draft`,
-        description: 'Complete the event details to move forward with planning.',
-        label: 'View Drafts',
-        to: '#',
-        priority: 'medium',
+    if (totalEvents === 0) {
+      cards.push({
+        title: 'Create a new event plan',
+        description: 'Start with a guided setup and push requirements into vendor procurement.',
+        label: 'Open Builder',
+        to: '#builder',
+        tone: 'brand'
       })
     }
 
     if (openReqs > 0) {
-      result.push({
-        title: `Post requirements for ${openReqs} open slot${openReqs > 1 ? 's' : ''}`,
-        description: 'Add event requirements and find vendors to fulfill them.',
+      cards.push({
+        title: `${openReqs} open requirements`,
+        description: 'Match the open service slots to the right vendors.',
         label: 'Find Vendors',
         to: '/organizer/procurement',
-        priority: 'high',
+        tone: 'emerald'
       })
     }
 
     if (pendingBookings > 0) {
-      result.push({
-        title: `${pendingBookings} vendor response${pendingBookings > 1 ? 's' : ''} to review`,
-        description: 'Review pending vendor bookings and accept or negotiate.',
-        label: 'Review Bookings',
+      cards.push({
+        title: `${pendingBookings} booking response${pendingBookings > 1 ? 's' : ''}`,
+        description: 'Review vendor replies and move the strongest matches forward.',
+        label: 'Review Requests',
         to: '/organizer/portfolio',
-        priority: 'high',
-      })
-    }
-
-    if (changesRequested > 0) {
-      result.push({
-        title: `${changesRequested} booking${changesRequested > 1 ? 's' : ''} need attention`,
-        description: 'Vendors have requested changes to their bookings.',
-        label: 'Review Changes',
-        to: '/organizer/portfolio',
-        priority: 'high',
+        tone: 'brand'
       })
     }
 
     if (contractSent > 0) {
-      result.push({
-        title: `${contractSent} contract${contractSent > 1 ? 's' : ''} waiting for signature`,
-        description: 'Review and sign pending contracts.',
-        label: 'Sign Contracts',
+      cards.push({
+        title: `${contractSent} contract${contractSent > 1 ? 's' : ''} pending`,
+        description: 'Track signatures and finalize procurement with confidence.',
+        label: 'Open Portfolio',
         to: '/organizer/portfolio',
-        priority: 'high',
+        tone: 'slate'
       })
     }
 
-    if (summary.upcomingEvents?.length > 0) {
-      const next = summary.upcomingEvents[0]
-      result.push({
-        title: `Upcoming: ${next.title}`,
-        description: `Scheduled for ${new Date(next.eventDate).toLocaleDateString()}. Check portfolio for progress.`,
-        label: 'View Portfolio',
-        to: `/organizer/portfolio?eventId=${next.id}`,
-        priority: 'medium',
-      })
-    }
+    return cards.slice(0, 3)
+  }, [events.length, eventStatusSummary?.total, requirementSummary?.open, bookingSummary?.pending, bookingSummary?.contractSent])
 
-    return result
-  }, [summary, events.length])
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const parsedBudget = parseFloat(budget)
-    const parsedGuests = parseInt(guests, 10)
-    const nextErrors = [
-      !title.trim() ? 'Event title is required.' : '',
-      !eventDate ? 'Event date is required.' : '',
-      eventDate && new Date(eventDate).getTime() < new Date(new Date().toDateString()).getTime() ? 'Event date cannot be in the past.' : '',
-      !venue.trim() ? 'Venue is required.' : '',
-      !Number.isFinite(parsedBudget) || parsedBudget <= 0 ? 'Budget must be greater than 0.' : '',
-      !Number.isFinite(parsedGuests) || parsedGuests < 500 ? 'Large Event guest count must be at least 500.' : ''
-    ].filter(Boolean)
-    setFormErrors(nextErrors)
-    if (nextErrors.length > 0 || submitting) return
-    await onCreateEvent({
-      title,
-      eventDate,
-      venue,
-      budget: parsedBudget,
-      expectedGuests: parsedGuests
-    })
-    setShowCreate(false)
-    setTitle('')
-    setEventDate('')
-    setVenue('')
-    setBudget('')
-    setGuests('')
-    setFormErrors([])
-  }
+  const recentActivity = summary?.recentActivity ?? []
+  const upcomingEvent = summary?.upcomingEvents?.[0] ?? events[0]
+  const upcomingEventDate = upcomingEvent
+    ? ('eventDate' in upcomingEvent ? upcomingEvent.eventDate : upcomingEvent.event_date)
+    : ''
 
   return (
     <DashboardShell>
-      <PageHeader
-        title="My Events"
-        subtitle="Create or select a Large Event to start vendor procurement"
-        action={
-          <Button onClick={() => setShowCreate(true)}>+ New Event</Button>
-        }
-      />
-      <div className="mb-4">
-        <RealtimeIndicator snapshot={realtimeSnapshot} refreshing={realtimeRefreshing || loading} onRefresh={() => { void onRefreshRealtime(); void onLoadEvents() }} />
-      </div>
-
-      <DashboardCommandPanel
-        meta="Organizer workspace"
-        title="Plan the next procurement move"
-        description="Create a Large Event, open procurement, or review portfolio progress from one event-first dashboard."
-        action={
-          <>
-            <Button onClick={() => setShowCreate(true)}>New Event</Button>
-            {events[0] && <Button variant="secondary" onClick={() => navigate(`/organizer/procurement?eventId=${events[0].id}`)}>Continue Procurement</Button>}
-          </>
-        }
-        secondary={
-          <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
-            <div><span className="font-semibold text-slate-900">{summary?.requirementSummary?.open ?? 0}</span> open requirements</div>
-            <div><span className="font-semibold text-slate-900">{summary?.bookingSummary?.pending ?? 0}</span> pending bookings</div>
-            <div><span className="font-semibold text-slate-900">{summary?.bookingSummary?.contractSent ?? 0}</span> contracts to review</div>
-          </div>
-        }
-      />
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
-      )}
-
-      {summary?.eventStatusSummary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <SummaryCard
-            label="Total Events"
-            value={summary.eventStatusSummary.total ?? 0}
-            sub={`${summary.eventStatusSummary.booking ?? 0} booking · ${summary.eventStatusSummary.confirmed ?? 0} confirmed`}
-          />
-          <SummaryCard
-            label="Requirements"
-            value={summary.requirementSummary?.total ?? 0}
-            color="text-blue-600"
-            sub={`${summary.requirementSummary?.open ?? 0} open · ${summary.requirementSummary?.fulfilled ?? 0} fulfilled`}
-          />
-          <SummaryCard
-            label="Bookings"
-            value={summary.bookingSummary?.total ?? 0}
-            color="text-indigo-600"
-            sub={`${summary.bookingSummary?.pending ?? 0} pending · ${summary.bookingSummary?.completed ?? 0} completed`}
-          />
-          <SummaryCard
-            label="Upcoming Events"
-            value={summary.upcomingEvents?.length ?? 0}
-            sub={(summary.upcomingEvents ?? []).slice(0, 2).map((e: { title: string }) => e.title).join(', ') || 'No upcoming events'}
-          />
-        </div>
-      )}
-
-      {actions.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Suggested Actions</h3>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {actions.map((action, i) => (
-              <div
-                key={i}
-                className={`rounded-xl border p-4 transition-all hover:shadow-md cursor-pointer ${
-                  action.priority === 'high'
-                    ? 'bg-brand-50 border-brand-200 hover:border-brand-300'
-                    : 'bg-white border-gray-200 hover:border-gray-300'
-                }`}
-                onClick={() => {
-                  if (action.to === '#create') setShowCreate(true)
-                  else navigate(action.to)
-                }}
-              >
-                <div className="flex items-start justify-between mb-1">
-                  <h4 className="font-medium text-gray-900 text-sm">{action.title}</h4>
-                  {action.priority === 'high' && (
-                    <span className="text-xs bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded font-medium">NOW</span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mb-2">{action.description}</p>
-                <span className="text-xs text-brand-600 font-medium">{action.label} &rarr;</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 bg-gray-100 rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : events.length === 0 ? (
-        <EmptyState
-          title="No events yet"
-          description="Create your first Large Event to begin vendor procurement"
-          action={<Button onClick={() => setShowCreate(true)}>Create Event</Button>}
+      <div className="space-y-6">
+        <PageHeader
+          title="Organizer Dashboard"
+          subtitle="Create events, manage vendor procurement, and track event progress from one workspace."
+          action={
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => navigate('/organizer/procurement')}>
+                Find vendors
+              </Button>
+              <Button onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                Build event
+              </Button>
+            </div>
+          }
         />
-      ) : (
-        <>
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">All Events</h3>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {events.map((event) => (
-              <div
-                key={event.id}
-                className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-brand-300 transition-all"
+
+        <RealtimeIndicator
+          snapshot={realtimeSnapshot}
+          refreshing={realtimeRefreshing || loading}
+          onRefresh={() => {
+            void onRefreshRealtime()
+            void onLoadEvents()
+          }}
+        />
+
+        {error && (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        )}
+
+        <section id="builder" className="scroll-mt-24">
+          <DashboardCommandPanel
+            meta="Event setup"
+            title="Create a guided event plan"
+            description="Select the event type, define the setup, choose services, and send the plan into procurement."
+            action={
+              <Button variant="secondary" onClick={() => navigate('/organizer/procurement')}>
+                Continue to procurement
+              </Button>
+            }
+            secondary={
+              <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Current events</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-950">{eventStatusSummary?.total ?? events.length}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Open requirements</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-950">{requirementSummary?.open ?? 0}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Pending bookings</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-950">{bookingSummary?.pending ?? 0}</p>
+                </div>
+              </div>
+            }
+          />
+
+          <EventSetupBuilder existingEventCount={events.length} onSubmit={onCreateEvent} submitting={submitting} />
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <SummaryCard label="Total events" value={eventStatusSummary?.total ?? events.length} color="text-slate-950" sub="All active event plans" />
+          <SummaryCard label="Open requirements" value={requirementSummary?.open ?? 0} color="text-emerald-700" sub="Services waiting for vendor matching" />
+          <SummaryCard label="Pending bookings" value={bookingSummary?.pending ?? 0} color="text-indigo-700" sub="Responses from vendors" />
+          <SummaryCard label="Upcoming events" value={summary?.upcomingEvents?.length ?? 0} color="text-amber-700" sub={upcomingEvent ? upcomingEvent.title : 'Nothing on the calendar yet'} />
+        </section>
+
+        {actionCards.length > 0 && (
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {actionCards.map((card) => (
+              <button
+                key={card.title}
+                type="button"
+                onClick={() => {
+                  if (card.to === '#builder') {
+                    document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    return
+                  }
+                  navigate(card.to)
+                }}
+                className={`group rounded-[24px] border p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
+                  card.tone === 'brand'
+                    ? 'border-brand-200 bg-brand-50'
+                    : card.tone === 'emerald'
+                      ? 'border-emerald-200 bg-emerald-50'
+                      : 'border-slate-200 bg-white'
+                }`}
               >
-                <button onClick={() => onSelectEvent(event.id)} className="w-full text-left">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-gray-900">{event.title}</h3>
-                    <StatusBadge status={event.status} size="sm" />
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Action</p>
+                    <h3 className="mt-2 text-lg font-semibold text-slate-950">{card.title}</h3>
+                    <p className="mt-2 text-sm text-slate-600">{card.description}</p>
                   </div>
-                  <div className="space-y-1 text-sm text-gray-500">
-                    <p>{new Date(event.event_date).toLocaleDateString()}</p>
-                    <p>{event.venue}</p>
-                    <p>Budget: ${Number(event.budget).toLocaleString()}</p>
-                    <p>{event.expected_guests} guests</p>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm">{card.label}</span>
+                </div>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-slate-900">
+                  Open workspace
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </button>
+            ))}
+          </section>
+        )}
+
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_360px]">
+          <section className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">Your events</h2>
+                <p className="text-sm text-slate-500">Select an event to continue procurement or review its portfolio.</p>
+              </div>
+              {events.length > 0 && (
+                <Button variant="ghost" onClick={() => navigate('/organizer/portfolio')}>
+                  Portfolio
+                </Button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="h-64 animate-pulse rounded-[24px] border border-slate-200 bg-slate-100" />
+                ))}
+              </div>
+            ) : events.length === 0 ? (
+              <EmptyState
+                title="No events yet"
+                description="Use the guided builder above to create your first event and start vendor procurement."
+                action={<Button onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Start planning</Button>}
+              />
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {events.map((event) => (
+                  <article
+                    key={event.id}
+                    className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
+                  >
+                    <PlaceholderMedia
+                      title={event.title}
+                      subtitle={`${event.venue} · ${formatDate(event.event_date)}`}
+                      tone={event.status === 'confirmed' ? 'emerald' : event.status === 'planning' ? 'indigo' : 'slate'}
+                      icon={<CalendarDays className="h-5 w-5" />}
+                    />
+                    <div className="space-y-4 p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-950">{event.title}</h3>
+                          <p className="mt-1 text-sm text-slate-500">{event.venue}</p>
+                        </div>
+                        <StatusBadge status={event.status} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm text-slate-600">
+                        <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Date</p>
+                          <p className="mt-1 font-medium text-slate-900">{formatDate(event.event_date)}</p>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Budget</p>
+                          <p className="mt-1 font-medium text-slate-900">${Number(event.budget).toLocaleString()}</p>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Guests</p>
+                          <p className="mt-1 font-medium text-slate-900">{event.expected_guests}</p>
+                        </div>
+                        <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">State</p>
+                          <p className="mt-1 font-medium text-slate-900 capitalize">{event.status}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          onClick={() => onSelectEvent(event.id)}
+                          className="flex-1"
+                        >
+                          Continue procurement
+                        </Button>
+                        {onNavigateToPortfolio && (
+                          <Button
+                            variant="secondary"
+                            onClick={() => onNavigateToPortfolio(event.id)}
+                          >
+                            Portfolio
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <aside className="space-y-4">
+            <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-slate-950 p-2 text-white">
+                  <Activity className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-slate-950">Recent activity</h3>
+                  <p className="text-sm text-slate-500">Status movement across the event pipeline.</p>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {recentActivity.length > 0 ? recentActivity.slice(0, 5).map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-slate-950">{item.previous_status ?? 'Created'} → {item.new_status}</p>
+                      <StatusBadge status={item.new_status} size="sm" />
+                    </div>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {item.reason || 'No additional notes were provided.'}
+                    </p>
+                    <p className="mt-2 text-xs font-medium text-slate-400">
+                      {new Date(item.created_at).toLocaleString()}
+                    </p>
                   </div>
-                </button>
-                {onNavigateToPortfolio && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onNavigateToPortfolio(event.id) }}
-                      className="text-sm text-brand-600 hover:text-brand-700 font-medium"
-                    >
-                      View Portfolio &rarr;
-                    </button>
-                  </div>
+                )) : (
+                  <EmptyState
+                    title="No recent activity"
+                    description="Activity will show up after event creation, requirement updates, and vendor responses."
+                  />
                 )}
               </div>
-            ))}
-          </div>
-        </>
-      )}
+            </section>
 
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create Large Event">
-        <form onSubmit={handleCreate} className="space-y-4">
-          <ValidationSummary errors={formErrors} />
-          <Input label="Event Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-          <Input label="Event Date" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} required />
-          <Input label="Venue" value={venue} onChange={(e) => setVenue(e.target.value)} required />
-          <Input label="Budget ($)" type="number" min="0" step="0.01" value={budget} onChange={(e) => setBudget(e.target.value)} required />
-          <Input label="Expected Guests" type="number" min="1" value={guests} onChange={(e) => setGuests(e.target.value)} required />
-          <Button type="submit" loading={submitting} fullWidth>Create Event</Button>
-        </form>
-      </Modal>
+            <section className="rounded-[24px] border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Next up</p>
+                  <h3 className="mt-2 text-2xl font-semibold">{upcomingEvent ? upcomingEvent.title : 'No upcoming event'}</h3>
+                  <p className="mt-2 text-sm text-slate-300">
+                    {upcomingEvent ? `Scheduled for ${formatDate(upcomingEventDate)}` : 'Create an event to see the next milestone.'}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white/10 p-3">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+              </div>
+              <div className="mt-5 space-y-3">
+                <div className="flex items-center gap-2 text-sm text-slate-300">
+                  <MapPin className="h-4 w-4" />
+                  <span>{upcomingEvent && 'venue' in upcomingEvent ? upcomingEvent.venue : upcomingEvent?.title ? 'Venue will appear after creation' : 'Venue pending'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-300">
+                  <Users className="h-4 w-4" />
+                  <span>{upcomingEvent && 'expected_guests' in upcomingEvent ? `${upcomingEvent.expected_guests} guests` : `${eventStatusSummary?.total ?? 0} events in pipeline`}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-300">
+                  <Wallet className="h-4 w-4" />
+                  <span>{upcomingEvent && 'budget' in upcomingEvent ? `$${Number(upcomingEvent.budget).toLocaleString()} budget` : 'Budget snapshot from builder'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-300">
+                  <Clock3 className="h-4 w-4" />
+                  <span>{realtimeSnapshot ? 'Realtime updates are active' : 'Realtime updates are ready'}</span>
+                </div>
+              </div>
+              <div className="mt-6">
+                <Button className="w-full" variant="secondary" onClick={() => navigate('/organizer/procurement')}>
+                  Review matching vendors
+                </Button>
+              </div>
+            </section>
+          </aside>
+        </div>
+
+        <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">Planning overview</h2>
+                <p className="text-sm text-slate-500">Keep the organizer workflow visible from creation to procurement.</p>
+              </div>
+              <FolderKanban className="h-5 w-5 text-slate-400" />
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Event flow</p>
+                <p className="mt-2 text-sm text-slate-600">Create event, select services, send requests, compare vendors, and confirm contracts.</p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Procurement</p>
+                <p className="mt-2 text-sm text-slate-600">Each selected service is converted into a vendor requirement to move the search forward.</p>
+              </div>
+            </div>
+          </div>
+          <PlaceholderMedia
+            title="Organizer workspace"
+            subtitle="Event cards, services, and planning milestones stay visually consistent across the dashboard."
+            tone="indigo"
+            icon={<LayoutGrid className="h-5 w-5" />}
+          />
+        </section>
+      </div>
     </DashboardShell>
   )
 }

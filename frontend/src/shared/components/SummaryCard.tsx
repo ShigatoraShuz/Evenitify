@@ -18,12 +18,12 @@ export function SummaryCard({ label, value, color = 'text-slate-900', sub }: Sum
   else if (color.includes('text-cyan-')) borderAccent = 'border-l-cyan-500'
 
   return (
-    <div className={`bg-white rounded-2xl border-y border-r border-slate-200/80 border-l-4 ${borderAccent} p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 shadow-sm flex flex-col justify-between min-h-[100px]`}>
+    <div className={`rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 ${borderAccent}`}>
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-        <p className={`text-2xl md:text-3xl font-bold tracking-tight ${color} mt-1.5`}>{value}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">{label}</p>
+        <p className={`mt-2 text-3xl font-semibold tracking-tight ${color}`}>{value}</p>
       </div>
-      {sub && <p className="text-xs text-slate-400 font-medium mt-2 pt-2 border-t border-slate-50 border-t-slate-100/60">{sub}</p>}
+      {sub && <p className="mt-3 border-t border-slate-100 pt-3 text-xs font-medium text-slate-500">{sub}</p>}
     </div>
   )
 }

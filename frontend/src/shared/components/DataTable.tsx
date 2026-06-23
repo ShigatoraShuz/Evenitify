@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Input } from './Input'
 import { Select } from './Select'
 import { Button } from './Button'
@@ -47,10 +47,6 @@ export function DataTable<T>({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [page, setPage] = useState(0)
 
-  const handleSearch = () => {
-    onSearch?.(searchTerm)
-  }
-
   const sorted = useMemo(() => {
     if (!sortKey) return data
     return [...data].sort((a, b) => {
@@ -66,18 +62,22 @@ export function DataTable<T>({
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortKey(key)
-      setSortDir('asc')
+      setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'))
+      return
     }
+    setSortKey(key)
+    setSortDir('asc')
+  }
+
+  const handleSearch = () => {
+    onSearch?.(searchTerm)
   }
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+      <div className="space-y-3 rounded-[24px] border border-slate-200 bg-white p-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-12 animate-pulse rounded-2xl bg-slate-100" />
         ))}
       </div>
     )
@@ -86,7 +86,7 @@ export function DataTable<T>({
   return (
     <div>
       {(searchable || filterOptions) && (
-        <div className="flex gap-3 mb-4">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row">
           {searchable && (
             <Input
               placeholder={searchPlaceholder}
@@ -100,7 +100,7 @@ export function DataTable<T>({
               value={filterValue}
               onChange={(e) => onFilterChange(e.target.value)}
               options={filterOptions}
-              className="w-40"
+              className="w-full lg:w-48"
             />
           )}
           {searchable && <Button onClick={handleSearch}>Search</Button>}
@@ -110,15 +110,15 @@ export function DataTable<T>({
       {paginated.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDescription} />
       ) : (
-        <div className="bg-white rounded-xl border overflow-x-auto" role="table">
+        <div className="overflow-x-auto rounded-[24px] border border-slate-200 bg-white" role="table">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+            <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
                 {columns.map((col) => (
                   <th
                     key={col.key}
                     scope="col"
-                    className={`text-left px-4 py-3 font-medium text-gray-600 ${col.sortable ? 'cursor-pointer hover:text-gray-900 select-none' : ''}`}
+                    className={`px-4 py-3 text-left font-semibold text-slate-500 ${col.sortable ? 'cursor-pointer select-none hover:text-slate-900' : ''}`}
                     aria-sort={col.sortable && sortKey === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
                     onClick={() => col.sortable && handleSort(col.key)}
                   >
@@ -132,11 +132,11 @@ export function DataTable<T>({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-slate-100">
               {paginated.map((row) => (
-                <tr key={keyExtractor(row)} className="hover:bg-gray-50">
+                <tr key={keyExtractor(row)} className="transition-colors hover:bg-slate-50">
                   {columns.map((col) => (
-                    <td key={col.key} className="px-4 py-3">
+                    <td key={col.key} className="px-4 py-3 align-top">
                       {col.render(row)}
                     </td>
                   ))}
@@ -148,11 +148,11 @@ export function DataTable<T>({
       )}
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, sorted.length)} of {sorted.length}</span>
+        <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
+          <span>Showing {page * pageSize + 1} - {Math.min((page + 1) * pageSize, sorted.length)} of {sorted.length}</span>
           <div className="flex gap-2">
-            <Button variant="secondary" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-            <Button variant="secondary" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>Next</Button>
+            <Button variant="secondary" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>Prev</Button>
+            <Button variant="secondary" disabled={page >= totalPages - 1} onClick={() => setPage((current) => current + 1)}>Next</Button>
           </div>
         </div>
       )}

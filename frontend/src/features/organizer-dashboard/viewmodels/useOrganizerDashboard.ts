@@ -1,7 +1,9 @@
 import { useState, useCallback, useRef } from 'react'
 import { eventService, type LargeEvent, type EventPortfolio, type DashboardSummary } from '../../../services/eventService'
+import { vendorService } from '../../../services/vendorService'
 import type { EventStatus } from '../models/organizer-dashboard.model'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
+import type { EventSetupPayload } from '../models/event-setup-builder.model'
 
 interface OrganizerDashboardState {
   events: LargeEvent[]
@@ -53,18 +55,35 @@ export function useOrganizerDashboard() {
 
   const submittingRef = useRef(false)
 
-  const createEvent = useCallback(async (payload: {
-    title: string
-    eventDate: string
-    venue: string
-    budget: number
-    expectedGuests: number
-  }) => {
+  const createEvent = useCallback(async (payload: EventSetupPayload) => {
     if (submittingRef.current) return
     submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
-      await eventService.createEvent(payload)
+      const createdEvent = await eventService.createEvent({
+        title: payload.title,
+        eventDate: payload.eventDate,
+        venue: payload.venue,
+        budget: payload.budget,
+        expectedGuests: payload.guests
+      })
+
+      await Promise.all(
+        payload.selectedServices.map((service) =>
+          vendorService.createRequirement(createdEvent.id, {
+            category: service,
+            quantity: 1,
+            notes: [
+              payload.description,
+              `Theme: ${payload.theme}`,
+              `Mood: ${payload.mood}`,
+              payload.specialRequirements,
+              payload.vendorNotes
+            ].filter(Boolean).join(' · ')
+          })
+        )
+      )
+
       await loadEvents()
       setState((s) => ({ ...s, submitting: false }))
     } catch (err) {
