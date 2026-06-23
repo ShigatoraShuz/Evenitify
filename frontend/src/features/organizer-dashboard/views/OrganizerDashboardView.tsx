@@ -53,13 +53,13 @@ export function OrganizerDashboardView({
 
   const actions = useMemo((): ActionCard[] => {
     const result: ActionCard[] = []
-    if (!summary) return result
+    if (!summary?.eventStatusSummary) return result
 
-    const draftEvents = summary.eventStatusSummary.draft
-    const openReqs = summary.requirementSummary.open
-    const pendingBookings = summary.bookingSummary.pending
-    const changesRequested = summary.bookingSummary.changesRequested
-    const contractSent = summary.bookingSummary.contractSent
+    const draftEvents = summary.eventStatusSummary.draft ?? 0
+    const openReqs = summary.requirementSummary?.open ?? 0
+    const pendingBookings = summary.bookingSummary?.pending ?? 0
+    const changesRequested = summary.bookingSummary?.changesRequested ?? 0
+    const contractSent = summary.bookingSummary?.contractSent ?? 0
 
     if (events.length === 0) {
       result.push({
@@ -121,7 +121,7 @@ export function OrganizerDashboardView({
       })
     }
 
-    if (summary.upcomingEvents.length > 0) {
+    if (summary.upcomingEvents?.length > 0) {
       const next = summary.upcomingEvents[0]
       result.push({
         title: `Upcoming: ${next.title}`,
@@ -166,29 +166,29 @@ export function OrganizerDashboardView({
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
       )}
 
-      {summary && (
+      {summary?.eventStatusSummary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <SummaryCard
             label="Total Events"
-            value={summary.eventStatusSummary.total}
-            sub={`${summary.eventStatusSummary.booking} booking · ${summary.eventStatusSummary.confirmed} confirmed`}
+            value={summary.eventStatusSummary.total ?? 0}
+            sub={`${summary.eventStatusSummary.booking ?? 0} booking · ${summary.eventStatusSummary.confirmed ?? 0} confirmed`}
           />
           <SummaryCard
             label="Requirements"
-            value={summary.requirementSummary.total}
+            value={summary.requirementSummary?.total ?? 0}
             color="text-blue-600"
-            sub={`${summary.requirementSummary.open} open · ${summary.requirementSummary.fulfilled} fulfilled`}
+            sub={`${summary.requirementSummary?.open ?? 0} open · ${summary.requirementSummary?.fulfilled ?? 0} fulfilled`}
           />
           <SummaryCard
             label="Bookings"
-            value={summary.bookingSummary.total}
+            value={summary.bookingSummary?.total ?? 0}
             color="text-indigo-600"
-            sub={`${summary.bookingSummary.pending} pending · ${summary.bookingSummary.completed} completed`}
+            sub={`${summary.bookingSummary?.pending ?? 0} pending · ${summary.bookingSummary?.completed ?? 0} completed`}
           />
           <SummaryCard
             label="Upcoming Events"
-            value={summary.upcomingEvents.length}
-            sub={summary.upcomingEvents.slice(0, 2).map((e) => e.title).join(', ') || 'No upcoming events'}
+            value={summary.upcomingEvents?.length ?? 0}
+            sub={(summary.upcomingEvents ?? []).slice(0, 2).map((e: { title: string }) => e.title).join(', ') || 'No upcoming events'}
           />
         </div>
       )}
