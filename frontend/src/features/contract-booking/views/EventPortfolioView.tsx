@@ -11,6 +11,7 @@ import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { AttachmentList, DocumentPreviewModal, UploadDocumentDropzone } from '../../../shared/components/DocumentComponents'
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { EventCalendarPreview, EventTimelineBoard, TimelineMilestoneCard } from '../../../shared/components/EventPlanningComponents'
+import { BudgetBreakdownChart, BudgetOverviewCard, BudgetWarningBanner } from '../../../shared/components/BudgetComponents'
 import { ContractTimeline, buildContractTimeline } from '../components/ContractTimeline'
 import type { BookingWithDetails, EventPortfolio, EventRequirement } from '../../../services/eventService'
 import type { ContractDetail } from '../../../services/contractService'
@@ -18,6 +19,7 @@ import type { AuditActivity } from '../../../services/auditService'
 import type { DocumentMetadata } from '../../../services/documentService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
 import type { EventPlanningTimeline } from '../../../services/planningService'
+import type { BudgetSummary } from '../../../services/budgetService'
 import type { PortfolioTab } from '../viewmodels/useEventPortfolio'
 
 interface VendorInfo {
@@ -64,6 +66,7 @@ interface EventPortfolioViewProps {
   documents: DocumentMetadata[]
   auditActivities: AuditActivity[]
   planningTimeline: EventPlanningTimeline | null
+  budgetSummary: BudgetSummary | null
   realtimeSnapshot: RealtimeSnapshot | null
   realtimeRefreshing: boolean
   onLoadPortfolio: (eventId: string) => Promise<void>
@@ -81,6 +84,7 @@ interface EventPortfolioViewProps {
 const TABS: { key: PortfolioTab; label: string }[] = [
   { key: 'overview', label: 'Overview' },
   { key: 'timeline', label: 'Timeline' },
+  { key: 'budget', label: 'Budget' },
   { key: 'requirements', label: 'Requirements' },
   { key: 'vendors', label: 'Vendors' },
   { key: 'bookings', label: 'Bookings' },
@@ -106,6 +110,7 @@ export function EventPortfolioView({
   documents,
   auditActivities,
   planningTimeline,
+  budgetSummary,
   realtimeSnapshot,
   realtimeRefreshing,
   onLoadPortfolio,
@@ -290,6 +295,20 @@ export function EventPortfolioView({
           )}
           <EventCalendarPreview days={planningTimeline?.calendarDays || []} />
           <EventTimelineBoard milestones={planningTimeline?.milestones || []} />
+        </div>
+      )}
+
+      {activeTab === 'budget' && (
+        <div className="space-y-4">
+          {budgetSummary ? (
+            <>
+              <BudgetWarningBanner summary={budgetSummary} />
+              <BudgetOverviewCard summary={budgetSummary} />
+              <BudgetBreakdownChart categories={budgetSummary.categoryBreakdown} />
+            </>
+          ) : (
+            <EmptyState title="Budget center unavailable" description="Budget details will appear after the event portfolio loads." />
+          )}
         </div>
       )}
 

@@ -5,9 +5,10 @@ import { contractService, type ContractDetail } from '../../../services/contract
 import { auditService, type AuditActivity } from '../../../services/auditService'
 import { documentService, type DocumentMetadata } from '../../../services/documentService'
 import { planningService, type EventPlanningTimeline } from '../../../services/planningService'
+import { budgetService, type BudgetSummary } from '../../../services/budgetService'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
-export type PortfolioTab = 'overview' | 'timeline' | 'requirements' | 'vendors' | 'bookings' | 'contracts' | 'documents' | 'activity'
+export type PortfolioTab = 'overview' | 'timeline' | 'budget' | 'requirements' | 'vendors' | 'bookings' | 'contracts' | 'documents' | 'activity'
 
 interface EventPortfolioState {
   portfolio: EventPortfolio | null
@@ -21,6 +22,7 @@ interface EventPortfolioState {
   documents: DocumentMetadata[]
   auditActivities: AuditActivity[]
   planningTimeline: EventPlanningTimeline | null
+  budgetSummary: BudgetSummary | null
 }
 
 export function useEventPortfolio() {
@@ -37,19 +39,21 @@ export function useEventPortfolio() {
     activeTab: 'overview',
     documents: [],
     auditActivities: [],
-    planningTimeline: null
+    planningTimeline: null,
+    budgetSummary: null
   })
 
   const loadPortfolio = useCallback(async (eventId: string) => {
     setState((s) => ({ ...s, loading: true, error: null, expandedBookingId: null, detailedContract: null }))
     try {
       const portfolio = await eventService.getEventPortfolio(eventId)
-      const [documents, auditActivities, planningTimeline] = await Promise.all([
+      const [documents, auditActivities, planningTimeline, budgetSummary] = await Promise.all([
         documentService.listDocuments(eventId),
         auditService.listActivities(`event:${eventId}`),
-        planningService.getEventPlanningTimeline(portfolio)
+        planningService.getEventPlanningTimeline(portfolio),
+        budgetService.getBudgetSummary(portfolio)
       ])
-      setState((s) => ({ ...s, portfolio, documents, auditActivities, planningTimeline, loading: false }))
+      setState((s) => ({ ...s, portfolio, documents, auditActivities, planningTimeline, budgetSummary, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
