@@ -28,4 +28,61 @@ const eventBookingsSchema = z.object({
   query: z.object({}).optional()
 });
 
-module.exports = { createBookingSchema, bookingIdSchema, eventBookingsSchema };
+// Contract schemas
+const createContractSchema = z.object({
+  body: z.object({
+    termsSummary: z.string().max(2000).optional().nullable()
+  }),
+  params: z.object({
+    bookingId: z.string().uuid('Invalid booking ID')
+  }),
+  query: z.object({}).optional()
+});
+
+const contractBookingIdSchema = z.object({
+  body: z.object({}).optional(),
+  params: z.object({
+    bookingId: z.string().uuid('Invalid booking ID')
+  }),
+  query: z.object({}).optional()
+});
+
+const contractIdSchema = z.object({
+  body: z.object({}).optional(),
+  params: z.object({
+    contractId: z.string().uuid('Invalid contract ID')
+  }),
+  query: z.object({}).optional()
+});
+
+const contractStatusSchema = z.object({
+  body: z.object({
+    status: z.enum(['sent', 'active', 'completed', 'cancelled'], 'Invalid contract status'),
+    reason: z.string().max(500).optional().nullable()
+  }),
+  params: z.object({
+    contractId: z.string().uuid('Invalid contract ID')
+  }),
+  query: z.object({}).optional()
+});
+
+const contractSignSchema = z.object({
+  body: z.object({
+    termsAccepted: z.boolean().refine((val) => val === true, 'You must accept the terms to sign')
+  }),
+  params: z.object({
+    contractId: z.string().uuid('Invalid contract ID')
+  }),
+  query: z.object({}).optional()
+});
+
+module.exports = {
+  createBookingSchema,
+  bookingIdSchema,
+  eventBookingsSchema,
+  createContractSchema,
+  contractBookingIdSchema,
+  contractIdSchema,
+  contractStatusSchema,
+  contractSignSchema
+};

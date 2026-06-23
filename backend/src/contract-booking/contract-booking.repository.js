@@ -77,4 +77,144 @@ async function findVendorById(vendorId) {
   return data;
 }
 
-module.exports = { findById, findByEventId, findDuplicate, create, findVendorById };
+// Contract repository methods
+
+async function findContractByBookingId(bookingId) {
+  const { data, error } = await supabase
+    .from('contracts')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+async function findContractById(contractId) {
+  const { data, error } = await supabase
+    .from('contracts')
+    .select(`
+      *,
+      bookings!inner(
+        event_id, organizer_id, vendor_id, status,
+        large_events!inner(title),
+        organizer_profiles!inner(organization_name),
+        vendor_profiles!inner(business_name)
+      )
+    `)
+    .eq('id', contractId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+async function createContract(input) {
+  const { data, error } = await supabase
+    .from('contracts')
+    .insert({
+      booking_id: input.bookingId,
+      contract_status: 'draft',
+      terms_summary: input.termsSummary || null,
+      contract_number: 'CNT-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + Math.random().toString(36).substr(2, 8).toUpperCase()
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+async function updateContractStatus(contractId, status) {
+  const updates = { contract_status: status };
+  if (status === 'sent') updates.sent_at = new Date().toISOString();
+  if (status === 'organizer_signed') updates.organizer_signed_at = new Date().toISOString();
+  if (status === 'vendor_signed') updates.vendor_signed_at = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('contracts')
+    .update(updates)
+    .eq('id', contractId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+async function findActiveContractByBooking(bookingId) {
+  const { data, error } = await supabase
+    .from('contracts')
+    .select('id')
+    .eq('booking_id', bookingId)
+    .not('contract_status', 'in', '("completed","cancelled")')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+async function findContractWithBooking(contractId) {
+  const { data, error } = await supabase
+    .from('contracts')
+    .select('*, bookings!inner(*)')
+    .eq('id', contractId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+async function getContractStatusHistory(contractId) {
+  const { data, error } = await supabase
+    .from('contract_status_history')
+    .select('*')
+    .eq('contract_id', contractId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function insertContractStatusHistory(contractId, previousStatus, newStatus, changedBy, reason) {
+  const { error } = await supabase
+    .from('contract_status_history')
+    .insert({
+      contract_id: contractId,
+      previous_status: previousStatus,
+      new_status: newStatus,
+      changed_by: changedBy,
+      reason: reason || null
+    });
+
+  if (error) throw error;
+}
+
+async function updateBookingStatus(bookingId, status) {
+  const { data, error } = await supabase
+    .from('bookings')
+    .update({ status })
+    .eq('id', bookingId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+module.exports = {
+  findById,
+  findByEventId,
+  findDuplicate,
+  create,
+  findVendorById,
+  findContractByBookingId,
+  findContractById,
+  createContract,
+  updateContractStatus,
+  findActiveContractByBooking,
+  findContractWithBooking,
+  getContractStatusHistory,
+  insertContractStatusHistory,
+  updateBookingStatus
+};

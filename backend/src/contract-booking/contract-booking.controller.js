@@ -17,4 +17,40 @@ const listEventBookings = asyncHandler(async (req, res) => {
   return sendSuccess(res, bookings);
 });
 
-module.exports = { createBooking, getBooking, listEventBookings };
+// Contract controllers
+
+const createContract = asyncHandler(async (req, res) => {
+  const contract = await bookingService.createContract(req.user, req.validated.params.bookingId, req.validated.body);
+  return sendCreated(res, contract);
+});
+
+const getContractByBooking = asyncHandler(async (req, res) => {
+  const contract = await bookingService.getContractByBooking(req.user, req.validated.params.bookingId);
+  return sendSuccess(res, contract);
+});
+
+const updateContractStatus = asyncHandler(async (req, res) => {
+  const contract = await bookingService.updateContractStatus(req.user, req.validated.params.contractId, req.validated.body);
+  return sendSuccess(res, contract);
+});
+
+const signContractOrganizer = asyncHandler(async (req, res) => {
+  const contract = await bookingService.signContractOrganizer(req.user, req.validated.params.contractId, req.validated.body);
+  return sendSuccess(res, contract);
+});
+
+const signContractVendor = asyncHandler(async (req, res) => {
+  const contract = await bookingService.signContractVendor(req.user, req.validated.params.contractId, req.validated.body);
+  return sendSuccess(res, contract);
+});
+
+module.exports = {
+  createBooking,
+  getBooking,
+  listEventBookings,
+  createContract,
+  getContractByBooking,
+  updateContractStatus,
+  signContractOrganizer,
+  signContractVendor
+};

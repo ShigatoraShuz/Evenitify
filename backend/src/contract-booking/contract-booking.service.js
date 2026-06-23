@@ -1,7 +1,16 @@
 const AppError = require('../shared/utils/appError');
 const { supabase } = require('../config/supabase');
 const bookingRepository = require('./contract-booking.repository');
-const eventRepository = require('../organizer-events/organizer-events.repository');
+
+const CONTRACT_TRANSITIONS = {
+  draft: ['sent', 'cancelled'],
+  sent: ['organizer_signed', 'cancelled'],
+  organizer_signed: ['vendor_signed', 'cancelled'],
+  vendor_signed: ['active', 'cancelled'],
+  active: ['completed', 'cancelled'],
+  completed: [],
+  cancelled: []
+};
 
 async function createBooking(actor, payload) {
   if (actor.role !== 'organizer') {
@@ -18,7 +27,7 @@ async function createBooking(actor, payload) {
     throw new AppError('Organizer profile not found', 404, 'ORGANIZER_NOT_FOUND');
   }
 
-  const event = await eventRepository.findById(payload.eventId);
+  const event = await bookingRepository.findById(payload.eventId);
   if (!event) {
     throw new AppError('Large Event not found', 404, 'EVENT_NOT_FOUND');
   }
@@ -110,7 +119,7 @@ async function listEventBookings(actor, eventId) {
     .single();
 
   if (actor.role !== 'admin') {
-    const event = await eventRepository.findById(eventId);
+    const event = await bookingRepository.findById(eventId);
     if (!event || event.organizer_id !== organizer?.id) {
       throw new AppError('Access denied', 403, 'FORBIDDEN');
     }
@@ -119,4 +128,185 @@ async function listEventBookings(actor, eventId) {
   return bookingRepository.findByEventId(eventId);
 }
 
-module.exports = { createBooking, getBooking, listEventBookings };
+// Contract methods
+
+async function createContract(actor, bookingId, payload) {
+  const booking = await bookingRepository.findById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+  }
+
+  if (booking.status !== 'accepted' && booking.status !== 'confirmed') {
+    throw new AppError('Contract can only be created for accepted or confirmed bookings', 400, 'INVALID_BOOKING_STATUS');
+  }
+
+  const existing = await bookingRepository.findActiveContractByBooking(bookingId);
+  if (existing) {
+    throw new AppError('An active contract already exists for this booking', 409, 'DUPLICATE_CONTRACT');
+  }
+
+  const { data: organizer } = await supabase
+    .from('organizer_profiles')
+    .select('id, user_id')
+    .eq('id', booking.organizer_id)
+    .single();
+
+  if (actor.role !== 'admin' && organizer?.user_id !== actor.id) {
+    throw new AppError('Only the booking organizer can create a contract', 403, 'FORBIDDEN');
+  }
+
+  const contract = await bookingRepository.createContract({
+    bookingId,
+    termsSummary: payload.termsSummary || null
+  });
+
+  await bookingRepository.insertContractStatusHistory(
+    contract.id,
+    null,
+    'draft',
+    actor.id,
+    'Contract created'
+  );
+
+  return contract;
+}
+
+async function getContractByBooking(actor, bookingId) {
+  const booking = await bookingRepository.findById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+  }
+
+  const contract = await bookingRepository.findContractByBookingId(bookingId);
+  if (!contract) {
+    return null;
+  }
+
+  const history = await bookingRepository.getContractStatusHistory(contract.id);
+  return { ...contract, statusHistory: history || [] };
+}
+
+async function updateContractStatus(actor, contractId, payload) {
+  const contract = await bookingRepository.findContractWithBooking(contractId);
+  if (!contract) {
+    throw new AppError('Contract not found', 404, 'CONTRACT_NOT_FOUND');
+  }
+
+  const allowed = CONTRACT_TRANSITIONS[contract.contract_status];
+  if (!allowed || !allowed.includes(payload.status)) {
+    throw new AppError(
+      `Cannot transition contract from '${contract.contract_status}' to '${payload.status}'`,
+      400,
+      'INVALID_CONTRACT_TRANSITION'
+    );
+  }
+
+  const updated = await bookingRepository.updateContractStatus(contractId, payload.status);
+
+  await bookingRepository.insertContractStatusHistory(
+    contractId,
+    contract.contract_status,
+    payload.status,
+    actor.id,
+    payload.reason || null
+  );
+
+  if (payload.status === 'active' || payload.status === 'completed') {
+    const bookingStatus = payload.status === 'active' ? 'confirmed' : 'completed';
+    await bookingRepository.updateBookingStatus(contract.booking_id, bookingStatus);
+  }
+
+  if (payload.status === 'cancelled') {
+    await bookingRepository.updateBookingStatus(contract.booking_id, 'cancelled');
+  }
+
+  return updated;
+}
+
+async function signContractOrganizer(actor, contractId, payload) {
+  const contract = await bookingRepository.findContractWithBooking(contractId);
+  if (!contract) {
+    throw new AppError('Contract not found', 404, 'CONTRACT_NOT_FOUND');
+  }
+
+  if (contract.contract_status !== 'sent') {
+    throw new AppError('Contract must be in sent status before organizer can sign', 400, 'INVALID_CONTRACT_STATUS');
+  }
+
+  const { data: organizer } = await supabase
+    .from('organizer_profiles')
+    .select('id, user_id')
+    .eq('id', contract.bookings.organizer_id)
+    .single();
+
+  if (actor.role !== 'admin' && organizer?.user_id !== actor.id) {
+    throw new AppError('Only the booking organizer can sign this contract', 403, 'FORBIDDEN');
+  }
+
+  const updated = await bookingRepository.updateContractStatus(contractId, 'organizer_signed');
+
+  await bookingRepository.insertContractStatusHistory(
+    contractId,
+    contract.contract_status,
+    'organizer_signed',
+    actor.id,
+    'Signed by organizer'
+  );
+
+  return updated;
+}
+
+async function signContractVendor(actor, contractId, payload) {
+  const contract = await bookingRepository.findContractWithBooking(contractId);
+  if (!contract) {
+    throw new AppError('Contract not found', 404, 'CONTRACT_NOT_FOUND');
+  }
+
+  if (contract.contract_status !== 'organizer_signed') {
+    throw new AppError('Organizer must sign first before vendor can sign', 400, 'INVALID_CONTRACT_STATUS');
+  }
+
+  const { data: vendor } = await supabase
+    .from('vendor_profiles')
+    .select('id, user_id')
+    .eq('id', contract.bookings.vendor_id)
+    .single();
+
+  if (actor.role !== 'admin' && vendor?.user_id !== actor.id) {
+    throw new AppError('Only the assigned vendor can sign this contract', 403, 'FORBIDDEN');
+  }
+
+  const updated = await bookingRepository.updateContractStatus(contractId, 'vendor_signed');
+
+  await bookingRepository.insertContractStatusHistory(
+    contractId,
+    contract.contract_status,
+    'vendor_signed',
+    actor.id,
+    'Signed by vendor'
+  );
+
+  const autoActivated = await bookingRepository.updateContractStatus(contractId, 'active');
+  await bookingRepository.insertContractStatusHistory(
+    contractId,
+    'vendor_signed',
+    'active',
+    actor.id,
+    'Contract automatically activated after vendor signing'
+  );
+
+  await bookingRepository.updateBookingStatus(contract.booking_id, 'confirmed');
+
+  return autoActivated;
+}
+
+module.exports = {
+  createBooking,
+  getBooking,
+  listEventBookings,
+  createContract,
+  getContractByBooking,
+  updateContractStatus,
+  signContractOrganizer,
+  signContractVendor
+};
