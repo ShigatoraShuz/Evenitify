@@ -25,20 +25,20 @@ export const API_CONTRACTS: ApiContract[] = [
   { method: 'POST', path: '/auth/login', description: 'Login with email/password', auth: false, roles: [], status: 'mock' },
   { method: 'GET', path: '/auth/me', description: 'Get current user session', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'mock' },
   { method: 'POST', path: '/auth/sync-profile', description: 'Sync user profile after registration', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'mock' },
-  { method: 'POST', path: '/auth/refresh', description: 'Refresh auth session token', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'missing' },
-  { method: 'POST', path: '/auth/logout', description: 'Logout and invalidate session', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'missing' },
+  { method: 'POST', path: '/auth/refresh', description: 'Refresh auth session token', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'mock' },
+  { method: 'POST', path: '/auth/logout', description: 'Logout and invalidate session', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'mock' },
 
   // Onboarding
-  { method: 'GET', path: '/onboarding/status', description: 'Check if onboarding is complete', auth: true, roles: ['organizer', 'vendor'], status: 'missing' },
-  { method: 'POST', path: '/onboarding/complete', description: 'Submit onboarding profile', auth: true, roles: ['organizer', 'vendor'], status: 'missing' },
+  { method: 'GET', path: '/onboarding/status', description: 'Check if onboarding is complete', auth: true, roles: ['organizer', 'vendor'], status: 'mock' },
+  { method: 'POST', path: '/onboarding/complete', description: 'Submit onboarding profile', auth: true, roles: ['organizer', 'vendor'], status: 'mock' },
 
   // Organizer Profile
-  { method: 'GET', path: '/organizer/profile', description: 'Get organizer profile', auth: true, roles: ['organizer'], status: 'missing' },
-  { method: 'PATCH', path: '/organizer/profile', description: 'Update organizer profile', auth: true, roles: ['organizer'], status: 'missing' },
+  { method: 'GET', path: '/organizer/profile', description: 'Get organizer profile', auth: true, roles: ['organizer'], status: 'mock' },
+  { method: 'PATCH', path: '/organizer/profile', description: 'Update organizer profile', auth: true, roles: ['organizer'], status: 'mock' },
 
   // Admin Settings
-  { method: 'GET', path: '/admin/settings', description: 'Get admin settings', auth: true, roles: ['admin'], status: 'missing' },
-  { method: 'PATCH', path: '/admin/settings', description: 'Update admin settings', auth: true, roles: ['admin'], status: 'missing' },
+  { method: 'GET', path: '/admin/settings', description: 'Get admin settings', auth: true, roles: ['admin'], status: 'mock' },
+  { method: 'PATCH', path: '/admin/settings', description: 'Update admin settings', auth: true, roles: ['admin'], status: 'mock' },
 
   // Events
   { method: 'GET', path: '/events', description: 'List organizer events', auth: true, roles: ['organizer', 'admin'], status: 'mock' },
@@ -92,4 +92,12 @@ export const API_CONTRACTS: ApiContract[] = [
   { method: 'GET', path: '/admin/vendors', description: 'List all vendors', auth: true, roles: ['admin'], status: 'mock' },
   { method: 'PATCH', path: '/admin/vendors/:vendorId/verification', description: 'Update vendor verification status', auth: true, roles: ['admin'], status: 'mock' },
   { method: 'PATCH', path: '/admin/bookings/:bookingId/override-status', description: 'Override booking status', auth: true, roles: ['admin'], status: 'mock' },
+
+  // Phase 6/7 frontend placeholders
+  { method: 'GET', path: '/reports/:role', description: 'Fetch role report bundle', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'partial' },
+  { method: 'POST', path: '/reports/:role/export', description: 'Export role report', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'partial' },
+  { method: 'GET', path: '/documents', description: 'List document metadata by owner', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'partial' },
+  { method: 'POST', path: '/documents/mock-upload', description: 'Create document metadata placeholder', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'partial' },
+  { method: 'GET', path: '/audit/activity', description: 'List audit activity by scope', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'partial' },
+  { method: 'GET', path: '/realtime/snapshot', description: 'Fetch realtime readiness snapshot', auth: true, roles: ['organizer', 'vendor', 'admin'], status: 'partial' },
 ]

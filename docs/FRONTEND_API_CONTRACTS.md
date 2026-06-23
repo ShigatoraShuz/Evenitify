@@ -67,6 +67,12 @@ All API contracts are also defined programmatically in `src/services/apiContract
 | GET | /admin/vendors | adminService.getVendors | mock |
 | PATCH | /admin/vendors/:vendorId/verification | adminService.updateVendorVerification | mock |
 | PATCH | /admin/bookings/:bookingId/override-status | adminService.overrideBookingStatus | mock |
+| GET | /reports/:role | reportService placeholder / useReports | partial |
+| POST | /reports/:role/export | future report export endpoint | partial |
+| GET | /documents | documentService.listDocuments | partial |
+| POST | /documents/mock-upload | documentService.mockUpload | partial |
+| GET | /audit/activity | auditService.listActivities | partial |
+| GET | /realtime/snapshot | realtimeService.getSnapshot | partial |
 
 ---
 
@@ -109,6 +115,14 @@ interface PaginatedResponse<T> {
 
 ## Switching from Mock to Real API
 
-1. Set `VITE_USE_MOCKS=false` in `.env`
-2. Ensure the backend is running and accessible at `VITE_API_BASE_URL`
-3. Service methods will automatically call real endpoints through `apiClient.ts`
+Use frontend-safe variables only:
+
+| Variable | Purpose |
+|---|---|
+| `VITE_API_MODE=mock` | Use typed mock adapter responses. Best for demos and static previews. |
+| `VITE_API_MODE=local` | Call a local backend, defaulting to `http://localhost:4000/api` when `VITE_API_BASE_URL` is empty. |
+| `VITE_API_MODE=production` | Call `VITE_API_BASE_URL` or `/api` in production hosting. |
+| `VITE_USE_MOCKS=true` | Backward-compatible mock mode switch. `VITE_API_MODE` takes precedence. |
+| `VITE_API_BASE_URL` | Backend API base URL. |
+
+All real API responses are expected to use the normalized `ApiResponse<T>` shape. The frontend service methods unwrap `data` through `apiClient.ts` and throw normalized error messages.
