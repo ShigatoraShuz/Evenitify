@@ -61,6 +61,7 @@ export const vendorService = {
   getVendorProfile: (vendorId: string) =>
     api.get<VendorProfile>(`/vendors/${vendorId}`),
 
+  // TODO: Consider moving requirement methods to eventService for better domain alignment
   listRequirements: (eventId: string) =>
     api.get<EventRequirement[]>(`/events/${eventId}/requirements`),
 
