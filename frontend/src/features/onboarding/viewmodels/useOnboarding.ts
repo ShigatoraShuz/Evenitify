@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { onboardingService } from '../../../services/onboardingService'
 import { useAuthSession } from '../../auth/viewmodels/useAuthSession'
 import type { OrganizerOnboardingForm, VendorOnboardingForm } from '../models/onboarding.model'
@@ -13,6 +13,7 @@ interface OnboardingState {
 
 export function useOnboarding() {
   const { user, setProfileComplete } = useAuthSession()
+  const submittingRef = useRef(false)
   const [state, setState] = useState<OnboardingState>({
     organizerForm: DEFAULT_ORGANIZER_ONBOARDING,
     vendorForm: DEFAULT_VENDOR_ONBOARDING,
@@ -29,6 +30,8 @@ export function useOnboarding() {
   }, [])
 
   const submitOnboarding = useCallback(async () => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       if (user?.role === 'organizer') {
@@ -40,6 +43,8 @@ export function useOnboarding() {
       setState((s) => ({ ...s, submitting: false }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [user, state.organizerForm, state.vendorForm, setProfileComplete])
 

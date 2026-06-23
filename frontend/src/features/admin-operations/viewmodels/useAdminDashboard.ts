@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { adminService } from '../../../services/adminService'
 import type {
   AdminDashboardSummary,
@@ -24,6 +24,7 @@ interface AdminDashboardState {
 }
 
 export function useAdminDashboard() {
+  const submittingRef = useRef(false)
   const [state, setState] = useState<AdminDashboardState>({
     summary: DEFAULT_DASHBOARD_SUMMARY,
     users: [],
@@ -105,6 +106,8 @@ export function useAdminDashboard() {
     verificationStatus: string,
     reason?: string
   ) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       await adminService.updateVendorVerification(vendorId, { verificationStatus, reason })
@@ -112,6 +115,8 @@ export function useAdminDashboard() {
       setState((s) => ({ ...s, vendors, submitting: false, selectedVendor: null }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [])
 
@@ -120,6 +125,8 @@ export function useAdminDashboard() {
     status: string,
     reason: string
   ) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       await adminService.overrideBookingStatus(bookingId, { status, reason })
@@ -127,6 +134,8 @@ export function useAdminDashboard() {
       setState((s) => ({ ...s, bookings, submitting: false, selectedBooking: null }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [])
 

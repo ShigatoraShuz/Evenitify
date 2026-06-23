@@ -181,6 +181,57 @@ const MOCK_REGISTRY: Record<string, MockHandler> = {
     }
     return null
   },
+  // Onboarding
+  'GET /onboarding/status': () => {
+    const completed = localStorage.getItem('onboarding_complete') === 'true'
+    const cached = localStorage.getItem('auth_user_cache')
+    let role: 'organizer' | 'vendor' | 'admin' = 'organizer'
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached)
+        role = parsed?.role || 'organizer'
+      } catch {}
+    }
+    return { completed, role }
+  },
+  'POST /onboarding/complete': (_, body) => {
+    const payload = body as { role?: string } | undefined
+    localStorage.setItem('onboarding_complete', 'true')
+    if (payload) {
+      localStorage.setItem('onboarding_data', JSON.stringify(payload))
+    }
+    return { message: 'Onboarding completed' }
+  },
+
+  // Organizer Profile
+  'GET /organizer/profile': () => {
+    const saved = localStorage.getItem('profile_organizer')
+    if (saved) return JSON.parse(saved)
+    return { organizationName: 'TechCorp Events', organizationType: 'Technology', phone: '+63 912 345 6789', address: 'Metro Manila' }
+  },
+  'PATCH /organizer/profile': (_, body) => {
+    const existing = localStorage.getItem('profile_organizer')
+    const current = existing ? JSON.parse(existing) : {}
+    const merged = { ...current, ...(body as Record<string, unknown>) }
+    localStorage.setItem('profile_organizer', JSON.stringify(merged))
+    return merged
+  },
+
+  // Admin Settings
+  'GET /admin/settings': () => {
+    const saved = localStorage.getItem('profile_admin')
+    if (saved) return JSON.parse(saved)
+    return { displayName: 'System Admin', email: 'admin@eventify.com' }
+  },
+  'PATCH /admin/settings': (_, body) => {
+    const existing = localStorage.getItem('profile_admin')
+    const current = existing ? JSON.parse(existing) : {}
+    const merged = { ...current, ...(body as Record<string, unknown>) }
+    localStorage.setItem('profile_admin', JSON.stringify(merged))
+    return merged
+  },
+
+  // Admin
   'PATCH /admin/bookings/': (endpoint, body) => {
     const parts = endpoint.split('/')
     const bookingId = parts[3]

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { vendorService, type VendorSearchResult } from '../../../services/vendorService'
 import { bookingService } from '../../../services/bookingService'
 import { eventService, type EventRequirement } from '../../../services/eventService'
@@ -27,6 +27,7 @@ interface VendorProcurementState {
 const DRAFT_KEY_PREFIX = 'procurement_draft_'
 
 export function useVendorProcurement() {
+  const submittingRef = useRef(false)
   const [state, setState] = useState<VendorProcurementState>({
     eventId: null,
     requirements: [],
@@ -180,6 +181,8 @@ export function useVendorProcurement() {
       setState((s) => ({ ...s, error: 'Cannot submit booking: missing event, requirement, or vendor' }))
       return
     }
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null, validationErrors: [] }))
     try {
       await bookingService.createBookingRequest({
@@ -194,6 +197,8 @@ export function useVendorProcurement() {
       setState((s) => ({ ...s, submitting: false, currentStep: 'confirm' }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [state.eventId, state.selectedRequirement, state.selectedVendor, validateStep, getDraftKey])
 

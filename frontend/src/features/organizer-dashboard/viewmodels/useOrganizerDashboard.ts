@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { eventService, type LargeEvent, type EventPortfolio, type DashboardSummary } from '../../../services/eventService'
 import type { EventStatus } from '../models/organizer-dashboard.model'
 
@@ -50,6 +50,8 @@ export function useOrganizerDashboard() {
     }
   }, [])
 
+  const submittingRef = useRef(false)
+
   const createEvent = useCallback(async (payload: {
     title: string
     eventDate: string
@@ -57,6 +59,8 @@ export function useOrganizerDashboard() {
     budget: number
     expectedGuests: number
   }) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       await eventService.createEvent(payload)
@@ -64,10 +68,14 @@ export function useOrganizerDashboard() {
       setState((s) => ({ ...s, submitting: false }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [loadEvents])
 
   const updateEventStatus = useCallback(async (eventId: string, status: EventStatus) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       await eventService.updateEvent(eventId, { status } as Partial<LargeEvent>)
@@ -79,6 +87,8 @@ export function useOrganizerDashboard() {
       setState((s) => ({ ...s, submitting: false }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [state.selectedEvent, selectEvent, loadEvents])
 

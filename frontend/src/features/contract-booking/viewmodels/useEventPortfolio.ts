@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useAuthSession } from '../../auth/viewmodels/useAuthSession'
 import { eventService, type EventPortfolio } from '../../../services/eventService'
 import { contractService, type ContractDetail } from '../../../services/contractService'
@@ -18,6 +18,7 @@ interface EventPortfolioState {
 
 export function useEventPortfolio() {
   const { user } = useAuthSession()
+  const submittingRef = useRef(false)
   const [state, setState] = useState<EventPortfolioState>({
     portfolio: null,
     loading: false,
@@ -59,6 +60,8 @@ export function useEventPortfolio() {
   }, [state.expandedBookingId])
 
   const createContract = useCallback(async (bookingId: string, termsSummary?: string) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       await contractService.createContract(bookingId, { termsSummary })
@@ -66,36 +69,50 @@ export function useEventPortfolio() {
       setState((s) => ({ ...s, submitting: false, detailedContract: contract }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [])
 
   const sendContract = useCallback(async (contractId: string) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       const updated = await contractService.updateContractStatus(contractId, { status: 'sent' })
       setState((s) => ({ ...s, submitting: false, detailedContract: updated }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [])
 
   const signContractAsOrganizer = useCallback(async (contractId: string) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       const updated = await contractService.signContractOrganizer(contractId, { termsAccepted: true })
       setState((s) => ({ ...s, submitting: false, detailedContract: updated }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [])
 
   const signContractAsVendor = useCallback(async (contractId: string) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       const updated = await contractService.signContractVendor(contractId, { termsAccepted: true })
       setState((s) => ({ ...s, submitting: false, detailedContract: updated }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [])
 

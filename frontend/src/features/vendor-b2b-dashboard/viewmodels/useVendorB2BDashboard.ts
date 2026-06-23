@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { bookingService, type BookingRequest } from '../../../services/bookingService'
 import { contractService, type ContractDetail } from '../../../services/contractService'
 import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
@@ -15,6 +15,7 @@ interface VendorB2BDashboardState {
 }
 
 export function useVendorB2BDashboard() {
+  const submittingRef = useRef(false)
   const [state, setState] = useState<VendorB2BDashboardState>({
     bookings: [],
     selectedBooking: null,
@@ -57,6 +58,8 @@ export function useVendorB2BDashboard() {
     status: 'accepted' | 'rejected' | 'changes_requested',
     reason?: string
   ) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       await bookingService.updateBookingStatus(bookingId, { status, reason })
@@ -65,6 +68,8 @@ export function useVendorB2BDashboard() {
       setState((s) => ({ ...s, bookings, selectedBooking: null, submitting: false }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [state.activeTab])
 
@@ -79,12 +84,16 @@ export function useVendorB2BDashboard() {
   }, [])
 
   const signVendorContract = useCallback(async (contractId: string) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
       const updated = await contractService.signContractVendor(contractId, { termsAccepted: true })
       setState((s) => ({ ...s, submitting: false, contract: updated }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
     }
   }, [])
 
