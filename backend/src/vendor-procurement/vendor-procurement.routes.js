@@ -1,11 +1,20 @@
 const { Router } = require('express');
+const authenticate = require('../shared/middleware/auth.middleware');
+const requireRole = require('../shared/middleware/role.middleware');
+const validate = require('../shared/middleware/validate.middleware');
+const controller = require('./vendor-procurement.controller');
+const {
+  createRequirementSchema,
+  updateRequirementSchema,
+  requirementIdSchema,
+  eventIdSchema
+} = require('./vendor-procurement.validator');
+
 const router = Router();
 
-router.get('/vendors', (req, res) => res.json({ success: true, data: [] }));
-router.get('/vendors/:vendorId', (req, res) => res.json({ success: true, data: null }));
-router.get('/events/:eventId/requirements', (req, res) => res.json({ success: true, data: [] }));
-router.post('/events/:eventId/requirements', (req, res) => res.status(201).json({ success: true, data: null }));
-router.patch('/requirements/:requirementId', (req, res) => res.json({ success: true, data: null }));
-router.delete('/requirements/:requirementId', (req, res) => res.status(204).send());
+router.get('/events/:eventId/requirements', authenticate, requireRole('organizer', 'admin'), validate(eventIdSchema), controller.listRequirements);
+router.post('/events/:eventId/requirements', authenticate, requireRole('organizer'), validate(createRequirementSchema), controller.createRequirement);
+router.patch('/requirements/:requirementId', authenticate, requireRole('organizer'), validate(updateRequirementSchema), controller.updateRequirement);
+router.delete('/requirements/:requirementId', authenticate, requireRole('organizer'), validate(requirementIdSchema), controller.deleteRequirement);
 
 module.exports = router;
