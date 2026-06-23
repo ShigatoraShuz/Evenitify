@@ -39,6 +39,10 @@ export const vendorService = {
     minBudget?: number
     maxBudget?: number
     minRating?: number
+    businessName?: string
+    availability?: string
+    sortBy?: string
+    sortOrder?: string
   }) => {
     const params = new URLSearchParams()
     if (filters?.category) params.set('category', filters.category)
@@ -46,6 +50,10 @@ export const vendorService = {
     if (filters?.minBudget !== undefined) params.set('minBudget', String(filters.minBudget))
     if (filters?.maxBudget !== undefined) params.set('maxBudget', String(filters.maxBudget))
     if (filters?.minRating !== undefined) params.set('minRating', String(filters.minRating))
+    if (filters?.businessName) params.set('businessName', filters.businessName)
+    if (filters?.availability) params.set('availability', filters.availability)
+    if (filters?.sortBy) params.set('sortBy', filters.sortBy)
+    if (filters?.sortOrder) params.set('sortOrder', filters.sortOrder)
     const qs = params.toString()
     return api.get<VendorSearchResult[]>(`/vendors${qs ? `?${qs}` : ''}`)
   },

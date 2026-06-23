@@ -66,6 +66,45 @@ export interface StatusHistory {
   created_at: string
 }
 
+export interface DashboardSummary {
+  eventStatusSummary: {
+    total: number
+    draft: number
+    planning: number
+    booking: number
+    confirmed: number
+    completed: number
+    cancelled: number
+  }
+  requirementSummary: {
+    total: number
+    open: number
+    pendingBooking: number
+    fulfilled: number
+    cancelled: number
+  }
+  bookingSummary: {
+    total: number
+    pending: number
+    accepted: number
+    rejected: number
+    changesRequested: number
+    contractSent: number
+    confirmed: number
+    completed: number
+    cancelled: number
+  }
+  upcomingEvents: Array<{ id: string; title: string; eventDate: string; status: string }>
+  recentActivity: Array<{
+    id: string
+    booking_id: string
+    previous_status: string | null
+    new_status: string
+    reason: string | null
+    created_at: string
+  }>
+}
+
 export const eventService = {
   listEvents: () => api.get<LargeEvent[]>('/events'),
 
@@ -73,6 +112,9 @@ export const eventService = {
 
   getEventPortfolio: (eventId: string) =>
     api.get<EventPortfolio>(`/events/${eventId}/portfolio`),
+
+  getDashboardSummary: () =>
+    api.get<DashboardSummary>('/events/dashboard/summary'),
 
   createEvent: (payload: {
     title: string

@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react'
-import { eventService, type LargeEvent, type EventPortfolio } from '../../../services/eventService'
+import { eventService, type LargeEvent, type EventPortfolio, type DashboardSummary } from '../../../services/eventService'
 import type { EventStatus } from '../models/organizer-dashboard.model'
 
 interface OrganizerDashboardState {
   events: LargeEvent[]
   selectedEvent: LargeEvent | null
   portfolio: EventPortfolio | null
+  summary: DashboardSummary | null
   loading: boolean
   submitting: boolean
   portfolioLoading: boolean
@@ -17,6 +18,7 @@ export function useOrganizerDashboard() {
     events: [],
     selectedEvent: null,
     portfolio: null,
+    summary: null,
     loading: false,
     submitting: false,
     portfolioLoading: false,
@@ -26,8 +28,11 @@ export function useOrganizerDashboard() {
   const loadEvents = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
-      const events = await eventService.listEvents()
-      setState((s) => ({ ...s, events, loading: false }))
+      const [events, summary] = await Promise.all([
+        eventService.listEvents(),
+        eventService.getDashboardSummary()
+      ])
+      setState((s) => ({ ...s, events, summary, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }

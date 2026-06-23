@@ -139,6 +139,81 @@ async function createEvent(actor, payload) {
   });
 }
 
+async function getDashboardSummary(actor) {
+  const { data: organizer } = await supabase
+    .from('organizer_profiles')
+    .select('id')
+    .eq('user_id', actor.id)
+    .single();
+
+  if (!organizer) {
+    throw new AppError('Organizer profile not found', 404, 'ORGANIZER_NOT_FOUND');
+  }
+
+  const events = await eventRepository.findByOrganizerId(organizer.id);
+
+  const eventStatusSummary = {
+    total: events.length,
+    draft: events.filter((e) => e.status === 'draft').length,
+    planning: events.filter((e) => e.status === 'planning').length,
+    booking: events.filter((e) => e.status === 'booking').length,
+    confirmed: events.filter((e) => e.status === 'confirmed').length,
+    completed: events.filter((e) => e.status === 'completed').length,
+    cancelled: events.filter((e) => e.status === 'cancelled').length
+  };
+
+  const { data: allRequirements } = await supabase
+    .from('event_requirements')
+    .select('*, large_events!inner(organizer_id)')
+    .eq('large_events.organizer_id', organizer.id);
+
+  const requirementSummary = {
+    total: allRequirements?.length || 0,
+    open: allRequirements?.filter((r) => r.requirement_status === 'open').length || 0,
+    pendingBooking: allRequirements?.filter((r) => r.requirement_status === 'pending_booking').length || 0,
+    fulfilled: allRequirements?.filter((r) => r.requirement_status === 'fulfilled').length || 0,
+    cancelled: allRequirements?.filter((r) => r.requirement_status === 'cancelled').length || 0
+  };
+
+  const { data: allBookings } = await supabase
+    .from('bookings')
+    .select('*, large_events!inner(organizer_id)')
+    .eq('large_events.organizer_id', organizer.id);
+
+  const bookingSummary = {
+    total: allBookings?.length || 0,
+    pending: allBookings?.filter((b) => b.status === 'pending').length || 0,
+    accepted: allBookings?.filter((b) => b.status === 'accepted').length || 0,
+    rejected: allBookings?.filter((b) => b.status === 'rejected').length || 0,
+    changesRequested: allBookings?.filter((b) => b.status === 'changes_requested').length || 0,
+    contractSent: allBookings?.filter((b) => b.status === 'contract_sent').length || 0,
+    confirmed: allBookings?.filter((b) => b.status === 'confirmed').length || 0,
+    completed: allBookings?.filter((b) => b.status === 'completed').length || 0,
+    cancelled: allBookings?.filter((b) => b.status === 'cancelled').length || 0
+  };
+
+  const upcomingEvents = events
+    .filter((e) => e.status !== 'completed' && e.status !== 'cancelled')
+    .sort((a, b) => new Date(a.event_date) - new Date(b.event_date))
+    .slice(0, 5)
+    .map((e) => ({ id: e.id, title: e.title, eventDate: e.event_date, status: e.status }));
+
+  const { data: recentActivity } = await supabase
+    .from('booking_status_history')
+    .select('*, bookings!inner(event_id, large_events!inner(organizer_id))')
+    .eq('bookings.large_events.organizer_id', organizer.id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  return {
+    eventStatusSummary,
+    requirementSummary,
+    bookingSummary,
+    upcomingEvents,
+    recentActivity: recentActivity || []
+  };
+}
+
 async function updateEvent(actor, eventId, payload) {
   const event = await eventRepository.findById(eventId);
 
@@ -166,4 +241,4 @@ async function updateEvent(actor, eventId, payload) {
   return eventRepository.update(eventId, payload);
 }
 
-module.exports = { listEvents, getEvent, createEvent, updateEvent };
+module.exports = { listEvents, getEvent, createEvent, updateEvent, getDashboardSummary };

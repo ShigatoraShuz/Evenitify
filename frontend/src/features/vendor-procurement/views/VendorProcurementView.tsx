@@ -12,6 +12,8 @@ import type { VendorSearchResult, VendorService } from '../../../services/vendor
 import type { RequirementCategory, ProcurementStep } from '../models/vendor-procurement.model'
 import { REQUIREMENT_CATEGORIES } from '../models/vendor-procurement.model'
 
+import type { VendorFilterState } from '../models/vendor-procurement.model'
+
 interface VendorProcurementViewProps {
   eventId: string | null
   requirements: EventRequirement[]
@@ -19,6 +21,7 @@ interface VendorProcurementViewProps {
   selectedRequirement: EventRequirement | null
   selectedVendor: VendorSearchResult | null
   currentStep: ProcurementStep
+  filters: VendorFilterState
   loading: boolean
   submitting: boolean
   error: string | null
@@ -29,6 +32,7 @@ interface VendorProcurementViewProps {
   onSelectVendor: (vendor: VendorSearchResult) => void
   onCreateRequirement: (payload: { category: RequirementCategory; quantity: number; minBudget?: number | null; maxBudget?: number | null; notes?: string | null }) => Promise<void>
   onDeleteRequirement: (id: string) => Promise<void>
+  onUpdateFilters: (next: Partial<VendorFilterState>) => void
   onSubmitBooking: (payload: { notes?: string; requestedBudget?: number }) => Promise<void>
   onClearError: () => void
 }
@@ -47,6 +51,7 @@ export function VendorProcurementView({
   selectedRequirement,
   selectedVendor,
   currentStep,
+  filters,
   loading,
   submitting,
   error,
@@ -57,6 +62,7 @@ export function VendorProcurementView({
   onSelectVendor,
   onCreateRequirement,
   onDeleteRequirement,
+  onUpdateFilters,
   onSubmitBooking,
   onClearError
 }: VendorProcurementViewProps) {
@@ -192,6 +198,35 @@ export function VendorProcurementView({
               Vendors for {selectedRequirement?.category}
             </h2>
             <Button onClick={onSearchVendors} loading={loading}>Search Vendors</Button>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Input
+              placeholder="Business name"
+              value={filters.businessName}
+              onChange={(e) => onUpdateFilters({ businessName: e.target.value })}
+            />
+            <Input
+              placeholder="Location"
+              value={filters.location}
+              onChange={(e) => onUpdateFilters({ location: e.target.value })}
+            />
+            <Select
+              value={filters.availability}
+              onChange={(e) => onUpdateFilters({ availability: e.target.value })}
+              options={[
+                { value: '', label: 'All Availability' },
+                { value: 'available', label: 'Available' }
+              ]}
+            />
+            <Select
+              value={filters.sortBy}
+              onChange={(e) => onUpdateFilters({ sortBy: e.target.value })}
+              options={[
+                { value: 'rating', label: 'Sort by Rating' },
+                { value: 'name', label: 'Sort by Name' }
+              ]}
+            />
           </div>
 
           {vendors.length === 0 ? (

@@ -1,4 +1,4 @@
-const { supabase } = require('../config/supabase');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 
 async function findByUserId(userId) {
   const { data, error } = await supabase
@@ -12,7 +12,7 @@ async function findByUserId(userId) {
 }
 
 async function createProfile(userId, email, role, displayName) {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('user_profiles')
     .insert({
       id: userId,
@@ -40,7 +40,7 @@ async function updateRole(userId, role) {
 }
 
 async function upsertOrganizerProfile(userId, organizationName, contactNumber, businessAddress) {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('organizer_profiles')
     .upsert({
       user_id: userId,
@@ -56,7 +56,7 @@ async function upsertOrganizerProfile(userId, organizationName, contactNumber, b
 }
 
 async function upsertVendorProfile(userId, businessName, contactNumber, serviceArea) {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('vendor_profiles')
     .upsert({
       user_id: userId,

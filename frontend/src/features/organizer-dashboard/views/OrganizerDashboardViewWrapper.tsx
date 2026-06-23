@@ -9,6 +9,7 @@ export default function OrganizerDashboardViewWrapper() {
   return (
     <OrganizerDashboardView
       events={vm.events}
+      summary={vm.summary}
       loading={vm.loading}
       submitting={vm.submitting}
       error={vm.error}

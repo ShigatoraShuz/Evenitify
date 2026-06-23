@@ -60,6 +60,9 @@ export interface VendorFilterState {
   minBudget: number | null
   maxBudget: number | null
   minRating: number | null
+  businessName: string
+  availability: string
+  sortBy: string
 }
 
 export const DEFAULT_VENDOR_FILTERS: VendorFilterState = {
@@ -67,7 +70,10 @@ export const DEFAULT_VENDOR_FILTERS: VendorFilterState = {
   location: '',
   minBudget: null,
   maxBudget: null,
-  minRating: null
+  minRating: null,
+  businessName: '',
+  availability: '',
+  sortBy: 'rating'
 }
 
 export type ProcurementStep = 'requirements' | 'vendors' | 'booking' | 'confirm'

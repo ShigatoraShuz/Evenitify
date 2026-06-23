@@ -67,7 +67,11 @@ export function useVendorProcurement() {
         minBudget: state.filters.minBudget || undefined,
         maxBudget: state.filters.maxBudget || undefined,
         minRating: state.filters.minRating || undefined,
-        location: state.filters.location || undefined
+        location: state.filters.location || undefined,
+        businessName: state.filters.businessName || undefined,
+        availability: state.filters.availability || undefined,
+        sortBy: state.filters.sortBy || undefined,
+        sortOrder: state.filters.sortBy === 'name' ? 'asc' : 'desc'
       })
       setState((s) => ({ ...s, vendors, loading: false }))
     } catch (err) {

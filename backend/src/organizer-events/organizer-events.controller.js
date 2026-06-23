@@ -27,4 +27,9 @@ const getEventPortfolio = asyncHandler(async (req, res) => {
   return sendSuccess(res, portfolio);
 });
 
-module.exports = { listEvents, getEvent, createEvent, updateEvent, getEventPortfolio };
+const getDashboardSummary = asyncHandler(async (req, res) => {
+  const summary = await eventService.getDashboardSummary(req.user);
+  return sendSuccess(res, summary);
+});
+
+module.exports = { listEvents, getEvent, createEvent, updateEvent, getEventPortfolio, getDashboardSummary };

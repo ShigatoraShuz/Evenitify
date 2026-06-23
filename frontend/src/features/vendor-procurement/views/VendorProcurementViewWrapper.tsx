@@ -14,6 +14,7 @@ export default function VendorProcurementViewWrapper() {
       selectedRequirement={vm.selectedRequirement}
       selectedVendor={vm.selectedVendor}
       currentStep={vm.currentStep}
+      filters={vm.filters}
       loading={vm.loading}
       submitting={vm.submitting}
       error={vm.error}
@@ -26,6 +27,7 @@ export default function VendorProcurementViewWrapper() {
       }}
       onCreateRequirement={vm.createRequirement}
       onDeleteRequirement={vm.deleteRequirement}
+      onUpdateFilters={vm.updateFilters}
       onSubmitBooking={vm.submitBookingRequest}
       onClearError={vm.clearError}
     />

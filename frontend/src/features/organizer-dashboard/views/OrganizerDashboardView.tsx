@@ -8,8 +8,11 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import type { LargeEvent } from '../../../services/eventService'
 
+import type { DashboardSummary } from '../../../services/eventService'
+
 interface OrganizerDashboardViewProps {
   events: LargeEvent[]
+  summary: DashboardSummary | null
   loading: boolean
   submitting: boolean
   error: string | null
@@ -20,6 +23,7 @@ interface OrganizerDashboardViewProps {
 
 export function OrganizerDashboardView({
   events,
+  summary,
   loading,
   submitting,
   error,
@@ -65,6 +69,45 @@ export function OrganizerDashboardView({
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+      )}
+
+      {summary && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{summary.eventStatusSummary.total}</p>
+            <p className="text-sm text-gray-500">Total Events</p>
+            <div className="flex gap-2 mt-2 text-xs text-gray-400">
+              <span className="text-blue-600">{summary.eventStatusSummary.booking} booking</span>
+              <span className="text-green-600">{summary.eventStatusSummary.confirmed} confirmed</span>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{summary.requirementSummary.total}</p>
+            <p className="text-sm text-gray-500">Requirements</p>
+            <div className="flex gap-2 mt-2 text-xs text-gray-400">
+              <span className="text-yellow-600">{summary.requirementSummary.open} open</span>
+              <span className="text-green-600">{summary.requirementSummary.fulfilled} fulfilled</span>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{summary.bookingSummary.total}</p>
+            <p className="text-sm text-gray-500">Bookings</p>
+            <div className="flex gap-2 mt-2 text-xs text-gray-400">
+              <span className="text-yellow-600">{summary.bookingSummary.pending} pending</span>
+              <span className="text-green-600">{summary.bookingSummary.completed} completed</span>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <p className="text-2xl font-bold text-gray-900">{summary.upcomingEvents.length}</p>
+            <p className="text-sm text-gray-500">Upcoming Events</p>
+            <div className="mt-2 text-xs text-gray-400">
+              {summary.upcomingEvents.slice(0, 2).map((e) => (
+                <p key={e.id}>{e.title} - {new Date(e.eventDate).toLocaleDateString()}</p>
+              ))}
+              {summary.upcomingEvents.length === 0 && <p>No upcoming events</p>}
+            </div>
+          </div>
+        </div>
       )}
 
       {loading ? (

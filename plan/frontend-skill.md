@@ -1,320 +1,544 @@
-# Eventify Frontend Skill Documentation
+# Eventify Frontend Skill
 
-## Role
-Creative Frontend Engineer & UI/UX Designer
+## Skill Purpose
+Use this skill when implementing, refactoring, or reviewing the Eventify frontend. The goal is to keep the application consistent, professional, MVVM-compliant, and visually uniform across the landing page, authentication flow, Organizer dashboard, Vendor B2B dashboard, procurement workspace, booking flow, portfolio tracking, notifications, profiles, settings, and Admin/Operations screens.
 
-## Description
-The Frontend Engineer is responsible for delivering a pixel-perfect, responsive, and engaging Eventify user experience while maintaining a strict React + TypeScript MVVM architecture. The role combines UI/UX design execution, component engineering, ViewModel-driven state management, accessible interfaces, and clean API consumption through service layers.
-
-## Primary Mission
-Build the Organizer procurement UI, Vendor B2B dashboard, contract tracking screens, and role-specific navigation in a way that is visually clear, maintainable, and ready for production.
+Eventify is not a generic booking app. It is a B2B Organizer Vendor Procurement system for large-scale events.
 
 ---
 
-## Required Architecture: MVVM
+## Required Frontend Standards
 
-Eventify must follow **Model-View-ViewModel** with explicit directory boundaries.
-
-### MVVM Responsibility Matrix
-
-| Layer | Directory | Responsibility | Allowed | Not Allowed |
-|---|---|---|---|---|
-| Model | `models/` | Define feature data structure. | TypeScript interfaces, types, enums, constants, default values. | API calls, React hooks, JSX, runtime business logic. |
-| ViewModel | `viewmodels/` | Manage state, effects, validation orchestration, derived values, and service calls. | Custom hooks, form handlers, loading/error state, transformations, API orchestration. | JSX, layout rendering, visual markup. |
-| View | `views/` | Render page layout and bind to ViewModel. | JSX/TSX composition, passing ViewModel state/handlers to components. | API calls, heavy computation, direct business logic. |
-| Components | `components/` | Render reusable UI pieces for one feature. | Presentational UI, props, small local visual state only when necessary. | Global data fetching, hidden business rules. |
-| Services | `services/` | Communicate with backend APIs. | API client wrappers, endpoint functions, request/response normalization. | UI rendering and React lifecycle logic. |
-| Shared | `shared/` | Store cross-feature UI and shared types. | Design system components, layout shells, generic badges/modals. | Feature-specific procurement rules. |
-| Utils | `utils/` | Hold pure helper functions. | Formatting, string helpers, route helpers, pure calculations. | React state, API orchestration, JSX. |
-
----
-
-## MVVM Data Flow
-
-```txt
-User Action
-   ↓
-View event handler binding
-   ↓
-ViewModel method
-   ↓
-Validation and state update
-   ↓
-Service call
-   ↓
-Backend API / Supabase-backed endpoint
-   ↓
-Service response normalization
-   ↓
-ViewModel updates state and derived values
-   ↓
-View re-renders UI from ViewModel output
-```
-
-### Example Binding Rule
-
-The View may call the ViewModel hook and bind returned state and handlers:
-
-```tsx
-export function VendorProcurementView() {
-  const vm = useVendorProcurement()
-
-  return (
-    <ProcurementShell
-      selectedEvent={vm.selectedEvent}
-      requirements={vm.requirements}
-      vendors={vm.filteredVendors}
-      loading={vm.loading}
-      error={vm.error}
-      onFilterChange={vm.updateFilters}
-      onSubmitBooking={vm.submitBookingRequest}
-    />
-  )
-}
-```
-
-The View must not call `fetch`, `axios`, `supabase`, or direct backend functions.
-
----
-
-## Feature Directory Standard
-
-```txt
-src/features/vendor-procurement/
-├── components/
-│   ├── ProcurementStepper.tsx
-│   ├── RequirementCard.tsx
-│   ├── VendorBookingCard.tsx
-│   ├── VendorFilterPanel.tsx
-│   └── BookingSummaryPanel.tsx
-├── models/
-│   └── vendor-procurement.model.ts
-├── viewmodels/
-│   └── useVendorProcurement.ts
-└── views/
-    └── VendorProcurementView.tsx
-```
-
-### Naming Standards
-
-| Item | Convention | Example |
-|---|---|---|
-| View file | PascalCase + `View` | `VendorProcurementView.tsx` |
-| ViewModel hook | `use` + Feature Name | `useVendorProcurement.ts` |
-| Model file | kebab-case + `.model.ts` | `vendor-procurement.model.ts` |
-| Component | PascalCase | `VendorFilterPanel.tsx` |
-| Service | camelCase + `Service` | `bookingService.ts` |
-| Types | PascalCase | `BookingRequest`, `LargeEvent` |
-| Enums | PascalCase | `BookingStatus`, `RequirementStatus` |
-
----
-
-## Frontend Execution Standards
-
-### 1. View Standards
-
-Views must remain layout-focused and readable.
-
-#### Allowed in Views
-
-- Calling exactly one main ViewModel hook per page when possible.
-- Passing ViewModel state and handlers to components.
-- Rendering route-level page structure.
-- Conditional rendering based on ViewModel state.
-
-#### Not Allowed in Views
-
-- `fetch`, `axios`, or direct Supabase calls.
-- Complex data transformations.
-- Business validation rules.
-- Long `useEffect` blocks.
-- Mutating API payloads directly.
-
----
-
-### 2. ViewModel Standards
-
-ViewModels are custom React hooks that act as the feature brain.
-
-#### Required ViewModel Responsibilities
-
-| Responsibility | Description |
+| Area | Standard |
 |---|---|
-| Load data | Fetch event, requirement, vendor, booking, contract, and notification data through services. |
-| Track state | Maintain loading, error, selected item, form state, filter state, and modal state. |
-| Validate | Run client validation before service calls. |
-| Transform | Convert API responses into UI-friendly structures. |
-| Derive | Compute progress, counts, grouped data, and status summaries. |
-| Orchestrate | Coordinate multi-step actions such as create event → add requirement → search vendor → submit booking. |
-
-#### ViewModel Output Shape
-
-```ts
-interface VendorProcurementViewModel {
-  selectedEvent: LargeEvent | null
-  requirements: EventRequirement[]
-  filters: VendorFilterState
-  filteredVendors: VendorSearchResult[]
-  selectedVendor: VendorSearchResult | null
-  selectedRequirement: EventRequirement | null
-  loading: boolean
-  submitting: boolean
-  error: string | null
-  progressSteps: ProcurementStep[]
-  updateFilters: (nextFilters: Partial<VendorFilterState>) => void
-  selectRequirement: (requirementId: string) => void
-  selectVendor: (vendorId: string) => void
-  submitBookingRequest: (payload: BookingFormInput) => Promise<void>
-  resetError: () => void
-}
-```
+| Framework | React + TypeScript |
+| Build Tool | Vite |
+| Architecture | Strict MVVM with feature folders |
+| Styling | Tailwind CSS using shared Eventify design tokens |
+| Routing | React Router or route registry through `src/routes/index.tsx` |
+| Forms | React Hook Form + Zod or equivalent validation layer |
+| Data Access | Services called through ViewModels only |
+| Auth | Supabase Auth consumed through `authService` and route guards |
+| Components | Shared UI primitives first; feature components only when truly feature-specific |
 
 ---
 
-### 3. Model Standards
+## Eventify Design Identity
 
-Models are pure TypeScript definitions.
-
-#### Example Model File
-
-```ts
-export type BookingStatus =
-  | 'pending'
-  | 'accepted'
-  | 'rejected'
-  | 'changes_requested'
-  | 'contract_sent'
-  | 'confirmed'
-  | 'completed'
-  | 'cancelled'
-
-export interface LargeEvent {
-  id: string
-  organizerId: string
-  title: string
-  eventDate: string
-  venue: string
-  budget: number
-  expectedGuests: number
-  status: 'draft' | 'planning' | 'booking' | 'confirmed' | 'completed' | 'cancelled'
-}
-
-export interface EventRequirement {
-  id: string
-  eventId: string
-  category: string
-  quantity: number
-  minBudget?: number
-  maxBudget?: number
-  requirementStatus: 'open' | 'pending_booking' | 'fulfilled' | 'cancelled'
-  notes?: string
-}
-```
-
-Models must not export hooks, API functions, or JSX.
-
----
-
-### 4. Service Standards
-
-Services isolate API details from ViewModels.
-
-#### Example Service Pattern
-
-```ts
-export async function createBookingRequest(input: CreateBookingRequestInput) {
-  return apiClient.post<BookingRequest>('/procurement-requests', input)
-}
-```
-
-#### Rules
-
-- Services must return typed data.
-- Services must normalize API errors.
-- Services must not use React hooks.
-- Services must not show toast messages.
-- Services must not contain component logic.
-
----
-
-## UI/UX Standards
+### Product Feel
+Eventify must feel like a clean, modern, B2B SaaS procurement platform. It should be minimalist, professional, and structured, but still visually distinct.
 
 ### Visual Direction
 
-| Area | Requirement |
+| Element | Rule |
 |---|---|
-| Brand style | Minimalist, professional, B2B procurement-focused. |
-| Layout | Clean dashboards, clear cards, spacious content, strong hierarchy. |
-| Text | Short labels, useful helper text, no clutter. |
-| Status | Use consistent status chips for Pending, Accepted, Contract Sent, Confirmed, Completed, Cancelled. |
-| Vendor B2B distinction | B2B requests must be visibly separated from personal customer bookings. |
-| Responsiveness | Every main flow must work on mobile, tablet, laptop, and desktop. |
+| Background | Use light neutral surfaces: `bg-slate-50`, `bg-white`, or subtle section contrast. |
+| Headings | Use dark slate text with strong hierarchy. |
+| Body text | Use muted slate text and concise descriptions. |
+| Cards | Use white cards, soft border, rounded corners, and subtle shadow. |
+| Buttons | Use shared variants only. Do not create one-off button styles. |
+| Badges | Use one status badge map for all statuses. |
+| Forms | Use consistent labels, helper text, validation, and spacing. |
+| Icons | Use a single line-icon style consistently. |
+| Layout | Use spacious sections, clear page headers, and predictable card grids. |
 
-### Core Screens to Design
+### Suggested Tailwind Classes
 
-| Screen | Main UX Goal |
-|---|---|
-| Landing/Auth | Explain Eventify and move user into correct role. |
-| Organizer Dashboard | Let Organizer choose or create a Large Event. |
-| Event Setup | Collect event details with minimal friction. |
-| Requirements Workspace | Add procurement needs by category. |
-| Vendor Discovery | Search, filter, compare, and select Vendors. |
-| Booking Request | Confirm event, requirement, Vendor, date, budget, and notes. |
-| Event Portfolio | Track all Vendor statuses in one place. |
-| Vendor B2B Dashboard | Review Organizer/Large Event requests separately from personal requests. |
-| Contract Tracking | View contract status and next action. |
-| Admin Dashboard | Review users, bookings, Vendors, and issues. |
+```txt
+Page shell: min-h-screen bg-slate-50 text-slate-950
+Card: rounded-2xl border border-slate-200 bg-white shadow-sm
+Muted card: rounded-2xl border border-slate-200 bg-slate-50
+Primary button: bg-indigo-600 text-white hover:bg-indigo-700
+Secondary button: border border-slate-200 bg-white text-slate-900 hover:bg-slate-50
+Ghost button: text-slate-600 hover:bg-slate-100 hover:text-slate-950
+Input: rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:ring-2 focus:ring-indigo-500
+Error text: text-sm text-rose-600
+Helper text: text-sm text-slate-500
+Page title: text-2xl md:text-3xl font-semibold tracking-tight text-slate-950
+Section title: text-xl md:text-2xl font-semibold tracking-tight text-slate-950
+Body text: text-sm md:text-base text-slate-600
+```
 
 ---
 
-## Component Quality Rules
+## Strict MVVM Rules
 
-| Rule | Requirement |
-|---|---|
-| Props | Components must receive typed props. |
-| Reuse | Shared UI goes in `src/shared/components`. |
-| Feature UI | Feature-specific components stay inside the feature folder. |
-| Size | Split large components after they exceed one clear responsibility. |
-| Accessibility | Interactive components require labels, focus styles, and keyboard support. |
-| Loading states | Every API-backed region needs loading, empty, and error states. |
-| No hidden fetching | Components must not fetch data internally unless they are explicitly service widgets approved by architecture. |
+### Model Layer
+Models contain only pure TypeScript data definitions and constants.
+
+Allowed:
+
+- interfaces
+- types
+- enums
+- constants
+- default values
+- static option lists
+- status maps
+
+Not allowed:
+
+- React hooks
+- API calls
+- navigation calls
+- localStorage access
+- Supabase calls
+- browser side effects
+- JSX
+
+### ViewModel Layer
+ViewModels own behavior and state.
+
+Allowed:
+
+- `useState`, `useEffect`, `useMemo`, `useCallback`
+- validation orchestration
+- service calls
+- loading/error/success state
+- routing handlers
+- UI state such as modal open/close and active tab
+- mapping API data to view-ready data
+
+Not allowed:
+
+- long JSX layout
+- duplicated model types
+- direct DOM manipulation unless absolutely necessary
+- styling decisions that belong in shared components
+
+### View Layer
+Views assemble sections and pass props.
+
+Allowed:
+
+- layout composition
+- rendering data from ViewModel
+- passing handlers to components
+- semantic HTML sections
+
+Not allowed:
+
+- direct API calls
+- Supabase calls
+- business logic
+- validation logic
+- complex mapping logic
+- one-off hardcoded design systems
+
+### Component Layer
+Components are reusable presentational building blocks.
+
+Allowed:
+
+- display props
+- local visual-only state when necessary
+- small UI interactions such as toggling a menu passed from ViewModel
+
+Not allowed:
+
+- service calls
+- business workflows
+- role permission logic
+- app-level route decisions
 
 ---
 
-## State Management Rules
+## Required Folder Pattern
 
-| State Type | Location |
-|---|---|
-| Page loading/error state | ViewModel |
-| Form state | ViewModel or form hook called from ViewModel |
-| Filter state | ViewModel |
-| Modal open/close state | ViewModel when business-related; component local state when purely visual |
-| Session state | Auth ViewModel or global auth provider |
-| Cross-feature state | Minimal global store only when required |
+Every feature must follow this structure:
+
+```txt
+src/features/<feature-name>/
+├── components/
+├── models/
+├── viewmodels/
+└── views/
+```
+
+Shared reusable components go here:
+
+```txt
+src/shared/components/
+src/shared/layout/
+src/shared/constants/
+src/shared/styles/
+src/shared/types/
+```
+
+Services go here:
+
+```txt
+src/services/
+```
+
+Routes go here:
+
+```txt
+src/routes/index.tsx
+```
 
 ---
 
-## Testing Responsibilities
+## Shared UI Component Rules
 
-| Test Type | Scope |
+Use shared UI primitives before creating feature-specific components.
+
+| Component | Requirement |
 |---|---|
-| Unit tests | ViewModel transformations, validation functions, utility functions. |
-| Component tests | Forms, cards, filters, status badges, dashboards. |
-| Integration tests | Organizer create event → requirement → vendor search → booking request. |
-| Accessibility tests | Keyboard navigation, labels, modal focus trap, color contrast. |
-| Responsive checks | Mobile, tablet, desktop breakpoints. |
+| `Button` | Must support `primary`, `secondary`, `ghost`, and `danger` variants. |
+| `Input` | Must support label, helper text, error text, disabled, and loading states. |
+| `Select` | Must visually match `Input`. |
+| `Modal` | Must have consistent overlay, panel radius, header, body, footer, and close behavior. |
+| `StatusBadge` | Must use a central status-to-color map. |
+| `PageHeader` | Must provide consistent title, subtitle, optional eyebrow, and action slot. |
+| `DashboardShell` | Must wrap authenticated Organizer, Vendor, Admin, and settings pages. |
+| `PublicShell` | Must wrap landing/auth public pages when useful, but landing may use custom full-width sections. |
+| `DataCard` | Must standardize cards for events, requirements, vendors, bookings, and contracts. |
+| `EmptyState` | Must provide title, short description, optional icon, and optional CTA. |
+| `LoadingSkeleton` | Must match the final page layout. |
+| `ErrorBanner` | Must show clear, actionable errors. |
+| `Stepper` | Must be reused for procurement, booking, and onboarding flows. |
+
+Do not duplicate these styles inside feature files.
 
 ---
 
-## Frontend Definition of Done
+## Landing Page Rules
 
-A frontend task is complete only when:
+The landing page is the public marketing entry for Eventify.
 
-- The feature follows MVVM boundaries.
-- The View contains no API calls.
-- Types are explicit and reusable.
+### Required Files
+
+```txt
+src/features/landing/models/landing.models.ts
+src/features/landing/viewmodels/useLandingViewModel.ts
+src/features/landing/views/LandingView.tsx
+src/features/landing/views/LandingViewWrapper.tsx
+src/features/landing/components/LandingNavbar.tsx
+src/features/landing/components/LandingHero.tsx
+src/features/landing/components/LandingWorkflow.tsx
+src/features/landing/components/LandingFeatureGrid.tsx
+src/features/landing/components/LandingRoleCards.tsx
+src/features/landing/components/LandingCTASection.tsx
+src/features/landing/components/LandingFooter.tsx
+```
+
+### Required Sections
+
+| Section | Rule |
+|---|---|
+| Navbar | Sticky public nav with Eventify branding, links, Login, Register, and mobile hamburger. |
+| Hero | Explain large event vendor procurement clearly. |
+| Workflow | Show Create Event → Add Requirements → Discover Vendors → Send Booking Request → Track Portfolio. |
+| Feature Grid | Preview procurement workspace, vendor discovery, booking request flow, vendor dashboard, portfolio tracking, and contract visibility. |
+| Role Cards | Show Organizer, Vendor, and Admin/Operations entry points. |
+| CTA Section | Add trust stats and final Organizer/Vendor CTAs. |
+| Footer | Dark footer with Eventify branding and simple links. |
+
+### Landing Design Rules
+
+- Do not use `DashboardShell`.
+- Use full-width marketing sections.
+- Use generous spacing and strong headline hierarchy.
+- Keep descriptions short.
+- Use the same brand colors and components as the rest of the app.
+- CTAs route to `/register` for unauthenticated users.
+- Authenticated users should route to their proper dashboard when existing auth logic is available.
+
+---
+
+## Auth Screen Rules
+
+Auth pages must feel connected to the landing page.
+
+| Screen | Rule |
+|---|---|
+| Login | Use centered card or split layout with concise copy and Eventify branding. |
+| Register | Include role selection or role-specific CTA path. |
+| Forgot Password | Use same card/form pattern as login. |
+| Role Selection | Use the same role-card style as landing. |
+
+Auth screens must use shared form controls, shared buttons, consistent error messages, and no direct Supabase calls in Views.
+
+---
+
+## Dashboard Rules
+
+Authenticated pages must use `DashboardShell` unless there is a documented reason not to.
+
+### DashboardShell Must Include
+
+- role-aware navigation
+- Eventify branding
+- active route state
+- account/profile area
+- responsive mobile navigation
+- consistent content container
+
+### Page Header Pattern
+
+Every authenticated page should start with `PageHeader`.
+
+Required header structure:
+
+```txt
+Eyebrow or role label
+Main page title
+Short helper subtitle
+Optional primary action button
+```
+
+---
+
+## Organizer UI Rules
+
+Organizer screens must always communicate the event-first workflow.
+
+| Area | Rule |
+|---|---|
+| Dashboard | Show large event cards and procurement progress. |
+| Event setup | Use clear create/select event flow. |
+| Procurement | Keep selected event visible. |
+| Requirements | Group by category and show status, budget, quantity, and booking count. |
+| Vendor search | Highlight vendor match to selected requirement. |
+| Booking | Always show event, requirement, vendor, budget, and status summary. |
+| Portfolio | Show requirement fulfillment, bookings, contracts, and timeline. |
+
+---
+
+## Vendor UI Rules
+
+Vendor pages must clearly distinguish B2B Organizer bookings from personal customer bookings.
+
+| Area | Rule |
+|---|---|
+| Dashboard | Use B2B queue-first layout. |
+| Labels | Use `Organizer Booking`, `Large Event`, and `B2B Procurement`. |
+| Request cards | Show event name, date, venue, expected guests, category, budget, and notes. |
+| Actions | Accept, decline, and request changes must be visually clear. |
+| Services | Use consistent service cards and editable form sections. |
+| Verification | Use shared verification badges and status descriptions. |
+
+---
+
+## Admin UI Rules
+
+Admin/Operations screens must feel operational and audit-friendly.
+
+| Area | Rule |
+|---|---|
+| Users | Use tables with filters and role/status badges. |
+| Vendors | Show verification status and action controls. |
+| Bookings | Use searchable booking oversight table. |
+| Issues | Use clear priority/status tags. |
+| Audit | Keep layouts dense but readable. |
+
+Admin screens should not introduce a separate design style. They must use the same shell, cards, filters, tables, and badges.
+
+---
+
+## Forms and Validation Rules
+
+All forms must use the same structure.
+
+```txt
+Label
+Input/select/textarea
+Optional helper text
+Validation error text
+```
+
+Validation errors must be specific and actionable.
+
+Do not use generic messages like:
+
+```txt
+Invalid input
+Something went wrong
+```
+
+Use messages like:
+
+```txt
+Event date is required.
+Maximum budget must be greater than minimum budget.
+Select a vendor before submitting a booking request.
+```
+
+---
+
+## Loading, Empty, Error, and Success States
+
+| State | Required Pattern |
+|---|---|
+| Loading | Use skeletons that match the final layout. |
+| Empty | Use `EmptyState` with one clear CTA. |
+| Error | Use `ErrorBanner` or toast with retry action when possible. |
+| Success | Use success toast, inline confirmation, or redirect with state. |
+| Disabled | Buttons must clearly show disabled/loading states. |
+
+---
+
+## Responsive Rules
+
+Build mobile-first.
+
+| Breakpoint | Rule |
+|---|---|
+| Mobile | Single-column layouts, collapsible nav, full-width CTAs. |
+| Tablet | Two-column cards when space allows. |
+| Desktop | Multi-column dashboards, sidebars, filters, and drawers. |
+| Large desktop | Use max-width containers; avoid overly stretched content. |
+
+No page should require horizontal scrolling except wide data tables, and tables must have responsive wrappers.
+
+---
+
+## Accessibility Rules
+
+Every implementation must include:
+
+- visible focus states
+- semantic headings
+- form labels
+- keyboard-accessible menus and dialogs
+- ARIA attributes for dialogs and disclosure menus when needed
+- sufficient text contrast
+- descriptive button text
+- no color-only status communication
+
+---
+
+## Routing Rules
+
+- Route definitions belong in `src/routes/index.tsx`.
+- Use lazy-loaded views when possible.
+- `/` must load the landing page publicly.
+- Auth routes must be public.
+- Organizer routes must use Organizer guard.
+- Vendor routes must use Vendor guard.
+- Admin routes must use Admin guard.
+- Catch-all route must come last.
+
+---
+
+## API and Service Rules
+
+Views and components must never call APIs directly.
+
+Correct flow:
+
+```txt
+View → ViewModel → Service → API Client → Backend/Supabase
+```
+
+Wrong flow:
+
+```txt
+View → API Client
+Component → Supabase
+View → fetch()
+```
+
+Services must return typed data and consistent error shapes.
+
+---
+
+## Tailwind Rules
+
+Allowed:
+
+- Tailwind utilities
+- shared class constants when repeated
+- small component-level class composition
+- design tokens documented in shared constants
+
+Avoid:
+
+- random per-page color choices
+- one-off card styles
+- inconsistent spacing
+- repeated long class strings when a shared component exists
+- inline styles unless absolutely required
+
+---
+
+## Naming Rules
+
+| Type | Pattern |
+|---|---|
+| Component | `PascalCase.tsx` |
+| View | `<Feature>View.tsx` |
+| View wrapper | `<Feature>ViewWrapper.tsx` |
+| ViewModel | `use<Feature>ViewModel.ts` or `use<Feature>.ts` |
+| Model | `<feature>.models.ts` |
+| Service | `<feature>Service.ts` |
+| Constants | `<feature>.constants.ts` or shared constants file |
+
+Use named exports only unless the project already has a documented exception.
+
+---
+
+## Page Build Checklist
+
+Before finishing any page, verify:
+
+- The page follows MVVM.
+- The View has no API call.
+- The View has no Supabase call.
+- The ViewModel owns state, validation, effects, and handlers.
+- The Model owns types and constants only.
+- Shared UI components are used before custom styles.
+- The page uses the Eventify color, spacing, card, button, and badge system.
 - Loading, empty, error, and success states exist.
-- UI is responsive and accessible.
-- All route guards work for expected roles.
-- Feature is tested or has a documented test path.
-- Build passes without TypeScript errors.
+- Mobile layout works.
+- Focus states and labels are present.
+- The route is documented.
+- `npm run build` passes.
+
+---
+
+## Design Uniformity Review Checklist
+
+Use this checklist at the end of every phase.
+
+| Check | Pass Condition |
+|---|---|
+| Shared buttons | No custom CTA style exists when shared `Button` can be used. |
+| Shared cards | Cards have consistent border, radius, shadow, padding, and header layout. |
+| Shared badges | Status badges use the centralized status map. |
+| Shared forms | Inputs, selects, labels, errors, and helper text match everywhere. |
+| Shared shell | Authenticated pages use `DashboardShell`. |
+| Landing consistency | Landing uses the same brand tokens but keeps a marketing layout. |
+| Role clarity | Organizer, Vendor, and Admin labels are clear. |
+| Mobile quality | Layout stacks cleanly and nav is usable. |
+| Accessibility | Keyboard and screen-reader basics are covered. |
+| No one-off styles | Any custom style has a documented reason. |
+
+---
+
+## Commit Rule
+
+Each completed phase must be verified and committed before moving to the next phase.
+
+Recommended format:
+
+```bash
+git add .
+git commit -m "frontend/<short-phase-description>"
+```
+
+Examples:
+
+```bash
+git commit -m "frontend/add-design-system-foundation"
+git commit -m "frontend/add-public-landing-page"
+git commit -m "frontend/add-auth-role-routing"
+git commit -m "frontend/add-organizer-dashboard"
+```
+
+---
+
+## Final Reminder
+
+Eventify must look like one product. Do not let each phase create a different visual style. Landing, auth, dashboards, procurement, booking, portfolio, notifications, profile, settings, and admin screens must all share the same design language, component system, and interaction patterns.

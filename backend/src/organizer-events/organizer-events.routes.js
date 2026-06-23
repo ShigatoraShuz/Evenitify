@@ -12,6 +12,7 @@ const router = Router();
 router.get('/', authenticate, requireRole('organizer', 'admin'), controller.listEvents);
 router.post('/', authenticate, requireRole('organizer'), validate(createEventSchema), controller.createEvent);
 router.get('/:eventId', authenticate, requireRole('organizer', 'admin'), validate(eventIdSchema), controller.getEvent);
+router.get('/dashboard/summary', authenticate, requireRole('organizer', 'admin'), controller.getDashboardSummary);
 router.get('/:eventId/portfolio', authenticate, requireRole('organizer', 'admin'), validate(eventIdSchema), controller.getEventPortfolio);
 router.patch('/:eventId', authenticate, requireRole('organizer'), validate(updateEventSchema), controller.updateEvent);
 router.get('/:eventId/bookings', authenticate, requireRole('organizer', 'admin'), validate(eventBookingsSchema), bookingController.listEventBookings);

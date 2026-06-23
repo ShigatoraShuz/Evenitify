@@ -94,6 +94,10 @@ async function searchVendors(filters) {
     .select('*')
     .eq('verification_status', 'verified');
 
+  if (filters.businessName) {
+    query = query.ilike('business_name', `%${filters.businessName}%`);
+  }
+
   if (filters.minRating) {
     query = query.gte('rating', filters.minRating);
   }
@@ -102,13 +106,22 @@ async function searchVendors(filters) {
     query = query.ilike('service_area', `%${filters.location}%`);
   }
 
-  const { data, error } = await query.order('rating', { ascending: false });
+  if (filters.availability === 'available') {
+    query = query.eq('availability_status', 'available');
+  } else if (filters.availability === 'all') {
+    // no filter
+  }
+
+  const orderColumn = filters.sortBy === 'name' ? 'business_name' : 'rating';
+  const orderAsc = filters.sortOrder === 'asc';
+
+  const { data, error } = await query.order(orderColumn, { ascending: orderAsc });
 
   if (error) throw error;
   return data || [];
 }
 
-async function searchVendorServices(vendorIds, category, minBudget, maxBudget) {
+async function searchVendorServices(vendorIds, category, minBudget, maxBudget, sortBy) {
   let query = supabase
     .from('vendor_services')
     .select('*, vendor_profiles!inner(*)')
@@ -125,6 +138,12 @@ async function searchVendorServices(vendorIds, category, minBudget, maxBudget) {
 
   if (maxBudget !== undefined) {
     query = query.lte('base_price', maxBudget);
+  }
+
+  if (sortBy === 'price_asc') {
+    query = query.order('base_price', { ascending: true });
+  } else if (sortBy === 'price_desc') {
+    query = query.order('base_price', { ascending: false });
   }
 
   const { data, error } = await query;

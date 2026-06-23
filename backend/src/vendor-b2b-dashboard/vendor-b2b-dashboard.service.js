@@ -63,7 +63,8 @@ async function searchVendors(filters) {
     vendorIds,
     filters.category,
     filters.minBudget,
-    filters.maxBudget
+    filters.maxBudget,
+    filters.sortBy
   );
 
   const vendorMap = {};
