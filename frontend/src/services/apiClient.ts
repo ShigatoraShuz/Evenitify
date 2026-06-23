@@ -1,17 +1,23 @@
 import { getMockResponse } from './mock/mockAdapter'
+import { isMockMode, getApiBaseUrl } from '../config/apiConfig'
 import type { ApiResponse } from './types'
 
-const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true' || !import.meta.env.VITE_USE_MOCKS
-
-const API_BASE = '/api'
+function getAuthToken(): string | null {
+  try {
+    const raw = localStorage.getItem('supabase.auth.token')
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed?.access_token || null
+  } catch {
+    return null
+  }
+}
 
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem('supabase.auth.token')
-    ? JSON.parse(localStorage.getItem('supabase.auth.token') || '{}')?.access_token
-    : null
+  const token = getAuthToken()
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -22,7 +28,7 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  if (USE_MOCKS) {
+  if (isMockMode()) {
     const mockResult = getMockResponse<T>(
       options.method || 'GET',
       endpoint,
@@ -34,7 +40,8 @@ async function request<T>(
     }
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
+  const apiBase = getApiBaseUrl()
+  const res = await fetch(`${apiBase}${endpoint}`, {
     ...options,
     headers
   })
