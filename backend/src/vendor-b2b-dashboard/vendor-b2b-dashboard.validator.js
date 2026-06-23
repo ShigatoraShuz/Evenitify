@@ -52,7 +52,10 @@ const bookingStatusSchema = z.object({
   body: z.object({
     status: z.enum(['accepted', 'rejected', 'changes_requested'], 'Invalid status transition'),
     reason: z.string().max(500).optional().nullable()
-  }),
+  }).refine(
+    (data) => data.status !== 'rejected' || (data.reason && data.reason.length > 0),
+    { message: 'Reason is required when declining a booking', path: ['reason'] }
+  ),
   params: z.object({
     bookingId: z.string().uuid('Invalid booking ID')
   }),

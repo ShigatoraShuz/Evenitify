@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
+import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { ContractTimeline, buildContractTimeline } from '../../contract-booking/components/ContractTimeline'
 import type { BookingRequest } from '../../../services/bookingService'
 import type { ContractDetail } from '../../../services/contractService'
@@ -51,10 +52,29 @@ export function VendorB2BDashboardView({
   onLoadContract,
   onSignVendorContract
 }: VendorB2BDashboardViewProps) {
+  const [confirmDecline, setConfirmDecline] = useState<string | null>(null)
+
   useEffect(() => { onLoadBookings() }, [])
+
+  const handleDecline = async () => {
+    if (confirmDecline) {
+      await onUpdateStatus(confirmDecline, 'rejected')
+      setConfirmDecline(null)
+    }
+  }
 
   return (
     <DashboardShell>
+      <ConfirmDialog
+        open={!!confirmDecline}
+        title="Decline Booking"
+        message="Are you sure you want to decline this booking request? This action cannot be undone."
+        confirmLabel="Decline"
+        variant="danger"
+        loading={submitting}
+        onConfirm={handleDecline}
+        onCancel={() => setConfirmDecline(null)}
+      />
       <PageHeader
         title="B2B Bookings"
         subtitle="Organizer and Large Event booking requests"
@@ -130,7 +150,7 @@ export function VendorB2BDashboardView({
             <div className="flex gap-3 mb-6">
               <Button onClick={() => onUpdateStatus(selectedBooking.id, 'accepted')} loading={submitting}>Accept</Button>
               <Button variant="secondary" onClick={() => onUpdateStatus(selectedBooking.id, 'changes_requested')} loading={submitting}>Request Changes</Button>
-              <Button variant="danger" onClick={() => onUpdateStatus(selectedBooking.id, 'rejected')} loading={submitting}>Decline</Button>
+              <Button variant="danger" onClick={() => setConfirmDecline(selectedBooking.id)} loading={submitting}>Decline</Button>
             </div>
           )}
 

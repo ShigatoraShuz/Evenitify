@@ -5,6 +5,7 @@ import { Select } from '../../../shared/components/Select'
 import { Modal } from '../../../shared/components/Modal'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import type { EventRequirement } from '../../../services/eventService'
@@ -74,10 +75,18 @@ export function VendorProcurementView({
   const [reqNotes, setReqNotes] = useState('')
   const [bookingNotes, setBookingNotes] = useState('')
   const [requestedBudget, setRequestedBudget] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     if (eventId) onInitEvent(eventId)
   }, [eventId])
+
+  const handleDeleteReq = async () => {
+    if (confirmDeleteId) {
+      await onDeleteRequirement(confirmDeleteId)
+      setConfirmDeleteId(null)
+    }
+  }
 
   const handleCreateReq = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -106,6 +115,16 @@ export function VendorProcurementView({
 
   return (
     <DashboardShell>
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        title="Remove Requirement"
+        message="Are you sure you want to remove this requirement? Any associated bookings will be affected."
+        confirmLabel="Remove"
+        variant="danger"
+        loading={submitting}
+        onConfirm={handleDeleteReq}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
       <PageHeader
         title="Vendor Procurement"
         subtitle={eventId ? `Event: ${eventId}` : 'Select an event first'}
@@ -163,7 +182,7 @@ export function VendorProcurementView({
                     {req.max_budget && <p>Max: ${Number(req.max_budget).toLocaleString()}</p>}
                   </div>
                   <button
-                    onClick={(e) => { e.stopPropagation(); onDeleteRequirement(req.id) }}
+                    onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(req.id) }}
                     className="mt-2 text-xs text-red-500 hover:text-red-700"
                   >
                     Remove
