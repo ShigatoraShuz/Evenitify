@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../../../shared/components/Button'
 import { Input } from '../../../shared/components/Input'
 import { Modal } from '../../../shared/components/Modal'
@@ -21,6 +22,14 @@ interface OrganizerDashboardViewProps {
   onNavigateToPortfolio?: (eventId: string) => void
 }
 
+interface ActionCard {
+  title: string
+  description: string
+  label: string
+  to: string
+  priority: 'high' | 'medium' | 'low'
+}
+
 export function OrganizerDashboardView({
   events,
   summary,
@@ -32,6 +41,7 @@ export function OrganizerDashboardView({
   onSelectEvent,
   onNavigateToPortfolio
 }: OrganizerDashboardViewProps) {
+  const navigate = useNavigate()
   const [showCreate, setShowCreate] = useState(false)
   const [title, setTitle] = useState('')
   const [eventDate, setEventDate] = useState('')
@@ -40,6 +50,90 @@ export function OrganizerDashboardView({
   const [guests, setGuests] = useState('')
 
   useEffect(() => { onLoadEvents() }, [])
+
+  const actions = useMemo((): ActionCard[] => {
+    const result: ActionCard[] = []
+    if (!summary) return result
+
+    const draftEvents = summary.eventStatusSummary.draft
+    const openReqs = summary.requirementSummary.open
+    const pendingBookings = summary.bookingSummary.pending
+    const changesRequested = summary.bookingSummary.changesRequested
+    const contractSent = summary.bookingSummary.contractSent
+
+    if (events.length === 0) {
+      result.push({
+        title: 'Create your first event',
+        description: 'Start by creating a Large Event to begin vendor procurement.',
+        label: 'Create Event',
+        to: '#create',
+        priority: 'high',
+      })
+    }
+
+    if (draftEvents > 0) {
+      result.push({
+        title: `${draftEvents} event${draftEvents > 1 ? 's' : ''} in draft`,
+        description: 'Complete the event details to move forward with planning.',
+        label: 'View Drafts',
+        to: '#',
+        priority: 'medium',
+      })
+    }
+
+    if (openReqs > 0) {
+      result.push({
+        title: `Post requirements for ${openReqs} open slot${openReqs > 1 ? 's' : ''}`,
+        description: 'Add event requirements and find vendors to fulfill them.',
+        label: 'Find Vendors',
+        to: '/organizer/procurement',
+        priority: 'high',
+      })
+    }
+
+    if (pendingBookings > 0) {
+      result.push({
+        title: `${pendingBookings} vendor response${pendingBookings > 1 ? 's' : ''} to review`,
+        description: 'Review pending vendor bookings and accept or negotiate.',
+        label: 'Review Bookings',
+        to: '/organizer/portfolio',
+        priority: 'high',
+      })
+    }
+
+    if (changesRequested > 0) {
+      result.push({
+        title: `${changesRequested} booking${changesRequested > 1 ? 's' : ''} need attention`,
+        description: 'Vendors have requested changes to their bookings.',
+        label: 'Review Changes',
+        to: '/organizer/portfolio',
+        priority: 'high',
+      })
+    }
+
+    if (contractSent > 0) {
+      result.push({
+        title: `${contractSent} contract${contractSent > 1 ? 's' : ''} waiting for signature`,
+        description: 'Review and sign pending contracts.',
+        label: 'Sign Contracts',
+        to: '/organizer/portfolio',
+        priority: 'high',
+      })
+    }
+
+    if (summary.upcomingEvents.length > 0) {
+      const next = summary.upcomingEvents[0]
+      result.push({
+        title: `Upcoming: ${next.title}`,
+        description: `Scheduled for ${new Date(next.eventDate).toLocaleDateString()}. Check portfolio for progress.`,
+        label: 'View Portfolio',
+        to: `/organizer/portfolio?eventId=${next.id}`,
+        priority: 'medium',
+      })
+    }
+
+    return result
+  }, [summary, events.length])
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,6 +193,37 @@ export function OrganizerDashboardView({
         </div>
       )}
 
+      {actions.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Suggested Actions</h3>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {actions.map((action, i) => (
+              <div
+                key={i}
+                className={`rounded-xl border p-4 transition-all hover:shadow-md cursor-pointer ${
+                  action.priority === 'high'
+                    ? 'bg-brand-50 border-brand-200 hover:border-brand-300'
+                    : 'bg-white border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={() => {
+                  if (action.to === '#create') setShowCreate(true)
+                  else navigate(action.to)
+                }}
+              >
+                <div className="flex items-start justify-between mb-1">
+                  <h4 className="font-medium text-gray-900 text-sm">{action.title}</h4>
+                  {action.priority === 'high' && (
+                    <span className="text-xs bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded font-medium">NOW</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mb-2">{action.description}</p>
+                <span className="text-xs text-brand-600 font-medium">{action.label} &rarr;</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -112,37 +237,40 @@ export function OrganizerDashboardView({
           action={<Button onClick={() => setShowCreate(true)}>Create Event</Button>}
         />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-brand-300 transition-all"
-            >
-              <button onClick={() => onSelectEvent(event.id)} className="w-full text-left">
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="font-semibold text-gray-900">{event.title}</h3>
-                  <StatusBadge status={event.status} size="sm" />
-                </div>
-                <div className="space-y-1 text-sm text-gray-500">
-                  <p>{new Date(event.event_date).toLocaleDateString()}</p>
-                  <p>{event.venue}</p>
-                  <p>Budget: ${Number(event.budget).toLocaleString()}</p>
-                  <p>{event.expected_guests} guests</p>
-                </div>
-              </button>
-              {onNavigateToPortfolio && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onNavigateToPortfolio(event.id) }}
-                    className="text-sm text-brand-600 hover:text-brand-700 font-medium"
-                  >
-                    View Portfolio &rarr;
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <>
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">All Events</h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {events.map((event) => (
+              <div
+                key={event.id}
+                className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-brand-300 transition-all"
+              >
+                <button onClick={() => onSelectEvent(event.id)} className="w-full text-left">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900">{event.title}</h3>
+                    <StatusBadge status={event.status} size="sm" />
+                  </div>
+                  <div className="space-y-1 text-sm text-gray-500">
+                    <p>{new Date(event.event_date).toLocaleDateString()}</p>
+                    <p>{event.venue}</p>
+                    <p>Budget: ${Number(event.budget).toLocaleString()}</p>
+                    <p>{event.expected_guests} guests</p>
+                  </div>
+                </button>
+                {onNavigateToPortfolio && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onNavigateToPortfolio(event.id) }}
+                      className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                    >
+                      View Portfolio &rarr;
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create Large Event">
