@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useVendorProcurement } from '../viewmodels/useVendorProcurement'
 import { VendorProcurementView } from './VendorProcurementView'
 
@@ -5,6 +6,12 @@ export default function VendorProcurementViewWrapper() {
   const vm = useVendorProcurement()
   const params = new URLSearchParams(window.location.search)
   const eventId = params.get('eventId')
+
+  useEffect(() => {
+    if (vm.eventId || eventId) {
+      vm.loadDraft()
+    }
+  }, [vm.eventId, eventId])
 
   return (
     <VendorProcurementView
@@ -18,6 +25,8 @@ export default function VendorProcurementViewWrapper() {
       loading={vm.loading}
       submitting={vm.submitting}
       error={vm.error}
+      draftSaved={vm.draftSaved}
+      validationErrors={vm.validationErrors}
       onInitEvent={vm.initEvent}
       onSetStep={vm.setStep}
       onSelectRequirement={vm.selectRequirement}
@@ -29,6 +38,7 @@ export default function VendorProcurementViewWrapper() {
       onDeleteRequirement={vm.deleteRequirement}
       onUpdateFilters={vm.updateFilters}
       onSubmitBooking={vm.submitBookingRequest}
+      onSaveDraft={vm.saveDraft}
       onClearError={vm.clearError}
     />
   )

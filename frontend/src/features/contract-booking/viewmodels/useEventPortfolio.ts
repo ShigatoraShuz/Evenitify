@@ -3,6 +3,8 @@ import { useAuthSession } from '../../auth/viewmodels/useAuthSession'
 import { eventService, type EventPortfolio } from '../../../services/eventService'
 import { contractService, type ContractDetail } from '../../../services/contractService'
 
+export type PortfolioTab = 'overview' | 'requirements' | 'vendors' | 'bookings' | 'contracts' | 'activity'
+
 interface EventPortfolioState {
   portfolio: EventPortfolio | null
   loading: boolean
@@ -11,6 +13,7 @@ interface EventPortfolioState {
   expandedBookingId: string | null
   detailedContract: ContractDetail | null
   contractLoading: boolean
+  activeTab: PortfolioTab
 }
 
 export function useEventPortfolio() {
@@ -22,7 +25,8 @@ export function useEventPortfolio() {
     error: null,
     expandedBookingId: null,
     detailedContract: null,
-    contractLoading: false
+    contractLoading: false,
+    activeTab: 'overview'
   })
 
   const loadPortfolio = useCallback(async (eventId: string) => {
@@ -33,6 +37,10 @@ export function useEventPortfolio() {
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
+  }, [])
+
+  const setActiveTab = useCallback((tab: PortfolioTab) => {
+    setState((s) => ({ ...s, activeTab: tab, expandedBookingId: null, detailedContract: null }))
   }, [])
 
   const expandBooking = useCallback(async (bookingId: string) => {
@@ -95,10 +103,40 @@ export function useEventPortfolio() {
     setState((s) => ({ ...s, error: null }))
   }, [])
 
+  const vendors = state.portfolio?.bookings
+    ? [...new Map(state.portfolio.bookings.map((b) => [b.vendor_id, b.vendor_profiles])).entries()]
+        .map(([vendorId, profile]) => ({ vendorId, ...profile }))
+    : []
+
+  const contracts = state.portfolio?.bookings
+    ? state.portfolio.bookings.flatMap((b) =>
+        (b.contracts || []).map((c) => ({
+          ...c,
+          bookingId: b.id,
+          vendorName: b.vendor_profiles?.business_name,
+          category: b.event_requirements?.category
+        }))
+      )
+    : []
+
+  const activity = state.portfolio?.bookings
+    ? state.portfolio.bookings.flatMap((b) =>
+        (b.statusHistory || []).map((h) => ({
+          ...h,
+          vendorName: b.vendor_profiles?.business_name,
+          category: b.event_requirements?.category
+        }))
+      ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    : []
+
   return {
     ...state,
     userRole: user?.role || null,
+    vendors,
+    contracts,
+    activity,
     loadPortfolio,
+    setActiveTab,
     expandBooking,
     createContract,
     sendContract,

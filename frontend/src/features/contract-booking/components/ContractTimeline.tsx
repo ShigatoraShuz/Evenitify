@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 interface TimelineStep {
   label: string
   date: string | null
@@ -9,7 +11,7 @@ interface ContractTimelineProps {
   steps: TimelineStep[]
 }
 
-export function ContractTimeline({ steps }: ContractTimelineProps) {
+export const ContractTimeline = memo(function ContractTimeline({ steps }: ContractTimelineProps) {
   return (
     <div className="space-y-3">
       {steps.map((step, index) => (
@@ -40,7 +42,7 @@ export function ContractTimeline({ steps }: ContractTimelineProps) {
       ))}
     </div>
   )
-}
+})
 
 export function buildContractTimeline(contract: {
   contract_status: string

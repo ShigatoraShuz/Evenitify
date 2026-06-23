@@ -1,5 +1,6 @@
 import { useNotifications } from '../../features/notifications/viewmodels/useNotifications'
 import { NotificationDropdown } from '../../features/notifications/components/NotificationDropdown'
+import { ToastProvider } from './ToastContext'
 import { useNavigate } from 'react-router-dom'
 
 interface DashboardShellProps {
@@ -23,6 +24,7 @@ export function DashboardShell({ children, sidebar }: DashboardShellProps) {
   })()
 
   return (
+    <ToastProvider>
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -74,5 +76,6 @@ export function DashboardShell({ children, sidebar }: DashboardShellProps) {
         </main>
       </div>
     </div>
+    </ToastProvider>
   )
 }

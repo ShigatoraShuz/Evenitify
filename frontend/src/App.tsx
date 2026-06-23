@@ -4,9 +4,9 @@ import { AppRoutes } from './routes'
 import './App.css'
 
 function AppContent() {
-  const { user, loading } = useAuthSession()
+  const { user, loading, profileComplete } = useAuthSession()
 
-  return <AppRoutes userRole={user?.role || null} loading={loading} />
+  return <AppRoutes userRole={user?.role || null} profileComplete={profileComplete} loading={loading} />
 }
 
 function App() {

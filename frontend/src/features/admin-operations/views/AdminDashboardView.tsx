@@ -6,7 +6,7 @@ import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { Modal } from '../../../shared/components/Modal'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Input } from '../../../shared/components/Input'
-// Using native selects styled to match shared Select component
+import { Select } from '../../../shared/components/Select'
 import type {
   AdminDashboardSummary,
   AdminUser,
@@ -156,16 +156,17 @@ export function AdminDashboardView({
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="flex-1"
                 />
-                <select
+                <Select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
-                  className="w-40 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="">All Roles</option>
-                  <option value="organizer">Organizer</option>
-                  <option value="vendor">Vendor</option>
-                  <option value="admin">Admin</option>
-                </select>
+                  options={[
+                    { value: '', label: 'All Roles' },
+                    { value: 'organizer', label: 'Organizer' },
+                    { value: 'vendor', label: 'Vendor' },
+                    { value: 'admin', label: 'Admin' }
+                  ]}
+                  className="w-40"
+                />
                 <Button onClick={handleSearch}>Search</Button>
               </div>
               {users.length === 0 ? (
@@ -206,19 +207,20 @@ export function AdminDashboardView({
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="flex-1"
                 />
-                <select
+                <Select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-40 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="">All Status</option>
-                  <option value="draft">Draft</option>
-                  <option value="planning">Planning</option>
-                  <option value="booking">Booking</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+                  options={[
+                    { value: '', label: 'All Status' },
+                    { value: 'draft', label: 'Draft' },
+                    { value: 'planning', label: 'Planning' },
+                    { value: 'booking', label: 'Booking' },
+                    { value: 'confirmed', label: 'Confirmed' },
+                    { value: 'completed', label: 'Completed' },
+                    { value: 'cancelled', label: 'Cancelled' }
+                  ]}
+                  className="w-40"
+                />
                 <Button onClick={handleSearch}>Search</Button>
               </div>
               {events.length === 0 ? (
@@ -263,20 +265,21 @@ export function AdminDashboardView({
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="flex-1"
                 />
-                <select
+                <Select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-40 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="accepted">Accepted</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="changes_requested">Changes Requested</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+                  options={[
+                    { value: '', label: 'All Status' },
+                    { value: 'pending', label: 'Pending' },
+                    { value: 'accepted', label: 'Accepted' },
+                    { value: 'rejected', label: 'Rejected' },
+                    { value: 'changes_requested', label: 'Changes Requested' },
+                    { value: 'confirmed', label: 'Confirmed' },
+                    { value: 'completed', label: 'Completed' },
+                    { value: 'cancelled', label: 'Cancelled' }
+                  ]}
+                  className="w-40"
+                />
                 <Button onClick={handleSearch}>Search</Button>
               </div>
               {bookings.length === 0 ? (
@@ -327,16 +330,17 @@ export function AdminDashboardView({
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="flex-1"
                 />
-                <select
+                <Select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-40 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="verified">Verified</option>
-                  <option value="rejected">Rejected</option>
-                </select>
+                  options={[
+                    { value: '', label: 'All Status' },
+                    { value: 'pending', label: 'Pending' },
+                    { value: 'verified', label: 'Verified' },
+                    { value: 'rejected', label: 'Rejected' }
+                  ]}
+                  className="w-40"
+                />
                 <Button onClick={handleSearch}>Search</Button>
               </div>
               {vendors.length === 0 ? (
@@ -423,23 +427,21 @@ export function AdminDashboardView({
             <p className="text-sm text-gray-600">
               Current status: <StatusBadge status={selectedBooking.status} size="sm" />
             </p>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Status</label>
-              <select
-                value={overrideStatus}
-                onChange={(e) => setOverrideStatus(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
-              >
-                <option value="">Select status...</option>
-                <option value="pending">Pending</option>
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
-                <option value="changes_requested">Changes Requested</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
+            <Select
+              label="New Status"
+              value={overrideStatus}
+              onChange={(e) => setOverrideStatus(e.target.value)}
+              placeholder="Select status..."
+              options={[
+                { value: 'pending', label: 'Pending' },
+                { value: 'accepted', label: 'Accepted' },
+                { value: 'rejected', label: 'Rejected' },
+                { value: 'changes_requested', label: 'Changes Requested' },
+                { value: 'confirmed', label: 'Confirmed' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'cancelled', label: 'Cancelled' }
+              ]}
+            />
             <Input
               label="Reason (required)"
               placeholder="Why are you overriding this booking?"

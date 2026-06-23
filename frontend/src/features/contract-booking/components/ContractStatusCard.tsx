@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { Button } from '../../../shared/components/Button'
 import type { ContractDetail } from '../../../services/contractService'
@@ -14,27 +15,39 @@ interface ContractStatusCardProps {
   onCancelContract?: () => void
 }
 
-function canCreate(contract: ContractDetail | null, userRole: string | null): boolean {
-  if (!contract) return true
-  return false
+const DISABLED_REASONS: Record<string, string> = {
+  send: 'Only the organizer can send the contract after it is drafted.',
+  sign_organizer: 'You must be the organizer to sign. Contract must be in "Sent" status.',
+  sign_vendor: 'You must be the assigned vendor to sign. Organizer must have signed first.',
+  cancel: 'Only cancellable when status is draft, sent, organizer_signed, vendor_signed, or active.',
+  create: 'A contract already exists for this booking.'
 }
 
-function canSign(contract: ContractDetail | null, userRole: string | null, asOrganizer: boolean): boolean {
-  if (!contract) return false
-  if (asOrganizer && contract.contract_status === 'sent') return true
-  if (!asOrganizer && contract.contract_status === 'organizer_signed') return true
-  return false
-}
-
-function canSend(contract: ContractDetail | null, userRole: string | null): boolean {
-  if (!contract) return false
-  return contract.contract_status === 'draft'
-}
-
-function canCancel(contract: ContractDetail | null, userRole: string | null): boolean {
-  if (!contract) return false
-  const cancellable: ContractStatus[] = ['draft', 'sent', 'organizer_signed', 'vendor_signed', 'active']
-  return cancellable.includes(contract.contract_status as ContractStatus)
+function getDisabledReason(action: string, contract: ContractDetail | null, userRole: string | null): string | null {
+  if (!contract) return null
+  switch (action) {
+    case 'send':
+      if (contract.contract_status !== 'draft') return 'Contract must be in draft status to send.'
+      if (userRole !== 'organizer') return 'Only the organizer can send the contract.'
+      return null
+    case 'sign_organizer':
+      if (contract.contract_status !== 'sent') return 'Contract must be in "Sent" status to sign as organizer.'
+      if (userRole !== 'organizer') return 'Only the organizer can sign at this stage.'
+      return null
+    case 'sign_vendor':
+      if (contract.contract_status !== 'organizer_signed') return 'Organizer must sign first before vendor can sign.'
+      if (userRole !== 'vendor') return 'Only the assigned vendor can sign.'
+      return null
+    case 'cancel': {
+      const cancellable: ContractStatus[] = ['draft', 'sent', 'organizer_signed', 'vendor_signed', 'active']
+      if (!cancellable.includes(contract.contract_status as ContractStatus)) return 'Contract cannot be cancelled in its current status.'
+      return null
+    }
+    case 'create':
+      return null
+    default:
+      return null
+  }
 }
 
 export function ContractStatusCard({
@@ -47,6 +60,8 @@ export function ContractStatusCard({
   onSignVendor,
   onCancelContract
 }: ContractStatusCardProps) {
+  const [expanded, setExpanded] = useState(false)
+
   if (loading) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -69,18 +84,10 @@ export function ContractStatusCard({
     )
   }
 
-  const statusColor = (status: string) => {
-    const map: Record<string, string> = {
-      draft: 'bg-gray-100 text-gray-700',
-      sent: 'bg-blue-100 text-blue-700',
-      organizer_signed: 'bg-purple-100 text-purple-700',
-      vendor_signed: 'bg-indigo-100 text-indigo-700',
-      active: 'bg-emerald-100 text-emerald-700',
-      completed: 'bg-green-100 text-green-700',
-      cancelled: 'bg-red-100 text-red-700'
-    }
-    return map[status] || 'bg-gray-100 text-gray-700'
-  }
+  const sendReason = getDisabledReason('send', contract, userRole)
+  const signOrgReason = getDisabledReason('sign_organizer', contract, userRole)
+  const signVendorReason = getDisabledReason('sign_vendor', contract, userRole)
+  const cancelReason = getDisabledReason('cancel', contract, userRole)
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -88,13 +95,22 @@ export function ContractStatusCard({
         <h4 className="font-medium text-gray-900">
           Contract {contract.contract_number ? `#${contract.contract_number}` : ''}
         </h4>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(contract.contract_status)}`}>
-          {contract.contract_status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-        </span>
+        <StatusBadge status={contract.contract_status} size="sm" />
       </div>
 
       {contract.terms_summary && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{contract.terms_summary}</p>
+        <div className="mb-3">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-sm text-left text-gray-600 hover:text-gray-900 w-full"
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-700">Terms Summary</span>
+              <span className="text-brand-600 text-xs">{expanded ? 'Collapse' : 'Expand'}</span>
+            </div>
+            <p className={`mt-1 ${expanded ? '' : 'line-clamp-2'}`}>{contract.terms_summary}</p>
+          </button>
+        </div>
       )}
 
       {contract.organizer_signed_at && (
@@ -109,18 +125,62 @@ export function ContractStatusCard({
       )}
 
       <div className="flex flex-wrap gap-2 mt-3">
-        {canSend(contract, userRole) && (
-          <Button onClick={onSendContract} disabled={!onSendContract}>Send Contract</Button>
-        )}
-        {canSign(contract, userRole, true) && (
-          <Button onClick={onSignOrganizer} disabled={!onSignOrganizer}>Sign as Organizer</Button>
-        )}
-        {canSign(contract, userRole, false) && (
-          <Button onClick={onSignVendor} disabled={!onSignVendor}>Sign as Vendor</Button>
-        )}
-        {canCancel(contract, userRole) && (
-          <Button variant="danger" onClick={onCancelContract} disabled={!onCancelContract}>Cancel</Button>
-        )}
+        <div className="relative group">
+          <Button
+            onClick={onSendContract}
+            disabled={!onSendContract || !!sendReason}
+          >
+            Send Contract
+          </Button>
+          {sendReason && (
+            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+              {sendReason}
+            </div>
+          )}
+        </div>
+
+        <div className="relative group">
+          <Button
+            onClick={onSignOrganizer}
+            disabled={!onSignOrganizer || !!signOrgReason}
+          >
+            Sign as Organizer
+          </Button>
+          {signOrgReason && (
+            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+              {signOrgReason}
+            </div>
+          )}
+        </div>
+
+        <div className="relative group">
+          <Button
+            onClick={onSignVendor}
+            disabled={!onSignVendor || !!signVendorReason}
+          >
+            Sign as Vendor
+          </Button>
+          {signVendorReason && (
+            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+              {signVendorReason}
+            </div>
+          )}
+        </div>
+
+        <div className="relative group">
+          <Button
+            variant="danger"
+            onClick={onCancelContract}
+            disabled={!onCancelContract || !!cancelReason}
+          >
+            Cancel
+          </Button>
+          {cancelReason && (
+            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+              {cancelReason}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

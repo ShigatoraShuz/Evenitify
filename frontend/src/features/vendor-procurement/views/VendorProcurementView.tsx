@@ -26,6 +26,8 @@ interface VendorProcurementViewProps {
   loading: boolean
   submitting: boolean
   error: string | null
+  draftSaved: boolean
+  validationErrors: string[]
   onInitEvent: (eventId: string) => Promise<void>
   onSetStep: (step: ProcurementStep) => void
   onSelectRequirement: (req: EventRequirement) => void
@@ -35,6 +37,7 @@ interface VendorProcurementViewProps {
   onDeleteRequirement: (id: string) => Promise<void>
   onUpdateFilters: (next: Partial<VendorFilterState>) => void
   onSubmitBooking: (payload: { notes?: string; requestedBudget?: number }) => Promise<void>
+  onSaveDraft: () => void
   onClearError: () => void
 }
 
@@ -44,6 +47,8 @@ const STEP_LABELS: Record<ProcurementStep, string> = {
   booking: 'Booking',
   confirm: 'Confirmed'
 }
+
+const STEP_ORDER: ProcurementStep[] = ['requirements', 'vendors', 'booking', 'confirm']
 
 export function VendorProcurementView({
   eventId,
@@ -56,6 +61,8 @@ export function VendorProcurementView({
   loading,
   submitting,
   error,
+  draftSaved,
+  validationErrors,
   onInitEvent,
   onSetStep,
   onSelectRequirement,
@@ -65,6 +72,7 @@ export function VendorProcurementView({
   onDeleteRequirement,
   onUpdateFilters,
   onSubmitBooking,
+  onSaveDraft,
   onClearError
 }: VendorProcurementViewProps) {
   const [showReqForm, setShowReqForm] = useState(false)
@@ -80,6 +88,8 @@ export function VendorProcurementView({
   useEffect(() => {
     if (eventId) onInitEvent(eventId)
   }, [eventId])
+
+  const currentStepIndex = STEP_ORDER.indexOf(currentStep)
 
   const handleDeleteReq = async () => {
     if (confirmDeleteId) {
@@ -113,6 +123,15 @@ export function VendorProcurementView({
     })
   }
 
+  if (!eventId) {
+    return (
+      <DashboardShell>
+        <PageHeader title="Vendor Procurement" subtitle="Select an event first" />
+        <EmptyState title="No event selected" description="Go to your dashboard and select an event to start procurement" />
+      </DashboardShell>
+    )
+  }
+
   return (
     <DashboardShell>
       <ConfirmDialog
@@ -127,8 +146,19 @@ export function VendorProcurementView({
       />
       <PageHeader
         title="Vendor Procurement"
-        subtitle={eventId ? `Event: ${eventId}` : 'Select an event first'}
+        subtitle={`Event ID: ${eventId}`}
+        action={
+          currentStep !== 'confirm' && (
+            <Button variant="secondary" onClick={onSaveDraft}>Save Draft</Button>
+          )
+        }
       />
+
+      {draftSaved && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+          Draft saved successfully.
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex justify-between items-center">
@@ -137,18 +167,48 @@ export function VendorProcurementView({
         </div>
       )}
 
-      <div className="flex items-center gap-2 mb-6 text-sm">
-        {(['requirements', 'vendors', 'booking', 'confirm'] as ProcurementStep[]).map((step, idx) => (
-          <div key={step} className="flex items-center">
-            <button
-              onClick={() => onSetStep(step)}
-              className={`px-3 py-1 rounded-full ${currentStep === step ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-500'}`}
-            >
-              {idx + 1}. {STEP_LABELS[step]}
-            </button>
-            {idx < 3 && <span className="mx-2 text-gray-300">→</span>}
-          </div>
-        ))}
+      {validationErrors.length > 0 && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+          <p className="font-medium mb-1">Please fix the following:</p>
+          <ul className="list-disc list-inside space-y-0.5">
+            {validationErrors.map((err, i) => <li key={i}>{err}</li>)}
+          </ul>
+        </div>
+      )}
+
+      <div className="mb-8">
+        <div className="flex items-center">
+          {STEP_ORDER.map((step, idx) => (
+            <div key={step} className="flex items-center flex-1">
+              <button
+                onClick={() => {
+                  if (idx <= currentStepIndex || currentStep === 'confirm') onSetStep(step)
+                }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  currentStep === step
+                    ? 'bg-brand-600 text-white shadow-sm'
+                    : idx < currentStepIndex
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  currentStep === step
+                    ? 'bg-white text-brand-600'
+                    : idx < currentStepIndex
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-gray-300 text-gray-500'
+                }`}>
+                  {idx < currentStepIndex ? '\u2713' : idx + 1}
+                </span>
+                <span className="hidden sm:inline">{STEP_LABELS[step]}</span>
+              </button>
+              {idx < STEP_ORDER.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-2 ${idx < currentStepIndex ? 'bg-emerald-400' : 'bg-gray-200'}`} />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {currentStep === 'requirements' && (
@@ -287,6 +347,9 @@ export function VendorProcurementView({
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-4">
             <h3 className="font-medium text-gray-900">{selectedVendor.business_name}</h3>
             <p className="text-sm text-gray-500">Rating: {selectedVendor.rating} | {selectedVendor.service_area}</p>
+            {selectedRequirement && (
+              <p className="text-sm text-gray-500 mt-1">Category: {selectedRequirement.category} | Qty: {selectedRequirement.quantity}</p>
+            )}
           </div>
           <form onSubmit={handleBooking} className="space-y-4 max-w-md">
             <Input label="Requested Budget ($)" type="number" min="0" step="0.01" value={requestedBudget} onChange={(e) => setRequestedBudget(e.target.value)} />
@@ -298,8 +361,12 @@ export function VendorProcurementView({
 
       {currentStep === 'confirm' && (
         <div className="text-center py-12">
+          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl text-emerald-600">&#10003;</span>
+          </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Request Sent!</h2>
-          <p className="text-gray-500">The vendor will review and respond to your request.</p>
+          <p className="text-gray-500 mb-6">The vendor will review and respond to your request.</p>
+          <Button onClick={() => onSetStep('requirements')}>Start New Procurement</Button>
         </div>
       )}
     </DashboardShell>

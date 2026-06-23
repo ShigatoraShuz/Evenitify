@@ -6,6 +6,7 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { ContractTimeline, buildContractTimeline } from '../../contract-booking/components/ContractTimeline'
+import { B2B_TABS } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
 import type { ContractDetail } from '../../../services/contractService'
 
@@ -26,14 +27,6 @@ interface VendorB2BDashboardViewProps {
   onLoadContract: (bookingId: string) => Promise<void>
   onSignVendorContract: (contractId: string) => Promise<void>
 }
-
-const TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'accepted', label: 'Accepted' },
-  { key: 'rejected', label: 'Rejected' },
-  { key: 'completed', label: 'Completed' }
-]
 
 export function VendorB2BDashboardView({
   bookings,
@@ -110,8 +103,8 @@ export function VendorB2BDashboardView({
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6 border-b pb-2">
-        {TABS.map((tab) => (
+      <div className="flex gap-2 mb-6 border-b pb-2 overflow-x-auto">
+        {B2B_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => onSetTab(tab.key)}

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { notificationService } from '../../../services/notificationService'
 import type { AppNotification } from '../models/notifications.model'
 
@@ -10,6 +10,25 @@ interface NotificationsState {
   error: string | null
 }
 
+function getTimeGroup(dateStr: string): 'today' | 'this_week' | 'earlier' {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+  if (diffDays < 0) return 'today'
+  if (diffDays === 0) return 'today'
+  if (diffDays <= 7) return 'this_week'
+  return 'earlier'
+}
+
+const GROUP_LABELS: Record<string, string> = {
+  today: 'Today',
+  this_week: 'This Week',
+  earlier: 'Earlier'
+}
+
+const GROUP_ORDER = ['today', 'this_week', 'earlier']
+
 export function useNotifications() {
   const [state, setState] = useState<NotificationsState>({
     notifications: [],
@@ -18,6 +37,19 @@ export function useNotifications() {
     submitting: false,
     error: null
   })
+
+  const grouped = useMemo(() => {
+    const groups: Record<string, AppNotification[]> = { today: [], this_week: [], earlier: [] }
+    for (const n of state.notifications) {
+      const group = getTimeGroup(n.created_at)
+      groups[group].push(n)
+    }
+    return GROUP_ORDER.map((key) => ({
+      key,
+      label: GROUP_LABELS[key],
+      notifications: groups[key]
+    })).filter((g) => g.notifications.length > 0)
+  }, [state.notifications])
 
   const loadNotifications = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: null }))
@@ -70,6 +102,7 @@ export function useNotifications() {
 
   return {
     ...state,
+    grouped,
     loadNotifications,
     loadUnreadCount,
     markAsRead,

@@ -7,6 +7,7 @@ export default function NotificationsViewWrapper() {
   return (
     <NotificationsView
       notifications={vm.notifications}
+      grouped={vm.grouped}
       loading={vm.loading}
       submitting={vm.submitting}
       error={vm.error}

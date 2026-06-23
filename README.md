@@ -28,6 +28,17 @@ A full-stack platform connecting event organizers with verified vendors for larg
 - **Vendor search**: Business name, location, availability filters; sort by rating/name
 - **UX hardening**: Confirm dialogs for destructive actions, validation improvements
 
+### Phase 3
+- **Frontend audit**: MVVM boundary fixes, deduplication, shared component migration, Toast infrastructure
+- **Onboarding flow**: Role-based first-time setup (organizer/vendor/admin), route guards, profile completion check
+- **Event portfolio tabs**: Overview/Requirements/Vendors/Bookings/Contracts/Activity tabs with budget utilization, progress bars
+- **Vendor comparison**: Side-by-side comparison table, shortlist drawer, service/rating/price comparison
+- **Procurement stepper**: Enhanced step indicators, draft save/resume to sessionStorage, validation summaries, blocking state
+- **Contract polish**: Expandable terms preview, disabled button tooltips, role-specific action visibility
+- **Notification groups**: Today/This Week/Earlier time-based grouping
+- **Profile & settings**: Role-specific profile pages (organizer/vendor/admin), edit forms, unsaved changes warning
+- **Accessibility**: Modal focus trapping, aria-labels on icon-only buttons, memoized contract timeline
+
 ## Project Structure
 
 ```
@@ -48,12 +59,15 @@ eventify/
 │       ├── features/
 │       │   ├── admin-operations/
 │       │   ├── auth/
-│       │   ├── contract-booking/
-│       │   ├── landing/
-│       │   ├── notifications/
-│       │   ├── organizer-dashboard/
-│       │   ├── vendor-b2b-dashboard/
-│       │   └── vendor-procurement/
+│   │   ├── contract-booking/
+│   │   ├── landing/
+│   │   ├── notifications/
+│   │   ├── onboarding/
+│   │   ├── organizer-dashboard/
+│   │   ├── user-settings/
+│   │   ├── vendor-b2b-dashboard/
+│   │   ├── vendor-comparison/
+│   │   └── vendor-procurement/
 │       ├── services/        # API client + service classes
 │       ├── shared/          # Reusable components
 │       └── routes/          # Route registry with guards
@@ -138,6 +152,25 @@ eventify/
 | GET | /admin/vendors | List vendors |
 | PATCH | /admin/vendors/:id/verification | Update vendor verification |
 | PUT | /admin/bookings/:id/status | Override booking status |
+
+## Frontend Routes
+
+| Route | Access | Description |
+|-------|--------|-------------|
+| / | Public | Landing page |
+| /login | Public | Login |
+| /register | Public | Registration |
+| /onboarding | Auth | Role-based profile setup |
+| /organizer | Organizer, Admin | Organizer dashboard |
+| /organizer/procurement | Organizer, Admin | Vendor procurement workflow |
+| /organizer/portfolio | Organizer, Admin | Event portfolio (tabs) |
+| /organizer/compare | Organizer, Admin | Vendor comparison |
+| /organizer/profile | Organizer, Admin | Organizer profile settings |
+| /vendor | Vendor | Vendor B2B dashboard |
+| /vendor/profile | Vendor | Vendor profile settings |
+| /admin | Admin | Admin operations dashboard |
+| /admin/settings | Admin | Admin settings |
+| /notifications | Auth | Notification center |
 
 ## Build
 

@@ -20,7 +20,11 @@ interface VendorProcurementState {
   loading: boolean
   submitting: boolean
   error: string | null
+  draftSaved: boolean
+  validationErrors: string[]
 }
+
+const DRAFT_KEY_PREFIX = 'procurement_draft_'
 
 export function useVendorProcurement() {
   const [state, setState] = useState<VendorProcurementState>({
@@ -33,8 +37,45 @@ export function useVendorProcurement() {
     currentStep: 'requirements',
     loading: false,
     submitting: false,
-    error: null
+    error: null,
+    draftSaved: false,
+    validationErrors: []
   })
+
+  const getDraftKey = useCallback(() => {
+    return state.eventId ? `${DRAFT_KEY_PREFIX}${state.eventId}` : null
+  }, [state.eventId])
+
+  const saveDraft = useCallback(() => {
+    const key = getDraftKey()
+    if (!key) return
+    const draft = {
+      currentStep: state.currentStep,
+      selectedRequirementId: state.selectedRequirement?.id || null,
+      selectedVendorId: state.selectedVendor?.id || null,
+      filters: state.filters
+    }
+    sessionStorage.setItem(key, JSON.stringify(draft))
+    setState((s) => ({ ...s, draftSaved: true }))
+    setTimeout(() => {
+      setState((s) => ({ ...s, draftSaved: false }))
+    }, 3000)
+  }, [getDraftKey, state.currentStep, state.selectedRequirement, state.selectedVendor, state.filters])
+
+  const loadDraft = useCallback(async () => {
+    const key = getDraftKey()
+    if (!key) return
+    try {
+      const raw = sessionStorage.getItem(key)
+      if (!raw) return
+      const draft = JSON.parse(raw)
+      setState((s) => ({
+        ...s,
+        currentStep: draft.currentStep || 'requirements',
+        filters: draft.filters || DEFAULT_VENDOR_FILTERS
+      }))
+    } catch {}
+  }, [getDraftKey])
 
   const initEvent = useCallback(async (eventId: string) => {
     setState((s) => ({ ...s, eventId, loading: true, error: null }))
@@ -47,7 +88,7 @@ export function useVendorProcurement() {
   }, [])
 
   const setStep = useCallback((step: ProcurementStep) => {
-    setState((s) => ({ ...s, currentStep: step }))
+    setState((s) => ({ ...s, currentStep: step, validationErrors: [] }))
   }, [])
 
   const selectRequirement = useCallback((req: EventRequirement) => {
@@ -114,15 +155,32 @@ export function useVendorProcurement() {
     }
   }, [state.eventId])
 
+  const validateStep = useCallback((): string[] => {
+    const errors: string[] = []
+    if (state.currentStep === 'vendors' && !state.selectedRequirement) {
+      errors.push('Please select a requirement first.')
+    }
+    if (state.currentStep === 'booking') {
+      if (!state.selectedRequirement) errors.push('No requirement selected.')
+      if (!state.selectedVendor) errors.push('No vendor selected.')
+    }
+    return errors
+  }, [state.currentStep, state.selectedRequirement, state.selectedVendor])
+
   const submitBookingRequest = useCallback(async (payload: {
     notes?: string
     requestedBudget?: number
   }) => {
+    const errors = validateStep()
+    if (errors.length > 0) {
+      setState((s) => ({ ...s, validationErrors: errors }))
+      return
+    }
     if (!state.eventId || !state.selectedRequirement || !state.selectedVendor) {
       setState((s) => ({ ...s, error: 'Cannot submit booking: missing event, requirement, or vendor' }))
       return
     }
-    setState((s) => ({ ...s, submitting: true, error: null }))
+    setState((s) => ({ ...s, submitting: true, error: null, validationErrors: [] }))
     try {
       await bookingService.createBookingRequest({
         eventId: state.eventId,
@@ -131,14 +189,16 @@ export function useVendorProcurement() {
         notes: payload.notes,
         requestedBudget: payload.requestedBudget
       })
+      const key = getDraftKey()
+      if (key) sessionStorage.removeItem(key)
       setState((s) => ({ ...s, submitting: false, currentStep: 'confirm' }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
     }
-  }, [state.eventId, state.selectedRequirement, state.selectedVendor])
+  }, [state.eventId, state.selectedRequirement, state.selectedVendor, validateStep, getDraftKey])
 
   const clearError = useCallback(() => {
-    setState((s) => ({ ...s, error: null }))
+    setState((s) => ({ ...s, error: null, validationErrors: [] }))
   }, [])
 
   return {
@@ -152,6 +212,8 @@ export function useVendorProcurement() {
     createRequirement,
     deleteRequirement,
     submitBookingRequest,
+    saveDraft,
+    loadDraft,
     clearError
   }
 }
