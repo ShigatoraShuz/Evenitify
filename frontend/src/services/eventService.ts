@@ -1,0 +1,87 @@
+import { api } from './apiClient'
+
+export interface LargeEvent {
+  id: string
+  organizer_id: string
+  title: string
+  event_date: string
+  venue: string
+  budget: number
+  expected_guests: number
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface EventPortfolio {
+  event: LargeEvent
+  requirements: EventRequirement[]
+  bookings: BookingWithDetails[]
+  requirementSummary: Record<string, number>
+  bookingSummary: Record<string, number>
+}
+
+export interface EventRequirement {
+  id: string
+  event_id: string
+  category: string
+  quantity: number
+  min_budget: number | null
+  max_budget: number | null
+  requirement_status: string
+  notes: string | null
+  created_at: string
+}
+
+export interface BookingWithDetails {
+  id: string
+  event_id: string
+  requirement_id: string
+  vendor_id: string
+  organizer_id: string
+  status: string
+  requested_budget: number | null
+  notes: string | null
+  requested_at: string
+  vendor_profiles: { business_name: string; rating: number }
+  event_requirements: { category: string; quantity: number }
+  contracts: Contract[]
+  statusHistory: StatusHistory[]
+}
+
+export interface Contract {
+  id: string
+  booking_id: string
+  contract_status: string
+  sent_at: string | null
+  signed_at: string | null
+}
+
+export interface StatusHistory {
+  id: string
+  booking_id: string
+  previous_status: string | null
+  new_status: string
+  reason: string | null
+  created_at: string
+}
+
+export const eventService = {
+  listEvents: () => api.get<LargeEvent[]>('/events'),
+
+  getEvent: (eventId: string) => api.get<LargeEvent>(`/events/${eventId}`),
+
+  getEventPortfolio: (eventId: string) =>
+    api.get<EventPortfolio>(`/events/${eventId}/portfolio`),
+
+  createEvent: (payload: {
+    title: string
+    eventDate: string
+    venue: string
+    budget: number
+    expectedGuests: number
+  }) => api.post<LargeEvent>('/events', payload),
+
+  updateEvent: (eventId: string, payload: Partial<LargeEvent>) =>
+    api.patch<LargeEvent>(`/events/${eventId}`, payload)
+}
