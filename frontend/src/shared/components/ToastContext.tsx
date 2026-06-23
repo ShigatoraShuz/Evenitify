@@ -3,9 +3,10 @@ import { ToastContainer, type ToastData, type ToastType } from './Toast'
 
 interface ToastContextValue {
   addToast: (type: ToastType, message: string) => void
+  clearToasts: () => void
 }
 
-const ToastContext = createContext<ToastContextValue>({ addToast: () => {} })
+const ToastContext = createContext<ToastContextValue>({ addToast: () => {}, clearToasts: () => {} })
 
 export function useToast() {
   return useContext(ToastContext)
@@ -23,8 +24,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
+  const clearToasts = useCallback(() => {
+    setToasts([])
+  }, [])
+
   return (
-    <ToastContext.Provider value={{ addToast }}>
+    <ToastContext.Provider value={{ addToast, clearToasts }}>
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </ToastContext.Provider>

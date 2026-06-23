@@ -1,5 +1,6 @@
 import { BrowserRouter } from 'react-router-dom'
 import { useAuthSession } from './features/auth/viewmodels/useAuthSession'
+import { ErrorBoundary } from './shared/components/ErrorBoundary'
 import { AppRoutes } from './routes'
 import './App.css'
 
@@ -12,7 +13,9 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }
