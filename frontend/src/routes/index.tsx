@@ -9,6 +9,7 @@ const VendorProcurementView = lazy(() => import('../features/vendor-procurement/
 const VendorB2BDashboardView = lazy(() => import('../features/vendor-b2b-dashboard/views/VendorB2BDashboardViewWrapper'))
 const EventPortfolioView = lazy(() => import('../features/contract-booking/views/EventPortfolioViewWrapper'))
 const AdminDashboardView = lazy(() => import('../features/admin-operations/views/AdminDashboardViewWrapper'))
+const NotificationsView = lazy(() => import('../features/notifications/views/NotificationsViewWrapper'))
 
 function LoadingFallback() {
   return (
@@ -82,6 +83,11 @@ export function AppRoutes({ userRole, loading }: { userRole: string | null; load
           <RouteGuard role={userRole} requiredRole={['admin']}>
             <AdminDashboardView />
           </RouteGuard>
+        </SuspenseWrapper>
+      } />
+      <Route path="/notifications" element={
+        <SuspenseWrapper>
+          {userRole ? <NotificationsView /> : <Navigate to="/login" replace />}
         </SuspenseWrapper>
       } />
       <Route path="/vendor" element={
