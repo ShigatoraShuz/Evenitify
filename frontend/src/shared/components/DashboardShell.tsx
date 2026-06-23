@@ -5,6 +5,7 @@ import { useNotifications } from '../../features/notifications/viewmodels/useNot
 import { NotificationDropdown } from '../../features/notifications/components/NotificationDropdown'
 import { ToastProvider } from './ToastContext'
 import { getSidebarByRole, type RouteConfig } from '../../routes/routeConstants'
+import { DemoRoleSwitcher } from './DemoRoleSwitcher'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -169,6 +170,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
           )}
 
           <main id="main-content" className={`flex-1 p-4 md:p-6 lg:p-8 min-h-[calc(100vh-64px)] ${sidebarItems.length > 0 ? '' : ''}`}>
+            <div className="mb-4">
+              <DemoRoleSwitcher compact />
+            </div>
             {children}
           </main>
         </div>

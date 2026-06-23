@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { authService, type UserProfile } from '../../../services/authService'
 import { onboardingService } from '../../../services/onboardingService'
+import { DEMO_SESSION_EVENT, demoJourneyService, type DemoRole } from '../../../services/demoJourneyService'
 import type { AuthState } from '../models/auth.model'
 
 const USER_CACHE_KEY = 'auth_user_cache'
@@ -80,6 +81,17 @@ export function useAuthSession() {
 
   useEffect(() => { loadSession() }, [loadSession])
 
+  useEffect(() => {
+    const syncDemoSession = () => {
+      const cached = getCachedUser()
+      if (cached) {
+        setState({ user: cached, loading: false, error: null, profileComplete: true })
+      }
+    }
+    window.addEventListener(DEMO_SESSION_EVENT, syncDemoSession)
+    return () => window.removeEventListener(DEMO_SESSION_EVENT, syncDemoSession)
+  }, [])
+
   const login = useCallback(async (email: string, password: string) => {
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
@@ -125,6 +137,13 @@ export function useAuthSession() {
     setState((s) => ({ ...s, profileComplete: true }))
   }, [])
 
+  const switchDemoRole = useCallback((role: DemoRole) => {
+    const journey = demoJourneyService.start(role)
+    const cached = getCachedUser()
+    if (cached) setState({ user: cached, loading: false, error: null, profileComplete: true })
+    return journey
+  }, [])
+
   const authState = getAuthState(state.user, state.loading, state.profileComplete)
 
   return {
@@ -137,6 +156,7 @@ export function useAuthSession() {
     register,
     logout,
     reload: loadSession,
-    setProfileComplete
+    setProfileComplete,
+    switchDemoRole
   }
 }

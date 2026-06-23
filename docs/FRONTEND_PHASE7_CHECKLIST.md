@@ -28,7 +28,7 @@ Phase 7 scope is frontend-only. Backend and Supabase database changes are intent
 ## Phase 7 Step Tracking
 
 - [x] 1. Baseline audit and checklist.
-- [ ] 2. End-to-end demo journey completion.
+- [x] 2. End-to-end demo journey completion.
 - [ ] 3. ViewModel state machine consolidation.
 - [ ] 4. Demo data realism and mock scenario system.
 - [ ] 5. API mode switching final readiness.
