@@ -10,11 +10,11 @@ export function Select({ label, error, options, placeholder, id, className = '',
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={selectId} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <label htmlFor={selectId} className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">{label}</label>
       )}
       <select
         id={selectId}
-        className={`w-full px-3 py-2 rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm bg-white ${className}`}
+        className={`w-full px-4 py-2.5 rounded-xl border ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:border-brand-500 focus:ring-brand-500/25'} focus:outline-none focus:ring-4 text-sm bg-white shadow-sm transition-all ${className}`}
         aria-invalid={error ? true : undefined}
         aria-describedby={error && selectId ? `${selectId}-error` : undefined}
         {...props}

@@ -187,10 +187,10 @@ export function VendorB2BDashboardView({
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
         <SummaryCard label="Total" value={bookings.length} />
-        <SummaryCard label="Pending" value={bookings.filter((b) => b.status === 'pending').length} color="text-yellow-600" borderColor="border-yellow-200" />
-        <SummaryCard label="Accepted" value={bookings.filter((b) => b.status === 'accepted').length} color="text-green-600" borderColor="border-green-200" />
-        <SummaryCard label="Declined" value={bookings.filter((b) => b.status === 'rejected').length} color="text-red-600" borderColor="border-red-200" />
-        <SummaryCard label="Completed" value={bookings.filter((b) => b.status === 'completed').length} color="text-blue-600" borderColor="border-blue-200" />
+        <SummaryCard label="Pending" value={bookings.filter((b) => b.status === 'pending').length} color="text-yellow-650" />
+        <SummaryCard label="Accepted" value={bookings.filter((b) => b.status === 'accepted').length} color="text-green-600" />
+        <SummaryCard label="Declined" value={bookings.filter((b) => b.status === 'rejected').length} color="text-red-600" />
+        <SummaryCard label="Completed" value={bookings.filter((b) => b.status === 'completed').length} color="text-blue-600" />
       </div>
 
       {actionCards.length > 0 && (
@@ -220,12 +220,16 @@ export function VendorB2BDashboardView({
         </div>
       )}
 
-      <div className="flex gap-2 mb-6 border-b pb-2 overflow-x-auto">
+      <div className="flex gap-1 mb-6 border-b border-slate-200 pb-px overflow-x-auto">
         {B2B_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => onSetTab(tab.key)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg ${activeTab === tab.key ? 'bg-white border border-b-0 border-gray-200 text-brand-600' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all duration-200 cursor-pointer ${
+              activeTab === tab.key
+                ? 'border-brand-600 text-brand-600'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-350'
+            }`}
           >
             {tab.label}
           </button>

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ShieldCheck,
   BarChart3,
@@ -13,6 +13,41 @@ interface SoftButtonProps {
   children: React.ReactNode
   variant?: 'primary' | 'outline'
   onClick?: () => void
+}
+
+const bgImages = [
+  'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=2069&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=2070&auto=format&fit=crop',
+]
+
+function BackgroundCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % bgImages.length)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 bg-slate-50/85 backdrop-blur-[1px] z-10" />
+      <AnimatePresence>
+        <motion.img
+          key={currentIndex}
+          src={bgImages[currentIndex]}
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 0.6, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.5, ease: 'easeInOut' }}
+          className="absolute inset-0 w-full h-full object-cover"
+          alt="Event Background"
+        />
+      </AnimatePresence>
+    </div>
+  )
 }
 
 const navItems = [
@@ -33,12 +68,12 @@ const currentYear = new Date().getFullYear()
 
 function SoftButton({ children, variant = 'primary', onClick }: SoftButtonProps) {
   const base =
-    'inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-200'
+    'inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow cursor-pointer'
   const styles = {
     primary:
-      'bg-brand-600 text-white hover:bg-brand-700 shadow-md hover:shadow-lg',
+      'bg-gradient-to-r from-brand-600 to-brand-700 text-white hover:from-brand-500 hover:to-brand-600 shadow-brand-500/10',
     outline:
-      'border border-gray-300 text-gray-700 hover:border-brand-500 hover:text-brand-600 bg-white',
+      'border border-slate-200 text-slate-700 hover:border-brand-500 hover:text-brand-600 bg-white hover:bg-slate-50',
   }
 
   return (
@@ -179,10 +214,13 @@ export default function EventifyLandingPage({
   demoPanel,
 }: EventifyLandingPageProps) {
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-transparent font-sans relative overflow-hidden">
+      <BackgroundCarousel />
+      <div className="absolute top-20 left-1/4 w-96 h-96 bg-brand-500/15 rounded-full blur-[100px] pointer-events-none z-0" />
+      <div className="absolute top-40 right-1/4 w-96 h-96 bg-teal-500/15 rounded-full blur-[100px] pointer-events-none z-0" />
       <Navbar />
 
-      <main>
+      <main className="relative z-10">
         <section className="pt-32 pb-20 lg:pt-40 lg:pb-28">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -238,13 +276,13 @@ export default function EventifyLandingPage({
                   initial={{ opacity: 0, y: 40, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.3, ...spr }}
-                  className="rounded-2xl p-5 text-white bg-gradient-to-br from-emerald-900 to-emerald-700 shadow-lg min-h-[180px] flex flex-col"
+                  className="rounded-2xl p-5 text-white bg-gradient-to-br from-brand-950 via-brand-900 to-brand-850 border border-brand-850/30 shadow-md hover:shadow-xl hover:shadow-brand-950/10 hover:-translate-y-0.5 transition-all duration-300 min-h-[180px] flex flex-col"
                 >
-                  <ShieldCheck size={28} className="mb-3" />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-200 mb-1">
+                  <ShieldCheck size={28} className="mb-3 text-brand-400" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-brand-300 mb-1">
                     Verified Workflow
                   </span>
-                  <p className="text-sm text-emerald-100 leading-relaxed">
+                  <p className="text-sm text-brand-100/90 leading-relaxed">
                     Secure vendor requests and organized procurement tracking.
                   </p>
                 </motion.div>
@@ -253,10 +291,10 @@ export default function EventifyLandingPage({
                   initial={{ opacity: 0, y: 40, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.42, ...spr }}
-                  className="rounded-2xl p-5 text-white bg-gradient-to-br from-teal-600 to-emerald-500 shadow-lg min-h-[180px] flex flex-col items-center justify-center"
+                  className="rounded-2xl p-5 text-white bg-gradient-to-br from-brand-600 to-brand-500 border border-brand-500/20 shadow-md hover:shadow-xl hover:shadow-brand-500/10 hover:-translate-y-0.5 transition-all duration-300 min-h-[180px] flex flex-col items-center justify-center"
                 >
                   <PlanetOrbitSVG />
-                  <p className="text-sm text-teal-50 leading-relaxed text-center mt-3">
+                  <p className="text-sm text-brand-50 leading-relaxed text-center mt-3">
                     Discover vendors across categories in one workspace.
                   </p>
                 </motion.div>
@@ -265,7 +303,7 @@ export default function EventifyLandingPage({
                   initial={{ opacity: 0, y: 40, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.54, ...spr }}
-                  className="rounded-2xl p-5 bg-white border border-gray-200 shadow-sm min-h-[180px] flex flex-col"
+                  className="rounded-2xl p-5 bg-white border border-slate-100 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 min-h-[180px] flex flex-col"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -277,7 +315,7 @@ export default function EventifyLandingPage({
                   <p className="text-xl font-bold text-gray-900 mt-2">
                     ₱240,000
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-450">
                     Estimated event allocation
                   </p>
                 </motion.div>
@@ -286,10 +324,10 @@ export default function EventifyLandingPage({
                   initial={{ opacity: 0, y: 40, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.66, ...spr }}
-                  className="rounded-2xl p-5 bg-gray-50 border border-gray-200 shadow-sm min-h-[180px] flex flex-col"
+                  className="rounded-2xl p-5 bg-white border border-slate-100 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 min-h-[180px] flex flex-col"
                 >
                   <ClipboardCheck size={24} className="text-brand-500 mb-3" />
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                  <span className="text-xs font-semibold text-gray-450 uppercase tracking-wider mb-1">
                     Event Requirements
                   </span>
                   <ul className="space-y-2 mt-1">
@@ -297,7 +335,7 @@ export default function EventifyLandingPage({
                       (item) => (
                         <li
                           key={item}
-                          className="flex items-center gap-2 text-sm text-gray-600"
+                          className="flex items-center gap-2 text-sm text-gray-600 font-medium"
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />
                           {item}
