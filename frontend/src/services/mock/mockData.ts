@@ -2,7 +2,7 @@
 // This file will be replaced by real API responses when backend is connected.
 
 import type { LargeEvent, EventRequirement, BookingWithDetails, DashboardSummary, EventPortfolio } from '../eventService'
-import type { VendorSearchResult, VendorService, VendorProfile } from '../vendorService'
+import type { VendorSearchResult, VendorService } from '../vendorService'
 import type { BookingRequest } from '../bookingService'
 import type { ContractDetail } from '../contractService'
 import type { AppNotification } from '../../features/notifications/models/notifications.model'

@@ -8,6 +8,7 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue>({ addToast: () => {}, clearToasts: () => {} })
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useToast() {
   return useContext(ToastContext)
 }

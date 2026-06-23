@@ -25,18 +25,18 @@ export interface ComparisonState {
   shortlist: ShortlistEntry[]
 }
 
-export function buildCompareVendors(results: any[]): CompareVendor[] {
+export function buildCompareVendors(results: Record<string, unknown>[]): CompareVendor[] {
   return results.map((r) => ({
-    id: r.id,
-    businessName: r.business_name,
-    serviceArea: r.service_area,
-    rating: r.rating,
-    verificationStatus: r.verification_status || 'pending',
-    services: (r.services || []).map((s: any) => ({
-      category: s.category,
-      serviceName: s.service_name,
-      basePrice: s.base_price,
-      availabilityStatus: s.availability_status
+    id: r.id as string,
+    businessName: r.business_name as string,
+    serviceArea: r.service_area as string | null,
+    rating: r.rating as number,
+    verificationStatus: (r.verification_status as string) || 'pending',
+    services: ((r.services as Record<string, unknown>[]) || []).map((s) => ({
+      category: s.category as string,
+      serviceName: s.service_name as string,
+      basePrice: s.base_price as number,
+      availabilityStatus: s.availability_status as string
     }))
   }))
 }

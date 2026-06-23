@@ -15,14 +15,6 @@ interface ContractStatusCardProps {
   onCancelContract?: () => void
 }
 
-const DISABLED_REASONS: Record<string, string> = {
-  send: 'Only the organizer can send the contract after it is drafted.',
-  sign_organizer: 'You must be the organizer to sign. Contract must be in "Sent" status.',
-  sign_vendor: 'You must be the assigned vendor to sign. Organizer must have signed first.',
-  cancel: 'Only cancellable when status is draft, sent, organizer_signed, vendor_signed, or active.',
-  create: 'A contract already exists for this booking.'
-}
-
 function getDisabledReason(action: string, contract: ContractDetail | null, userRole: string | null): string | null {
   if (!contract) return null
   switch (action) {

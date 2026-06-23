@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { vendorService, type VendorSearchResult } from '../../../services/vendorService'
 import { bookingService } from '../../../services/bookingService'
-import { eventService, type EventRequirement } from '../../../services/eventService'
+import type { EventRequirement } from '../../../services/eventService'
 import type {
   RequirementCategory,
   VendorFilterState,
@@ -75,7 +75,7 @@ export function useVendorProcurement() {
         currentStep: draft.currentStep || 'requirements',
         filters: draft.filters || DEFAULT_VENDOR_FILTERS
       }))
-    } catch {}
+    } catch { /* ignore parse errors */ }
   }, [getDraftKey])
 
   const initEvent = useCallback(async (eventId: string) => {

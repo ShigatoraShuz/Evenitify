@@ -123,22 +123,22 @@ export function EventPortfolioView({
 
   const reqStats = {
     total: requirements?.length || 0,
-    open: requirements?.filter((r: any) => r.requirement_status === 'open').length || 0,
-    fulfilled: requirements?.filter((r: any) => r.requirement_status === 'fulfilled').length || 0
+    open: requirements?.filter((r: Record<string, unknown>) => r.requirement_status === 'open').length || 0,
+    fulfilled: requirements?.filter((r: Record<string, unknown>) => r.requirement_status === 'fulfilled').length || 0
   }
 
   const bkStats = {
     total: bookings?.length || 0,
-    pending: bookings?.filter((b: any) => b.status === 'pending').length || 0,
-    accepted: bookings?.filter((b: any) => b.status === 'accepted').length || 0,
-    confirmed: bookings?.filter((b: any) => b.status === 'confirmed').length || 0,
-    completed: bookings?.filter((b: any) => b.status === 'completed').length || 0,
-    cancelled: bookings?.filter((b: any) => b.status === 'cancelled').length || 0
+    pending: bookings?.filter((b: Record<string, unknown>) => b.status === 'pending').length || 0,
+    accepted: bookings?.filter((b: Record<string, unknown>) => b.status === 'accepted').length || 0,
+    confirmed: bookings?.filter((b: Record<string, unknown>) => b.status === 'confirmed').length || 0,
+    completed: bookings?.filter((b: Record<string, unknown>) => b.status === 'completed').length || 0,
+    cancelled: bookings?.filter((b: Record<string, unknown>) => b.status === 'cancelled').length || 0
   }
 
   const completionPct = reqStats.total > 0 ? Math.round((reqStats.fulfilled / reqStats.total) * 100) : 0
   const totalBudget = Number(event.budget) || 0
-  const usedBudget = bookings?.reduce((sum: number, b: any) => sum + (Number(b.requested_budget) || 0), 0) || 0
+  const usedBudget = bookings?.reduce((sum: number, b: Record<string, unknown>) => sum + (Number(b.requested_budget) || 0), 0) || 0
   const budgetPct = totalBudget > 0 ? Math.round((usedBudget / totalBudget) * 100) : 0
 
   return (
@@ -232,7 +232,7 @@ export function EventPortfolioView({
 
           {requirements?.length > 0 ? (
             <div className="grid gap-3 md:grid-cols-2 mb-8">
-              {requirements.map((req: any) => (
+              {requirements.map((req: Record<string, unknown>) => (
                 <div key={req.id} className="bg-white rounded-xl border p-4">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-medium text-gray-900">{req.category}</h3>
@@ -280,7 +280,7 @@ export function EventPortfolioView({
 
           {bookings?.length > 0 ? (
             <div className="space-y-4 mb-8">
-              {bookings.map((booking: any) => {
+              {bookings.map((booking: Record<string, unknown>) => {
                 const isExpanded = expandedBookingId === booking.id
                 const contract = isExpanded ? detailedContract : null
                 const existingContract = booking.contracts?.[0]

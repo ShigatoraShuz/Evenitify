@@ -1,7 +1,5 @@
 import { STATUS_COLORS } from '../constants/statusColors'
 
-type StatusVariant = 'pending' | 'accepted' | 'rejected' | 'changes_requested' | 'contract_sent' | 'confirmed' | 'completed' | 'cancelled' | 'open' | 'fulfilled'
-
 interface StatusBadgeProps {
   status: string
   size?: 'sm' | 'md'

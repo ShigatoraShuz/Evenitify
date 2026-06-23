@@ -22,7 +22,7 @@ interface VendorB2BDashboardViewProps {
   contract: ContractDetail | null
   contractLoading: boolean
   onLoadBookings: (status?: string) => Promise<void>
-  onSetTab: (tab: any) => void
+  onSetTab: (tab: string) => void
   onSelectBooking: (bookingId: string) => Promise<void>
   onUpdateStatus: (bookingId: string, status: 'accepted' | 'rejected' | 'changes_requested', reason?: string) => Promise<void>
   onClearError: () => void

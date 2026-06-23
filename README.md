@@ -39,6 +39,27 @@ A full-stack platform connecting event organizers with verified vendors for larg
 - **Profile & settings**: Role-specific profile pages (organizer/vendor/admin), edit forms, unsaved changes warning
 - **Accessibility**: Modal focus trapping, aria-labels on icon-only buttons, memoized contract timeline
 
+### Phase 4
+- **Role-based views**: Separated role dashboard layouts (organizer, vendor, admin)
+- **Event dashboard**: Summary stats, booking counts, upcoming events, activity timeline
+- **Vendor services**: List/create/edit service catalog
+- **B2B booking queue**: Status tabs (pending/accepted/rejected/changes_requested), accept/reject/request changes
+- **Admin operations**: User/event/vendor/booking management, vendor verification, booking status override
+- **Contract workflow**: Digital contracts with organizer/vendor signing, status transitions, timeline
+- **Notification center**: In-app notifications with read/unread, priority levels, dropdown in header
+
+### Phase 5
+- **Integration readiness audit**: 9 service files audited against backend endpoints
+- **API contract normalization**: Shared types (ApiError, PaginatedResponse, ServiceResult, RequestStatus), full endpoint map
+- **Environment configuration**: Typed env accessors, mock mode toggle, VITE prefix validation
+- **Auth session management**: AuthState enum, refresh/logout methods, role-based session guards
+- **Error boundary**: Global error boundary with crash screen and retry
+- **Data state consistency**: Duplicate submission prevention, localStorage services migrated to apiClient
+- **Testing infrastructure**: Vitest + Testing Library setup, 7 smoke tests
+- **Performance**: Unused asset removal, useMemo optimizations, lazy route verification
+- **Accessibility**: Semantic HTML, aria attributes, skip-to-content link
+- **Documentation**: API contracts, environment setup, smoke test procedures, phase summary
+
 ## Project Structure
 
 ```
@@ -68,9 +89,11 @@ eventify/
 │   │   ├── vendor-b2b-dashboard/
 │   │   ├── vendor-comparison/
 │   │   └── vendor-procurement/
-│       ├── services/        # API client + service classes
-│       ├── shared/          # Reusable components
-│       └── routes/          # Route registry with guards
+│       ├── config/          # Environment & API config (env.ts, apiConfig.ts)
+│       ├── services/        # API client + service classes + mock adapter
+│       ├── shared/          # Reusable components, hooks, utils
+│       ├── routes/          # Route registry with guards
+│       └── __tests__/       # Smoke tests (Vitest + Testing Library)
 └── database/
     └── migrations/          # Incremental SQL migrations
 ```
@@ -110,14 +133,35 @@ eventify/
    npm run dev
    ```
 
-6. Start frontend:
+6. Configure frontend environment:
+   ```bash
+   cp frontend/.env.example frontend/.env
+   # VITE_USE_MOCKS=true uses mock data; set to false for real backend
+   ```
+
+7. Start frontend:
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
 
-7. Open http://localhost:5173
+8. Open http://localhost:5173
+
+### Testing
+
+```bash
+cd frontend
+npm test          # Run smoke tests (7 tests)
+npm run test:watch  # Watch mode
+```
+
+### Lint
+
+```bash
+cd frontend
+npm run lint      # ESLint check
+```
 
 ## API Routes
 

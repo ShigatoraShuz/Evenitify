@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { notificationService } from '../../../services/notificationService'
 import type { AppNotification } from '../models/notifications.model'
 
 interface NotificationDropdownProps {

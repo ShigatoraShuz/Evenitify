@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { vendorService, type VendorSearchResult } from '../../../services/vendorService'
+import { vendorService } from '../../../services/vendorService'
 import type { CompareVendor, ShortlistEntry } from '../models/vendor-comparison.model'
 import { buildCompareVendors } from '../models/vendor-comparison.model'
 

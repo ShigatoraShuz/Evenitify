@@ -44,6 +44,7 @@ export const ContractTimeline = memo(function ContractTimeline({ steps }: Contra
   )
 })
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function buildContractTimeline(contract: {
   contract_status: string
   created_at?: string

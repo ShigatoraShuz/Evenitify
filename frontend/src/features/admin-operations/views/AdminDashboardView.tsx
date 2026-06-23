@@ -73,7 +73,7 @@ export function AdminDashboardView({
   onOverrideBookingStatus,
   onClearError
 }: AdminDashboardViewProps) {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [verifyReason, setVerifyReason] = useState('')
