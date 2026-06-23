@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { bookingService, type BookingRequest } from '../../../services/bookingService'
+import { contractService, type ContractDetail } from '../../../services/contractService'
 import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
 
 interface VendorB2BDashboardState {
@@ -9,6 +10,8 @@ interface VendorB2BDashboardState {
   loading: boolean
   submitting: boolean
   error: string | null
+  contract: ContractDetail | null
+  contractLoading: boolean
 }
 
 export function useVendorB2BDashboard() {
@@ -18,7 +21,9 @@ export function useVendorB2BDashboard() {
     activeTab: 'all',
     loading: false,
     submitting: false,
-    error: null
+    error: null,
+    contract: null,
+    contractLoading: false
   })
 
   const loadBookings = useCallback(async (status?: string) => {
@@ -63,6 +68,26 @@ export function useVendorB2BDashboard() {
     }
   }, [state.activeTab])
 
+  const loadContract = useCallback(async (bookingId: string) => {
+    setState((s) => ({ ...s, contractLoading: true, error: null }))
+    try {
+      const contract = await contractService.getContractByBooking(bookingId)
+      setState((s) => ({ ...s, contract, contractLoading: false }))
+    } catch (err) {
+      setState((s) => ({ ...s, contractLoading: false, error: (err as Error).message }))
+    }
+  }, [])
+
+  const signVendorContract = useCallback(async (contractId: string) => {
+    setState((s) => ({ ...s, submitting: true, error: null }))
+    try {
+      const updated = await contractService.signContractVendor(contractId, { termsAccepted: true })
+      setState((s) => ({ ...s, submitting: false, contract: updated }))
+    } catch (err) {
+      setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    }
+  }, [])
+
   const clearError = useCallback(() => {
     setState((s) => ({ ...s, error: null }))
   }, [])
@@ -73,6 +98,8 @@ export function useVendorB2BDashboard() {
     setTab,
     selectBooking,
     updateStatus,
+    loadContract,
+    signVendorContract,
     clearError
   }
 }

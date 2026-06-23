@@ -4,7 +4,9 @@ import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
+import { ContractTimeline, buildContractTimeline } from '../../contract-booking/components/ContractTimeline'
 import type { BookingRequest } from '../../../services/bookingService'
+import type { ContractDetail } from '../../../services/contractService'
 
 interface VendorB2BDashboardViewProps {
   bookings: BookingRequest[]
@@ -13,11 +15,15 @@ interface VendorB2BDashboardViewProps {
   loading: boolean
   submitting: boolean
   error: string | null
+  contract: ContractDetail | null
+  contractLoading: boolean
   onLoadBookings: (status?: string) => Promise<void>
   onSetTab: (tab: any) => void
   onSelectBooking: (bookingId: string) => Promise<void>
   onUpdateStatus: (bookingId: string, status: 'accepted' | 'rejected' | 'changes_requested', reason?: string) => Promise<void>
   onClearError: () => void
+  onLoadContract: (bookingId: string) => Promise<void>
+  onSignVendorContract: (contractId: string) => Promise<void>
 }
 
 const TABS = [
@@ -35,11 +41,15 @@ export function VendorB2BDashboardView({
   loading,
   submitting,
   error,
+  contract,
+  contractLoading,
   onLoadBookings,
   onSetTab,
   onSelectBooking,
   onUpdateStatus,
-  onClearError
+  onClearError,
+  onLoadContract,
+  onSignVendorContract
 }: VendorB2BDashboardViewProps) {
   useEffect(() => { onLoadBookings() }, [])
 
@@ -94,12 +104,47 @@ export function VendorB2BDashboardView({
           )}
 
           {selectedBooking.status === 'pending' && (
-            <div className="flex gap-3">
+            <div className="flex gap-3 mb-6">
               <Button onClick={() => onUpdateStatus(selectedBooking.id, 'accepted')} loading={submitting}>Accept</Button>
               <Button variant="secondary" onClick={() => onUpdateStatus(selectedBooking.id, 'changes_requested')} loading={submitting}>Request Changes</Button>
               <Button variant="danger" onClick={() => onUpdateStatus(selectedBooking.id, 'rejected')} loading={submitting}>Decline</Button>
             </div>
           )}
+
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium text-gray-900">Contract</h4>
+              <Button variant="ghost" onClick={() => onLoadContract(selectedBooking.id)}>
+                {contract ? 'Refresh' : 'View Contract'}
+              </Button>
+            </div>
+
+            {contractLoading ? (
+              <div className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+            ) : contract ? (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    {contract.contract_number ? `#${contract.contract_number}` : ''}
+                  </span>
+                  <StatusBadge status={contract.contract_status} size="sm" />
+                </div>
+                {contract.terms_summary && (
+                  <p className="text-sm text-gray-600 mb-3">{contract.terms_summary}</p>
+                )}
+                <ContractTimeline steps={buildContractTimeline(contract)} />
+                {contract.contract_status === 'organizer_signed' && (
+                  <div className="mt-3">
+                    <Button onClick={() => onSignVendorContract(contract.id)} loading={submitting}>
+                      Sign as Vendor
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No contract yet. Contracts appear after the organizer creates one.</p>
+            )}
+          </div>
 
           <button onClick={() => onSelectBooking('')} className="mt-4 text-sm text-brand-600 hover:text-brand-700">← Back to list</button>
         </div>

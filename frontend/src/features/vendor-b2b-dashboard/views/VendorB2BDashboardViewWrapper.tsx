@@ -12,11 +12,15 @@ export default function VendorB2BDashboardViewWrapper() {
       loading={vm.loading}
       submitting={vm.submitting}
       error={vm.error}
+      contract={vm.contract}
+      contractLoading={vm.contractLoading}
       onLoadBookings={vm.loadBookings}
       onSetTab={vm.setTab}
       onSelectBooking={vm.selectBooking}
       onUpdateStatus={vm.updateStatus}
       onClearError={vm.clearError}
+      onLoadContract={vm.loadContract}
+      onSignVendorContract={vm.signVendorContract}
     />
   )
 }
