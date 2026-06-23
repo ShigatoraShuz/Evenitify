@@ -39,6 +39,8 @@ interface VendorProcurementViewProps {
   onSubmitBooking: (payload: { notes?: string; requestedBudget?: number }) => Promise<void>
   onSaveDraft: () => void
   onClearError: () => void
+  onNavigateToCompare?: () => void
+  onNavigateToPortfolio?: () => void
 }
 
 const STEP_LABELS: Record<ProcurementStep, string> = {
@@ -73,7 +75,9 @@ export function VendorProcurementView({
   onUpdateFilters,
   onSubmitBooking,
   onSaveDraft,
-  onClearError
+  onClearError,
+  onNavigateToCompare,
+  onNavigateToPortfolio
 }: VendorProcurementViewProps) {
   const [showReqForm, setShowReqForm] = useState(false)
   const [category, setCategory] = useState<RequirementCategory>('Catering')
@@ -272,11 +276,14 @@ export function VendorProcurementView({
 
       {currentStep === 'vendors' && (
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h2 className="text-lg font-semibold text-gray-900">
               Vendors for {selectedRequirement?.category}
             </h2>
-            <Button onClick={onSearchVendors} loading={loading}>Search Vendors</Button>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" onClick={onNavigateToCompare}>Compare Vendors</Button>
+              <Button onClick={onSearchVendors} loading={loading}>Search Vendors</Button>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -366,7 +373,12 @@ export function VendorProcurementView({
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Request Sent!</h2>
           <p className="text-gray-500 mb-6">The vendor will review and respond to your request.</p>
-          <Button onClick={() => onSetStep('requirements')}>Start New Procurement</Button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button onClick={() => onSetStep('requirements')}>Add Another Requirement</Button>
+            <Button variant="secondary" onClick={onNavigateToPortfolio}>
+              View Event Portfolio
+            </Button>
+          </div>
         </div>
       )}
     </DashboardShell>

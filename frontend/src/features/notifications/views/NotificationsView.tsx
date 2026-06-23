@@ -45,11 +45,16 @@ export function NotificationsView({
         title="Notifications"
         subtitle="Stay updated on booking and contract activity"
         action={
-          notifications.length > 0 ? (
-            <Button variant="secondary" onClick={onMarkAllAsRead} loading={submitting}>
-              Mark All as Read
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => navigate(-1)}>
+              &larr; Back
             </Button>
-          ) : undefined
+            {notifications.length > 0 && (
+              <Button variant="secondary" onClick={onMarkAllAsRead} loading={submitting}>
+                Mark All as Read
+              </Button>
+            )}
+          </div>
         }
       />
 

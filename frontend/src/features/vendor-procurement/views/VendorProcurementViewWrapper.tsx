@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useVendorProcurement } from '../viewmodels/useVendorProcurement'
 import { VendorProcurementView } from './VendorProcurementView'
 
 export default function VendorProcurementViewWrapper() {
+  const navigate = useNavigate()
   const vm = useVendorProcurement()
   const params = new URLSearchParams(window.location.search)
   const eventId = params.get('eventId')
@@ -40,6 +42,11 @@ export default function VendorProcurementViewWrapper() {
       onSubmitBooking={vm.submitBookingRequest}
       onSaveDraft={vm.saveDraft}
       onClearError={vm.clearError}
+      onNavigateToCompare={() => navigate('/organizer/compare')}
+      onNavigateToPortfolio={() => {
+        const id = vm.eventId || eventId
+        if (id) navigate(`/organizer/portfolio?eventId=${id}`)
+      }}
     />
   )
 }

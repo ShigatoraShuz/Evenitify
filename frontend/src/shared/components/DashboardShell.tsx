@@ -1,81 +1,185 @@
+import { useState, useRef, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useNotifications } from '../../features/notifications/viewmodels/useNotifications'
 import { NotificationDropdown } from '../../features/notifications/components/NotificationDropdown'
 import { ToastProvider } from './ToastContext'
-import { useNavigate } from 'react-router-dom'
+import { getSidebarByRole, type RouteConfig } from '../../routes/routeConstants'
 
 interface DashboardShellProps {
   children: React.ReactNode
-  sidebar?: React.ReactNode
 }
 
-export function DashboardShell({ children, sidebar }: DashboardShellProps) {
-  const navigate = useNavigate()
-  const { notifications, unreadCount, loading, loadNotifications, markAsRead } = useNotifications()
+function getUserRole(): string | null {
+  try {
+    const raw = localStorage.getItem('auth_user_cache')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return parsed?.role || null
+    }
+  } catch {}
+  return null
+}
 
-  const userRole = (() => {
-    try {
-      const token = localStorage.getItem('supabase.auth.token')
-      if (token) {
-        const parsed = JSON.parse(token)
-        return parsed?.user?.role || null
+function logout() {
+  localStorage.removeItem('supabase.auth.token')
+  localStorage.removeItem('onboarding_complete')
+  window.location.href = '/login'
+}
+
+export function DashboardShell({ children }: DashboardShellProps) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const userRole = getUserRole()
+  const sidebarItems = getSidebarByRole(userRole)
+  const { notifications, unreadCount, loading, loadNotifications, markAsRead } = useNotifications()
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileMenuOpen(false)
       }
-    } catch {}
-    return null
-  })()
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const isActive = (path: string) => {
+    if (path === '/organizer' && location.pathname === '/organizer') return true
+    if (path === '/vendor' && location.pathname === '/vendor') return true
+    if (path === '/admin' && location.pathname === '/admin') return true
+    return location.pathname.startsWith(path) && path !== '/'
+  }
+
+  const handleNavigation = (path: string) => {
+    navigate(path)
+    setMobileSidebarOpen(false)
+  }
+
+  const profileRoute = userRole === 'vendor' ? '/vendor/profile' : userRole === 'admin' ? '/admin/settings' : '/organizer/profile'
 
   return (
     <ToastProvider>
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1
-              className="text-xl font-bold text-brand-600 cursor-pointer"
-              onClick={() => {
-                if (userRole === 'admin') navigate('/admin')
-                else if (userRole === 'vendor') navigate('/vendor')
-                else navigate('/organizer')
-              }}
-            >
-              Eventify
-            </h1>
-            <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-medium">B2B</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <NotificationDropdown
-              unreadCount={unreadCount}
-              notifications={notifications}
-              loading={loading}
-              onMarkAsRead={markAsRead}
-              onRefresh={loadNotifications}
-            />
-
-            {userRole && (
-              <button
+      <div className="min-h-screen bg-slate-50">
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {sidebarItems.length > 0 && (
+                <button
+                  onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+                  className="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+                  aria-label="Toggle sidebar"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              )}
+              <h1
+                className="text-xl font-bold text-brand-600 cursor-pointer select-none"
                 onClick={() => {
-                  localStorage.removeItem('supabase.auth.token')
-                  window.location.href = '/login'
+                  if (userRole === 'admin') navigate('/admin')
+                  else if (userRole === 'vendor') navigate('/vendor')
+                  else navigate('/organizer')
                 }}
-                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100"
               >
-                Logout
-              </button>
-            )}
+                Eventify
+              </h1>
+              <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-medium hidden sm:inline">B2B</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <NotificationDropdown
+                unreadCount={unreadCount}
+                notifications={notifications}
+                loading={loading}
+                onMarkAsRead={markAsRead}
+                onRefresh={loadNotifications}
+              />
+
+              {userRole && (
+                <div ref={profileRef} className="relative">
+                  <button
+                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                    className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-slate-100"
+                    aria-label="Account menu"
+                  >
+                    <span className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold">
+                      {userRole.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="hidden sm:inline text-xs capitalize text-slate-500">{userRole}</span>
+                  </button>
+                  {profileMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-slate-200 shadow-lg z-50 py-1">
+                      <button
+                        onClick={() => { handleNavigation(profileRoute); setProfileMenuOpen(false) }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        Profile & Settings
+                      </button>
+                      <button
+                        onClick={() => { navigate('/notifications'); setProfileMenuOpen(false) }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        Notifications
+                      </button>
+                      <hr className="my-1 border-slate-100" />
+                      <button
+                        onClick={() => { logout(); setProfileMenuOpen(false) }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+        </header>
+
+        <div className="flex max-w-7xl mx-auto relative">
+          {sidebarItems.length > 0 && (
+            <>
+              <aside className={`
+                fixed lg:sticky top-16 lg:top-16 z-30 h-[calc(100vh-64px)] w-64 bg-white border-r border-slate-200 
+                transition-transform duration-200 ease-in-out
+                ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+              `}>
+                <nav className="p-4 space-y-1" aria-label="Sidebar navigation">
+                  {sidebarItems.map((item: RouteConfig) => (
+                    <button
+                      key={item.path}
+                      onClick={() => handleNavigation(item.path)}
+                      className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                        isActive(item.path)
+                          ? 'bg-brand-50 text-brand-700 border border-brand-200'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </nav>
+              </aside>
+
+              {mobileSidebarOpen && (
+                <div
+                  className="fixed inset-0 bg-black/30 z-20 lg:hidden"
+                  onClick={() => setMobileSidebarOpen(false)}
+                  aria-hidden="true"
+                />
+              )}
+            </>
+          )}
+
+          <main className={`flex-1 p-4 md:p-6 lg:p-8 min-h-[calc(100vh-64px)] ${sidebarItems.length > 0 ? '' : ''}`}>
+            {children}
+          </main>
         </div>
-      </header>
-      <div className="flex max-w-7xl mx-auto">
-        {sidebar && (
-          <aside className="w-64 border-r border-gray-200 bg-white min-h-[calc(100vh-64px)] p-4 hidden lg:block">
-            {sidebar}
-          </aside>
-        )}
-        <main className={`flex-1 p-6 ${sidebar ? 'lg:pl-8' : ''}`}>
-          {children}
-        </main>
       </div>
-    </div>
     </ToastProvider>
   )
 }

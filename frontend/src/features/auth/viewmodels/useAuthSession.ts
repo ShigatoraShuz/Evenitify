@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { authService, type UserProfile } from '../../../services/authService'
 import { onboardingService } from '../../../services/onboardingService'
 
+const USER_CACHE_KEY = 'auth_user_cache'
+
 interface AuthSessionState {
   user: UserProfile | null
   loading: boolean
@@ -9,9 +11,26 @@ interface AuthSessionState {
   profileComplete: boolean
 }
 
+function cacheUser(user: UserProfile | null) {
+  if (user) {
+    localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user))
+  } else {
+    localStorage.removeItem(USER_CACHE_KEY)
+  }
+}
+
+function getCachedUser(): UserProfile | null {
+  try {
+    const raw = localStorage.getItem(USER_CACHE_KEY)
+    return raw ? (JSON.parse(raw) as UserProfile) : null
+  } catch {
+    return null
+  }
+}
+
 export function useAuthSession() {
   const [state, setState] = useState<AuthSessionState>({
-    user: null,
+    user: getCachedUser(),
     loading: true,
     error: null,
     profileComplete: true
@@ -33,9 +52,11 @@ export function useAuthSession() {
     try {
       const user = await authService.getMe()
       const profileComplete = await checkProfileComplete(user)
+      cacheUser(user)
       setState({ user, loading: false, error: null, profileComplete })
     } catch {
-      setState({ user: null, loading: false, error: null, profileComplete: true })
+      const cached = getCachedUser()
+      setState({ user: cached, loading: false, error: null, profileComplete: true })
     }
   }, [checkProfileComplete])
 
@@ -47,6 +68,9 @@ export function useAuthSession() {
       const result = await authService.login({ email, password })
       if (result.session?.access_token) {
         localStorage.setItem('supabase.auth.token', JSON.stringify(result.session))
+      }
+      if (result.user) {
+        cacheUser(result.user as unknown as UserProfile)
       }
       await loadSession()
     } catch (err) {
@@ -69,6 +93,7 @@ export function useAuthSession() {
   const logout = useCallback(() => {
     localStorage.removeItem('supabase.auth.token')
     localStorage.removeItem('onboarding_complete')
+    cacheUser(null)
     setState({ user: null, loading: false, error: null, profileComplete: true })
   }, [])
 

@@ -19,6 +19,9 @@ export default function OrganizerDashboardViewWrapper() {
         vm.selectEvent(eventId)
         navigate(`/organizer/procurement?eventId=${eventId}`)
       }}
+      onNavigateToPortfolio={(eventId) => {
+        navigate(`/organizer/portfolio?eventId=${eventId}`)
+      }}
     />
   )
 }

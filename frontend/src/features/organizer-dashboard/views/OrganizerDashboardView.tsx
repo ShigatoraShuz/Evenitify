@@ -19,6 +19,7 @@ interface OrganizerDashboardViewProps {
   onLoadEvents: () => Promise<void>
   onCreateEvent: (payload: { title: string; eventDate: string; venue: string; budget: number; expectedGuests: number }) => Promise<void>
   onSelectEvent: (eventId: string) => void
+  onNavigateToPortfolio?: (eventId: string) => void
 }
 
 export function OrganizerDashboardView({
@@ -29,7 +30,8 @@ export function OrganizerDashboardView({
   error,
   onLoadEvents,
   onCreateEvent,
-  onSelectEvent
+  onSelectEvent,
+  onNavigateToPortfolio
 }: OrganizerDashboardViewProps) {
   const [showCreate, setShowCreate] = useState(false)
   const [title, setTitle] = useState('')
@@ -125,22 +127,33 @@ export function OrganizerDashboardView({
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {events.map((event) => (
-            <button
+            <div
               key={event.id}
-              onClick={() => onSelectEvent(event.id)}
-              className="text-left bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-brand-300 transition-all"
+              className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-brand-300 transition-all"
             >
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="font-semibold text-gray-900">{event.title}</h3>
-                <StatusBadge status={event.status} size="sm" />
-              </div>
-              <div className="space-y-1 text-sm text-gray-500">
-                <p>{new Date(event.event_date).toLocaleDateString()}</p>
-                <p>{event.venue}</p>
-                <p>Budget: ${Number(event.budget).toLocaleString()}</p>
-                <p>{event.expected_guests} guests</p>
-              </div>
-            </button>
+              <button onClick={() => onSelectEvent(event.id)} className="w-full text-left">
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900">{event.title}</h3>
+                  <StatusBadge status={event.status} size="sm" />
+                </div>
+                <div className="space-y-1 text-sm text-gray-500">
+                  <p>{new Date(event.event_date).toLocaleDateString()}</p>
+                  <p>{event.venue}</p>
+                  <p>Budget: ${Number(event.budget).toLocaleString()}</p>
+                  <p>{event.expected_guests} guests</p>
+                </div>
+              </button>
+              {onNavigateToPortfolio && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onNavigateToPortfolio(event.id) }}
+                    className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                  >
+                    View Portfolio &rarr;
+                  </button>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}

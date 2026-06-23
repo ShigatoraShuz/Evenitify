@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { EmptyState } from '../../../shared/components/EmptyState'
@@ -45,6 +46,7 @@ export function VendorB2BDashboardView({
   onLoadContract,
   onSignVendorContract
 }: VendorB2BDashboardViewProps) {
+  const navigate = useNavigate()
   const [confirmDecline, setConfirmDecline] = useState<string | null>(null)
 
   useEffect(() => { onLoadBookings() }, [])
@@ -71,6 +73,11 @@ export function VendorB2BDashboardView({
       <PageHeader
         title="B2B Bookings"
         subtitle="Organizer and Large Event booking requests"
+        action={
+          <Button variant="ghost" onClick={() => navigate('/vendor/profile')}>
+            Manage Services
+          </Button>
+        }
       />
 
       {error && (

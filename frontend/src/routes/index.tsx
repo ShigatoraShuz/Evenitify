@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 
-const LandingView = lazy(() => import('../features/landing/view/LandingView'))
+const LandingView = lazy(() => import('../features/landing/views/LandingView'))
 const LoginView = lazy(() => import('../features/auth/views/LoginViewWrapper'))
 const RegisterView = lazy(() => import('../features/auth/views/RegisterViewWrapper'))
 const OrganizerDashboardView = lazy(() => import('../features/organizer-dashboard/views/OrganizerDashboardViewWrapper'))

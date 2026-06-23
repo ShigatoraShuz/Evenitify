@@ -1,5 +1,5 @@
 import EventifyLandingPage from '@/components/ui/eventify-landing-page'
-import { useLandingViewModel } from '../viewmodel/useLandingViewModel'
+import { useLandingViewModel } from '../viewmodels/useLandingViewModel'
 
 export default function LandingView() {
   const { goToPlanning, goToVendors } = useLandingViewModel()
