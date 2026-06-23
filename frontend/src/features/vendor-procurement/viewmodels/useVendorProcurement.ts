@@ -9,6 +9,7 @@ import type {
 } from '../models/vendor-procurement.model'
 import { DEFAULT_VENDOR_FILTERS } from '../models/vendor-procurement.model'
 import { buildVendorRecommendations } from './vendorScoring'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
 interface VendorProcurementState {
   eventId: string | null
@@ -211,6 +212,13 @@ export function useVendorProcurement() {
 
   return {
     ...state,
+    ...buildViewModelStateMeta({
+      loading: state.loading,
+      submitting: state.submitting,
+      error: state.error,
+      empty: state.currentStep === 'requirements' ? state.requirements.length === 0 : state.currentStep === 'vendors' ? state.vendors.length === 0 : false,
+      loaded: !state.loading
+    }),
     recommendations,
     initEvent,
     setStep,

@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useRef } from 'react'
 import { adminService } from '../../../services/adminService'
 import { auditService, type AuditActivity } from '../../../services/auditService'
 import type { OperationQueueItem } from '../../../shared/components/OperationsPanels'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 import type {
   AdminDashboardSummary,
   AdminUser,
@@ -198,6 +199,21 @@ export function useAdminDashboard() {
 
   return {
     ...state,
+    ...buildViewModelStateMeta({
+      loading: state.loading,
+      submitting: state.submitting,
+      error: state.error,
+      empty: state.activeSection === 'users'
+        ? state.users.length === 0
+        : state.activeSection === 'events'
+          ? state.events.length === 0
+          : state.activeSection === 'bookings'
+            ? state.bookings.length === 0
+            : state.activeSection === 'vendors'
+              ? state.vendors.length === 0
+              : false,
+      loaded: !state.loading
+    }),
     loadSummary,
     loadUsers,
     loadEvents,

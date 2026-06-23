@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { eventService, type LargeEvent, type EventPortfolio, type DashboardSummary } from '../../../services/eventService'
 import type { EventStatus } from '../models/organizer-dashboard.model'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
 interface OrganizerDashboardState {
   events: LargeEvent[]
@@ -98,6 +99,13 @@ export function useOrganizerDashboard() {
 
   return {
     ...state,
+    ...buildViewModelStateMeta({
+      loading: state.loading,
+      submitting: state.submitting,
+      error: state.error,
+      empty: !state.loading && state.events.length === 0,
+      loaded: !state.loading
+    }),
     loadEvents,
     selectEvent,
     createEvent,

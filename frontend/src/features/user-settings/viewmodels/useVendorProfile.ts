@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { profileService } from '../../../services/profileService'
 import type { VendorProfileForm } from '../models/user-settings.model'
 import { DEFAULT_VENDOR_PROFILE } from '../models/user-settings.model'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
 interface VendorProfileState {
   profile: VendorProfileForm
@@ -68,6 +69,12 @@ export function useVendorProfile() {
     error: state.error,
     saved: state.saved,
     hasChanges,
+    ...buildViewModelStateMeta({
+      loading: state.loading,
+      submitting: state.submitting,
+      error: state.error,
+      loaded: !state.loading
+    }),
     updateProfile,
     saveProfile,
     clearError

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { notificationService } from '../../../services/notificationService'
 import type { AppNotification } from '../models/notifications.model'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
 interface NotificationsState {
   notifications: AppNotification[]
@@ -102,6 +103,13 @@ export function useNotifications() {
 
   return {
     ...state,
+    ...buildViewModelStateMeta({
+      loading: state.loading,
+      submitting: state.submitting,
+      error: state.error,
+      empty: !state.loading && state.notifications.length === 0,
+      loaded: !state.loading
+    }),
     grouped,
     loadNotifications,
     loadUnreadCount,

@@ -3,6 +3,7 @@ import { onboardingService } from '../../../services/onboardingService'
 import { useAuthSession } from '../../auth/viewmodels/useAuthSession'
 import type { OrganizerOnboardingForm, VendorOnboardingForm } from '../models/onboarding.model'
 import { DEFAULT_ORGANIZER_ONBOARDING, DEFAULT_VENDOR_ONBOARDING } from '../models/onboarding.model'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
 interface OnboardingState {
   organizerForm: OrganizerOnboardingForm
@@ -58,6 +59,11 @@ export function useOnboarding() {
     vendorForm: state.vendorForm,
     submitting: state.submitting,
     error: state.error,
+    ...buildViewModelStateMeta({
+      submitting: state.submitting,
+      error: state.error,
+      loaded: true
+    }),
     updateOrganizerForm,
     updateVendorForm,
     submitOnboarding,

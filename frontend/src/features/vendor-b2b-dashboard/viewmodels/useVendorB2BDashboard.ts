@@ -3,6 +3,7 @@ import { bookingService, type BookingRequest } from '../../../services/bookingSe
 import { contractService, type ContractDetail } from '../../../services/contractService'
 import { auditService, type AuditActivity } from '../../../services/auditService'
 import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
 interface VendorB2BDashboardState {
   bookings: BookingRequest[]
@@ -109,6 +110,14 @@ export function useVendorB2BDashboard() {
 
   return {
     ...state,
+    ...buildViewModelStateMeta({
+      loading: state.loading,
+      submitting: state.submitting,
+      refreshing: state.contractLoading,
+      error: state.error,
+      empty: !state.loading && state.bookings.length === 0,
+      loaded: !state.loading
+    }),
     loadBookings,
     setTab,
     selectBooking,

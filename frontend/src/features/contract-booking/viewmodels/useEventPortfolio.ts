@@ -4,6 +4,7 @@ import { eventService, type EventPortfolio } from '../../../services/eventServic
 import { contractService, type ContractDetail } from '../../../services/contractService'
 import { auditService, type AuditActivity } from '../../../services/auditService'
 import { documentService, type DocumentMetadata } from '../../../services/documentService'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
 export type PortfolioTab = 'overview' | 'requirements' | 'vendors' | 'bookings' | 'contracts' | 'documents' | 'activity'
 
@@ -164,6 +165,14 @@ export function useEventPortfolio() {
 
   return {
     ...state,
+    ...buildViewModelStateMeta({
+      loading: state.loading,
+      submitting: state.submitting,
+      refreshing: state.contractLoading,
+      error: state.error,
+      empty: !state.loading && !state.portfolio,
+      loaded: !state.loading && !!state.portfolio
+    }),
     userRole: user?.role || null,
     vendors,
     contracts,
