@@ -5,9 +5,9 @@ import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { SummaryCard } from '../../../shared/components/SummaryCard'
 import { Modal } from '../../../shared/components/Modal'
-import { EmptyState } from '../../../shared/components/EmptyState'
 import { Input } from '../../../shared/components/Input'
 import { Select } from '../../../shared/components/Select'
+import { DataTable, type Column } from '../../../shared/components/DataTable'
 import type {
   AdminDashboardSummary,
   AdminUser,
@@ -89,12 +89,47 @@ export function AdminDashboardView({
     else if (activeSection === 'vendors') onLoadVendors({ status: statusFilter || undefined, search: searchTerm || undefined })
   }, [activeSection])
 
-  const handleSearch = () => {
-    if (activeSection === 'users') onLoadUsers({ role: roleFilter || undefined, search: searchTerm || undefined })
-    else if (activeSection === 'events') onLoadEvents({ status: statusFilter || undefined, search: searchTerm || undefined })
-    else if (activeSection === 'bookings') onLoadBookings({ status: statusFilter || undefined, search: searchTerm || undefined })
-    else if (activeSection === 'vendors') onLoadVendors({ status: statusFilter || undefined, search: searchTerm || undefined })
+  const handleSearch = (term?: string) => {
+    const search = term ?? searchTerm
+    if (activeSection === 'users') onLoadUsers({ role: roleFilter || undefined, search: search || undefined })
+    else if (activeSection === 'events') onLoadEvents({ status: statusFilter || undefined, search: search || undefined })
+    else if (activeSection === 'bookings') onLoadBookings({ status: statusFilter || undefined, search: search || undefined })
+    else if (activeSection === 'vendors') onLoadVendors({ status: statusFilter || undefined, search: search || undefined })
   }
+
+  const userColumns: Column<AdminUser>[] = [
+    { key: 'name', label: 'Name', render: (u) => <span className="font-medium">{u.display_name || '-'}</span>, sortable: true },
+    { key: 'email', label: 'Email', render: (u) => <span className="text-gray-500">{u.email}</span>, sortable: true },
+    { key: 'role', label: 'Role', render: (u) => <StatusBadge status={u.role} size="sm" />, sortable: true },
+    { key: 'created_at', label: 'Joined', render: (u) => <span className="text-gray-500">{new Date(u.created_at).toLocaleDateString()}</span>, sortable: true },
+  ]
+
+  const eventColumns: Column<AdminEvent>[] = [
+    { key: 'title', label: 'Title', render: (e) => <span className="font-medium">{e.title}</span>, sortable: true },
+    { key: 'org', label: 'Organizer', render: (e) => <span className="text-gray-500">{(e as any).organization_name || '-'}</span> },
+    { key: 'event_date', label: 'Date', render: (e) => <span className="text-gray-500">{new Date(e.event_date).toLocaleDateString()}</span>, sortable: true },
+    { key: 'venue', label: 'Venue', render: (e) => <span className="text-gray-500">{e.venue}</span> },
+    { key: 'budget', label: 'Budget', render: (e) => <span className="text-gray-500">${Number(e.budget).toLocaleString()}</span>, sortable: true },
+    { key: 'status', label: 'Status', render: (e) => <StatusBadge status={e.status} size="sm" />, sortable: true },
+  ]
+
+  const bookingColumns: Column<AdminBooking>[] = [
+    { key: 'event', label: 'Event', render: (b) => <span className="font-medium">{b.large_events?.title}</span> },
+    { key: 'organizer', label: 'Organizer', render: (b) => <span className="text-gray-500">{b.organizer_profiles?.organization_name}</span> },
+    { key: 'vendor', label: 'Vendor', render: (b) => <span className="text-gray-500">{b.vendor_profiles?.business_name}</span> },
+    { key: 'category', label: 'Category', render: (b) => <span className="text-gray-500">{b.event_requirements?.category}</span> },
+    { key: 'budget', label: 'Budget', render: (b) => <span className="text-gray-500">${b.requested_budget ? Number(b.requested_budget).toLocaleString() : 'N/A'}</span>, sortable: true },
+    { key: 'status', label: 'Status', render: (b) => <StatusBadge status={b.status} size="sm" />, sortable: true },
+    { key: 'actions', label: 'Actions', render: (b) => <Button variant="secondary" onClick={() => onSelectBooking(b)}>Override</Button> },
+  ]
+
+  const vendorColumns: Column<AdminVendor>[] = [
+    { key: 'name', label: 'Business Name', render: (v) => <span className="font-medium">{v.business_name}</span>, sortable: true },
+    { key: 'area', label: 'Service Area', render: (v) => <span className="text-gray-500">{v.service_area || '-'}</span> },
+    { key: 'rating', label: 'Rating', render: (v) => <span className="text-gray-500">{v.rating}</span>, sortable: true },
+    { key: 'verification', label: 'Verification', render: (v) => <StatusBadge status={v.verification_status} size="sm" />, sortable: true },
+    { key: 'actions', label: 'Actions', render: (v) => <Button variant="secondary" onClick={() => onSelectVendor(v)}>Verify</Button> },
+  ]
 
   return (
     <DashboardShell>
@@ -123,262 +158,114 @@ export function AdminDashboardView({
         ))}
       </div>
 
-      {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <>
-          {activeSection === 'summary' && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <SummaryCard label="Organizers" value={summary.total_organizers} color="text-blue-600" />
-              <SummaryCard label="Vendors" value={summary.total_vendors} color="text-purple-600" />
-              <SummaryCard label="Events (500+)" value={summary.large_events_500plus} color="text-indigo-600" />
-              <SummaryCard label="Pending Bookings" value={summary.pending_bookings} color="text-yellow-600" />
-              <SummaryCard label="Accepted" value={summary.accepted_bookings} color="text-cyan-600" />
-              <SummaryCard label="Confirmed" value={summary.confirmed_bookings} color="text-blue-600" />
-              <SummaryCard label="Completed" value={summary.completed_bookings} color="text-emerald-600" />
-              <SummaryCard label="Pending Verifications" value={summary.pending_verifications} color="text-orange-600" />
-              <SummaryCard label="Draft Contracts" value={summary.draft_contracts} color="text-gray-600" />
-              <SummaryCard label="Active Contracts" value={summary.active_contracts} color="text-green-600" />
-              <SummaryCard label="Total Events" value={summary.total_events} color="text-slate-600" />
-              <SummaryCard label="Rejected Bookings" value={summary.rejected_bookings} color="text-red-600" />
-            </div>
-          )}
+      {activeSection === 'summary' && (
+        loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {Array.from({ length: 12 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <SummaryCard label="Organizers" value={summary.total_organizers} color="text-blue-600" />
+            <SummaryCard label="Vendors" value={summary.total_vendors} color="text-purple-600" />
+            <SummaryCard label="Events (500+)" value={summary.large_events_500plus} color="text-indigo-600" />
+            <SummaryCard label="Pending Bookings" value={summary.pending_bookings} color="text-yellow-600" />
+            <SummaryCard label="Accepted" value={summary.accepted_bookings} color="text-cyan-600" />
+            <SummaryCard label="Confirmed" value={summary.confirmed_bookings} color="text-blue-600" />
+            <SummaryCard label="Completed" value={summary.completed_bookings} color="text-emerald-600" />
+            <SummaryCard label="Pending Verifications" value={summary.pending_verifications} color="text-orange-600" />
+            <SummaryCard label="Draft Contracts" value={summary.draft_contracts} color="text-gray-600" />
+            <SummaryCard label="Active Contracts" value={summary.active_contracts} color="text-green-600" />
+            <SummaryCard label="Total Events" value={summary.total_events} color="text-slate-600" />
+            <SummaryCard label="Rejected Bookings" value={summary.rejected_bookings} color="text-red-600" />
+          </div>
+        )
+      )}
 
-          {activeSection === 'users' && (
-            <div>
-              <div className="flex gap-3 mb-4">
-                <Input
-                  placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1"
-                />
-                <Select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                  options={[
-                    { value: '', label: 'All Roles' },
-                    { value: 'organizer', label: 'Organizer' },
-                    { value: 'vendor', label: 'Vendor' },
-                    { value: 'admin', label: 'Admin' }
-                  ]}
-                  className="w-40"
-                />
-                <Button onClick={handleSearch}>Search</Button>
-              </div>
-              {users.length === 0 ? (
-                <EmptyState title="No users found" description="Try adjusting your search or filters" />
-              ) : (
-                <div className="bg-white rounded-xl border overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b">
-                      <tr>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Name</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Email</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Role</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Joined</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {users.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">{user.display_name || '-'}</td>
-                          <td className="px-4 py-3 text-gray-500">{user.email}</td>
-                          <td className="px-4 py-3"><StatusBadge status={user.role} size="sm" /></td>
-                          <td className="px-4 py-3 text-gray-500">{new Date(user.created_at).toLocaleDateString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
+      {activeSection === 'users' && (
+        <DataTable
+          columns={userColumns}
+          data={users}
+          keyExtractor={(u) => u.id}
+          searchable
+          searchPlaceholder="Search by name or email..."
+          filterOptions={[
+            { value: '', label: 'All Roles' },
+            { value: 'organizer', label: 'Organizer' },
+            { value: 'vendor', label: 'Vendor' },
+            { value: 'admin', label: 'Admin' }
+          ]}
+          filterValue={roleFilter}
+          onFilterChange={setRoleFilter}
+          onSearch={handleSearch}
+          pageSize={10}
+        />
+      )}
 
-          {activeSection === 'events' && (
-            <div>
-              <div className="flex gap-3 mb-4">
-                <Input
-                  placeholder="Search events..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1"
-                />
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  options={[
-                    { value: '', label: 'All Status' },
-                    { value: 'draft', label: 'Draft' },
-                    { value: 'planning', label: 'Planning' },
-                    { value: 'booking', label: 'Booking' },
-                    { value: 'confirmed', label: 'Confirmed' },
-                    { value: 'completed', label: 'Completed' },
-                    { value: 'cancelled', label: 'Cancelled' }
-                  ]}
-                  className="w-40"
-                />
-                <Button onClick={handleSearch}>Search</Button>
-              </div>
-              {events.length === 0 ? (
-                <EmptyState title="No events found" description="Try adjusting your search or filters" />
-              ) : (
-                <div className="bg-white rounded-xl border overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b">
-                      <tr>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Title</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Organizer</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Date</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Venue</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Budget</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {events.map((event) => (
-                        <tr key={event.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 font-medium">{event.title}</td>
-                          <td className="px-4 py-3 text-gray-500">{(event as any).organizer_profiles?.organization_name || '-'}</td>
-                          <td className="px-4 py-3 text-gray-500">{new Date(event.event_date).toLocaleDateString()}</td>
-                          <td className="px-4 py-3 text-gray-500">{event.venue}</td>
-                          <td className="px-4 py-3 text-gray-500">${Number(event.budget).toLocaleString()}</td>
-                          <td className="px-4 py-3"><StatusBadge status={event.status} size="sm" /></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
+      {activeSection === 'events' && (
+        <DataTable
+          columns={eventColumns}
+          data={events}
+          keyExtractor={(e) => e.id}
+          searchable
+          searchPlaceholder="Search events..."
+          filterOptions={[
+            { value: '', label: 'All Status' },
+            { value: 'draft', label: 'Draft' },
+            { value: 'planning', label: 'Planning' },
+            { value: 'booking', label: 'Booking' },
+            { value: 'confirmed', label: 'Confirmed' },
+            { value: 'completed', label: 'Completed' },
+            { value: 'cancelled', label: 'Cancelled' }
+          ]}
+          filterValue={statusFilter}
+          onFilterChange={setStatusFilter}
+          onSearch={handleSearch}
+          pageSize={10}
+        />
+      )}
 
-          {activeSection === 'bookings' && (
-            <div>
-              <div className="flex gap-3 mb-4">
-                <Input
-                  placeholder="Search bookings..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1"
-                />
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  options={[
-                    { value: '', label: 'All Status' },
-                    { value: 'pending', label: 'Pending' },
-                    { value: 'accepted', label: 'Accepted' },
-                    { value: 'rejected', label: 'Rejected' },
-                    { value: 'changes_requested', label: 'Changes Requested' },
-                    { value: 'confirmed', label: 'Confirmed' },
-                    { value: 'completed', label: 'Completed' },
-                    { value: 'cancelled', label: 'Cancelled' }
-                  ]}
-                  className="w-40"
-                />
-                <Button onClick={handleSearch}>Search</Button>
-              </div>
-              {bookings.length === 0 ? (
-                <EmptyState title="No bookings found" description="Try adjusting your search or filters" />
-              ) : (
-                <div className="bg-white rounded-xl border overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b">
-                      <tr>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Event</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Organizer</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Vendor</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Category</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Budget</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {bookings.map((booking) => (
-                        <tr key={booking.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 font-medium">{booking.large_events?.title}</td>
-                          <td className="px-4 py-3 text-gray-500">{booking.organizer_profiles?.organization_name}</td>
-                          <td className="px-4 py-3 text-gray-500">{booking.vendor_profiles?.business_name}</td>
-                          <td className="px-4 py-3 text-gray-500">{booking.event_requirements?.category}</td>
-                          <td className="px-4 py-3 text-gray-500">${booking.requested_budget ? Number(booking.requested_budget).toLocaleString() : 'N/A'}</td>
-                          <td className="px-4 py-3"><StatusBadge status={booking.status} size="sm" /></td>
-                          <td className="px-4 py-3">
-                            <Button variant="secondary" onClick={() => onSelectBooking(booking)}>
-                              Override
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
+      {activeSection === 'bookings' && (
+        <DataTable
+          columns={bookingColumns}
+          data={bookings}
+          keyExtractor={(b) => b.id}
+          searchable
+          searchPlaceholder="Search bookings..."
+          filterOptions={[
+            { value: '', label: 'All Status' },
+            { value: 'pending', label: 'Pending' },
+            { value: 'accepted', label: 'Accepted' },
+            { value: 'rejected', label: 'Rejected' },
+            { value: 'changes_requested', label: 'Changes Requested' },
+            { value: 'confirmed', label: 'Confirmed' },
+            { value: 'completed', label: 'Completed' },
+            { value: 'cancelled', label: 'Cancelled' }
+          ]}
+          filterValue={statusFilter}
+          onFilterChange={setStatusFilter}
+          onSearch={handleSearch}
+          pageSize={10}
+        />
+      )}
 
-          {activeSection === 'vendors' && (
-            <div>
-              <div className="flex gap-3 mb-4">
-                <Input
-                  placeholder="Search vendors..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1"
-                />
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  options={[
-                    { value: '', label: 'All Status' },
-                    { value: 'pending', label: 'Pending' },
-                    { value: 'verified', label: 'Verified' },
-                    { value: 'rejected', label: 'Rejected' }
-                  ]}
-                  className="w-40"
-                />
-                <Button onClick={handleSearch}>Search</Button>
-              </div>
-              {vendors.length === 0 ? (
-                <EmptyState title="No vendors found" description="Try adjusting your search or filters" />
-              ) : (
-                <div className="bg-white rounded-xl border overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-50 border-b">
-                      <tr>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Business Name</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Service Area</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Rating</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Verification</th>
-                        <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {vendors.map((vendor) => (
-                        <tr key={vendor.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 font-medium">{vendor.business_name}</td>
-                          <td className="px-4 py-3 text-gray-500">{vendor.service_area || '-'}</td>
-                          <td className="px-4 py-3 text-gray-500">{vendor.rating}</td>
-                          <td className="px-4 py-3"><StatusBadge status={vendor.verification_status} size="sm" /></td>
-                          <td className="px-4 py-3">
-                            <Button variant="secondary" onClick={() => onSelectVendor(vendor)}>
-                              Verify
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-        </>
+      {activeSection === 'vendors' && (
+        <DataTable
+          columns={vendorColumns}
+          data={vendors}
+          keyExtractor={(v) => v.id}
+          searchable
+          searchPlaceholder="Search vendors..."
+          filterOptions={[
+            { value: '', label: 'All Status' },
+            { value: 'pending', label: 'Pending' },
+            { value: 'verified', label: 'Verified' },
+            { value: 'rejected', label: 'Rejected' }
+          ]}
+          filterValue={statusFilter}
+          onFilterChange={setStatusFilter}
+          onSearch={handleSearch}
+          pageSize={10}
+        />
       )}
 
       <Modal
@@ -469,5 +356,3 @@ export function AdminDashboardView({
     </DashboardShell>
   )
 }
-
-
