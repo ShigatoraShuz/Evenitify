@@ -10,12 +10,14 @@ import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { AttachmentList, DocumentPreviewModal, UploadDocumentDropzone } from '../../../shared/components/DocumentComponents'
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
+import { EventCalendarPreview, EventTimelineBoard, TimelineMilestoneCard } from '../../../shared/components/EventPlanningComponents'
 import { ContractTimeline, buildContractTimeline } from '../components/ContractTimeline'
 import type { BookingWithDetails, EventPortfolio, EventRequirement } from '../../../services/eventService'
 import type { ContractDetail } from '../../../services/contractService'
 import type { AuditActivity } from '../../../services/auditService'
 import type { DocumentMetadata } from '../../../services/documentService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
+import type { EventPlanningTimeline } from '../../../services/planningService'
 import type { PortfolioTab } from '../viewmodels/useEventPortfolio'
 
 interface VendorInfo {
@@ -61,6 +63,7 @@ interface EventPortfolioViewProps {
   activity: ActivityItem[]
   documents: DocumentMetadata[]
   auditActivities: AuditActivity[]
+  planningTimeline: EventPlanningTimeline | null
   realtimeSnapshot: RealtimeSnapshot | null
   realtimeRefreshing: boolean
   onLoadPortfolio: (eventId: string) => Promise<void>
@@ -77,6 +80,7 @@ interface EventPortfolioViewProps {
 
 const TABS: { key: PortfolioTab; label: string }[] = [
   { key: 'overview', label: 'Overview' },
+  { key: 'timeline', label: 'Timeline' },
   { key: 'requirements', label: 'Requirements' },
   { key: 'vendors', label: 'Vendors' },
   { key: 'bookings', label: 'Bookings' },
@@ -101,6 +105,7 @@ export function EventPortfolioView({
   activity,
   documents,
   auditActivities,
+  planningTimeline,
   realtimeSnapshot,
   realtimeRefreshing,
   onLoadPortfolio,
@@ -270,6 +275,21 @@ export function EventPortfolioView({
           ) : (
             <EmptyState title="No requirements" description="No requirements defined yet." />
           )}
+        </div>
+      )}
+
+      {activeTab === 'timeline' && (
+        <div className="space-y-4">
+          {planningTimeline?.nextDeadline && (
+            <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Next deadline</p>
+              <div className="mt-3">
+                <TimelineMilestoneCard milestone={planningTimeline.nextDeadline} />
+              </div>
+            </div>
+          )}
+          <EventCalendarPreview days={planningTimeline?.calendarDays || []} />
+          <EventTimelineBoard milestones={planningTimeline?.milestones || []} />
         </div>
       )}
 

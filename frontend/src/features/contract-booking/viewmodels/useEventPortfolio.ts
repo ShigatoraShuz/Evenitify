@@ -4,9 +4,10 @@ import { eventService, type EventPortfolio } from '../../../services/eventServic
 import { contractService, type ContractDetail } from '../../../services/contractService'
 import { auditService, type AuditActivity } from '../../../services/auditService'
 import { documentService, type DocumentMetadata } from '../../../services/documentService'
+import { planningService, type EventPlanningTimeline } from '../../../services/planningService'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
-export type PortfolioTab = 'overview' | 'requirements' | 'vendors' | 'bookings' | 'contracts' | 'documents' | 'activity'
+export type PortfolioTab = 'overview' | 'timeline' | 'requirements' | 'vendors' | 'bookings' | 'contracts' | 'documents' | 'activity'
 
 interface EventPortfolioState {
   portfolio: EventPortfolio | null
@@ -19,6 +20,7 @@ interface EventPortfolioState {
   activeTab: PortfolioTab
   documents: DocumentMetadata[]
   auditActivities: AuditActivity[]
+  planningTimeline: EventPlanningTimeline | null
 }
 
 export function useEventPortfolio() {
@@ -34,18 +36,20 @@ export function useEventPortfolio() {
     contractLoading: false,
     activeTab: 'overview',
     documents: [],
-    auditActivities: []
+    auditActivities: [],
+    planningTimeline: null
   })
 
   const loadPortfolio = useCallback(async (eventId: string) => {
     setState((s) => ({ ...s, loading: true, error: null, expandedBookingId: null, detailedContract: null }))
     try {
-      const [portfolio, documents, auditActivities] = await Promise.all([
-        eventService.getEventPortfolio(eventId),
+      const portfolio = await eventService.getEventPortfolio(eventId)
+      const [documents, auditActivities, planningTimeline] = await Promise.all([
         documentService.listDocuments(eventId),
-        auditService.listActivities(`event:${eventId}`)
+        auditService.listActivities(`event:${eventId}`),
+        planningService.getEventPlanningTimeline(portfolio)
       ])
-      setState((s) => ({ ...s, portfolio, documents, auditActivities, loading: false }))
+      setState((s) => ({ ...s, portfolio, documents, auditActivities, planningTimeline, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }

@@ -30,6 +30,7 @@ export default function EventPortfolioViewWrapper() {
       activity={vm.activity}
       documents={vm.documents}
       auditActivities={vm.auditActivities}
+      planningTimeline={vm.planningTimeline}
       realtimeSnapshot={realtime.snapshot}
       realtimeRefreshing={realtime.refreshing}
       onLoadPortfolio={vm.loadPortfolio}
