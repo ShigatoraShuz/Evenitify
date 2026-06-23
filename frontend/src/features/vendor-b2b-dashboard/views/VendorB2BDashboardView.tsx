@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
+import { SummaryCard } from '../../../shared/components/SummaryCard'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
@@ -88,26 +89,11 @@ export function VendorB2BDashboardView({
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
-          <p className="text-xl font-bold text-gray-900">{bookings.length}</p>
-          <p className="text-xs text-gray-500">Total</p>
-        </div>
-        <div className="bg-white rounded-xl border border-yellow-200 p-3 text-center">
-          <p className="text-xl font-bold text-yellow-600">{bookings.filter((b) => b.status === 'pending').length}</p>
-          <p className="text-xs text-yellow-600">Pending</p>
-        </div>
-        <div className="bg-white rounded-xl border border-green-200 p-3 text-center">
-          <p className="text-xl font-bold text-green-600">{bookings.filter((b) => b.status === 'accepted').length}</p>
-          <p className="text-xs text-green-600">Accepted</p>
-        </div>
-        <div className="bg-white rounded-xl border border-red-200 p-3 text-center">
-          <p className="text-xl font-bold text-red-600">{bookings.filter((b) => b.status === 'rejected').length}</p>
-          <p className="text-xs text-red-600">Declined</p>
-        </div>
-        <div className="bg-white rounded-xl border border-blue-200 p-3 text-center">
-          <p className="text-xl font-bold text-blue-600">{bookings.filter((b) => b.status === 'completed').length}</p>
-          <p className="text-xs text-blue-600">Completed</p>
-        </div>
+        <SummaryCard label="Total" value={bookings.length} />
+        <SummaryCard label="Pending" value={bookings.filter((b) => b.status === 'pending').length} color="text-yellow-600" borderColor="border-yellow-200" />
+        <SummaryCard label="Accepted" value={bookings.filter((b) => b.status === 'accepted').length} color="text-green-600" borderColor="border-green-200" />
+        <SummaryCard label="Declined" value={bookings.filter((b) => b.status === 'rejected').length} color="text-red-600" borderColor="border-red-200" />
+        <SummaryCard label="Completed" value={bookings.filter((b) => b.status === 'completed').length} color="text-blue-600" borderColor="border-blue-200" />
       </div>
 
       <div className="flex gap-2 mb-6 border-b pb-2 overflow-x-auto">

@@ -3,6 +3,7 @@ import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
+import { SummaryCard } from '../../../shared/components/SummaryCard'
 import { Modal } from '../../../shared/components/Modal'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Input } from '../../../shared/components/Input'
@@ -469,11 +470,4 @@ export function AdminDashboardView({
   )
 }
 
-function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <p className={`text-2xl md:text-3xl font-bold ${color}`}>{value}</p>
-      <p className="text-sm text-gray-500 mt-1">{label}</p>
-    </div>
-  )
-}
+
