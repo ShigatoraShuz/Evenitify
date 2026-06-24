@@ -77,6 +77,7 @@ app.use('/contracts', require('./contract-booking/contract.routes'));
 app.use('/notifications', require('./notifications/notifications.routes'));
 app.use('/organizer/dashboard', require('./organizer-dashboard/organizer-dashboard.routes'));
 app.use('/api/organizer/dashboard', require('./organizer-dashboard/organizer-dashboard.routes'));
+app.use('/api', require('./compat/marketplace-compat.routes'));
 app.use('/', require('./profiles/profiles.routes'));
 app.use('/', require('./phase8/phase8.routes'));
 
