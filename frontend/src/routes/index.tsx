@@ -10,13 +10,15 @@ const LoginView = lazy(() => import('../features/auth/views/LoginViewWrapper'))
 const RegisterView = lazy(() => import('../features/auth/views/RegisterViewWrapper'))
 const ChooseRoleView = lazy(() => import('../features/auth/views/ChooseRoleViewWrapper'))
 const OrganizerDashboardView = lazy(() => import('../features/organizer-dashboard/views/OrganizerDashboardViewWrapper'))
-const VendorProcurementView = lazy(() => import('../features/vendor-procurement/views/VendorProcurementViewWrapper'))
+const OrganizerPlanEventView = lazy(() => import('../features/organizer/plan-event/views/OrganizerPlanEventViewWrapper'))
+const VendorMarketplaceView = lazy(() => import('../features/organizer/vendor-marketplace/views/VendorMarketplaceViewWrapper'))
 const VendorB2BDashboardView = lazy(() => import('../features/vendor-b2b-dashboard/views/VendorB2BDashboardViewWrapper'))
 const EventPortfolioView = lazy(() => import('../features/contract-booking/views/EventPortfolioViewWrapper'))
 const AdminDashboardView = lazy(() => import('../features/admin-operations/views/AdminDashboardViewWrapper'))
 const NotificationsView = lazy(() => import('../features/notifications/views/NotificationsViewWrapper'))
 const OnboardingView = lazy(() => import('../features/onboarding/views/OnboardingViewWrapper'))
 const VendorComparisonView = lazy(() => import('../features/vendor-comparison/views/VendorComparisonViewWrapper'))
+const OrganizerVendorStatusView = lazy(() => import('../features/organizer/vendor-status/views/OrganizerVendorStatusViewWrapper'))
 const OrganizerProfileView = lazy(() => import('../features/user-settings/views/OrganizerProfileViewWrapper'))
 const VendorProfileView = lazy(() => import('../features/user-settings/views/VendorProfileViewWrapper'))
 const AdminSettingsView = lazy(() => import('../features/user-settings/views/AdminSettingsViewWrapper'))
@@ -117,10 +119,26 @@ export function AppRoutes({
             </RouteGuard>
           </SuspenseWrapper>
         } />
-        <Route path="/organizer/procurement" element={
+        <Route path="/organizer/plan-event" element={
           <SuspenseWrapper>
             <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
-              <PageTransition><VendorProcurementView /></PageTransition>
+              <PageTransition><OrganizerPlanEventView /></PageTransition>
+            </RouteGuard>
+          </SuspenseWrapper>
+        } />
+        <Route path="/organizer/procurement" element={<Navigate to="/organizer/vendor-marketplace" replace />} />
+        <Route path="/organizer/procurement/marketplace" element={<Navigate to="/organizer/vendor-marketplace" replace />} />
+        <Route path="/organizer/vendor-marketplace" element={
+          <SuspenseWrapper>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+              <PageTransition><VendorMarketplaceView /></PageTransition>
+            </RouteGuard>
+          </SuspenseWrapper>
+        } />
+        <Route path="/organizer/vendor-status" element={
+          <SuspenseWrapper>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+              <PageTransition><OrganizerVendorStatusView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />

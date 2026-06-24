@@ -1,425 +1,452 @@
-import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, CalendarDays, FolderKanban, LayoutGrid, Sparkles, Users, Wallet, MapPin, Clock3, Activity, ShieldCheck } from 'lucide-react'
-import { Button } from '../../../shared/components/Button'
-import { StatusBadge } from '../../../shared/components/StatusBadge'
-import { EmptyState } from '../../../shared/components/EmptyState'
-import { PageHeader } from '../../../shared/components/PageHeader'
+import {
+  Plus, ShoppingBag, MessageSquare, CalendarCheck, ArrowRight, Calendar, MapPin, Users, DollarSign,
+  Clock, Star, TrendingUp, AlertCircle, CheckCircle2, XCircle, Send, Eye, FileText,
+  MessageSquare as MessageIcon, ThumbsUp, FileSignature, Activity, ExternalLink,
+  BarChart3, ClipboardList, Sparkles, ChevronRight, Inbox
+} from 'lucide-react'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
-import { SummaryCard } from '../../../shared/components/SummaryCard'
-import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
-import { DashboardCommandPanel } from '../../../shared/components/DashboardCommandPanel'
-import { PlaceholderMedia } from '../../../shared/components/PlaceholderMedia'
-import { EventSetupBuilder } from '../components/EventSetupBuilder'
-import type { EventSetupPayload } from '../models/event-setup-builder.model'
-import type { LargeEvent, DashboardSummary } from '../../../services/eventService'
-import type { RealtimeSnapshot } from '../../../services/realtimeService'
+import type {
+  DashboardEventPreview, DashboardDraft, DashboardVendorRequest, DashboardBooking,
+  RecommendedVendorPreview, DashboardActivity, DashboardNotification,
+} from '../models/organizer-dashboard.model'
+import { STATUS_LABELS_DASHBOARD, STATUS_COLORS_DASHBOARD } from '../models/organizer-dashboard.model'
 
-interface OrganizerDashboardViewProps {
-  events: LargeEvent[]
-  summary: DashboardSummary | null
-  loading: boolean
-  submitting: boolean
-  error: string | null
-  realtimeSnapshot: RealtimeSnapshot | null
-  realtimeRefreshing: boolean
-  onLoadEvents: () => Promise<void>
-  onRefreshRealtime: () => Promise<void>
-  onCreateEvent: (payload: EventSetupPayload) => Promise<void>
-  onSelectEvent: (eventId: string) => void
-  onNavigateToPortfolio?: (eventId: string) => void
+interface SummaryStats {
+  totalEvents: number
+  draftEvents: number
+  activeVendorRequests: number
+  pendingResponses: number
+  acceptedBookings: number
+  confirmedBookings: number
 }
 
-interface ActionCard {
-  title: string
-  description: string
-  label: string
-  to: string
-  tone: 'brand' | 'emerald' | 'slate'
+interface VendorRequestCounts {
+  sent: number
+  pending: number
+  accepted: number
+  rejected: number
+  confirmed: number
+  contract_pending: number
+}
+
+interface Props {
+  events: DashboardEventPreview[]
+  drafts: DashboardDraft[]
+  vendorRequests: DashboardVendorRequest[]
+  bookings: DashboardBooking[]
+  recommendedVendors: RecommendedVendorPreview[]
+  activities: DashboardActivity[]
+  notifications: DashboardNotification[]
+  summaryStats: SummaryStats
+  vendorRequestCounts: VendorRequestCounts
+}
+
+const activityIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  request_sent: Send,
+  vendor_accepted: ThumbsUp,
+  vendor_rejected: XCircle,
+  new_message: MessageIcon,
+  draft_updated: FileText,
+  booking_confirmed: CheckCircle2,
+  contract_pending: FileSignature,
+}
+
+const activityColors: Record<string, string> = {
+  request_sent: 'bg-blue-100 text-blue-600',
+  vendor_accepted: 'bg-emerald-100 text-emerald-600',
+  vendor_rejected: 'bg-red-100 text-red-600',
+  new_message: 'bg-purple-100 text-purple-600',
+  draft_updated: 'bg-amber-100 text-amber-600',
+  booking_confirmed: 'bg-green-100 text-green-600',
+  contract_pending: 'bg-violet-100 text-violet-600',
+}
+
+const notificationIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  response_review: Inbox,
+  confirm_booking: CheckCircle2,
+  unfinished_draft: FileText,
+  contract_pending: FileSignature,
+}
+
+const notificationColors: Record<string, string> = {
+  response_review: 'bg-amber-100 text-amber-600',
+  confirm_booking: 'bg-emerald-100 text-emerald-600',
+  unfinished_draft: 'bg-blue-100 text-blue-600',
+  contract_pending: 'bg-violet-100 text-violet-600',
 }
 
 function formatDate(date: string) {
-  return new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function formatRelativeTime(date: string) {
+  const now = Date.now()
+  const then = new Date(date).getTime()
+  const diff = now - then
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  return formatDate(date)
 }
 
 export function OrganizerDashboardView({
-  events,
-  summary,
-  loading,
-  submitting,
-  error,
-  realtimeSnapshot,
-  realtimeRefreshing,
-  onLoadEvents,
-  onRefreshRealtime,
-  onCreateEvent,
-  onSelectEvent,
-  onNavigateToPortfolio
-}: OrganizerDashboardViewProps) {
+  events, drafts, vendorRequests, bookings, recommendedVendors,
+  activities, notifications, summaryStats, vendorRequestCounts,
+}: Props) {
   const navigate = useNavigate()
 
-  useEffect(() => {
-    void onLoadEvents()
-  }, [onLoadEvents])
+  const pendingVendorReqs = vendorRequests.filter(
+    (r) => ['sent', 'pending', 'viewed', 'quoted', 'negotiating'].includes(r.status)
+  )
 
-  const eventStatusSummary = summary?.eventStatusSummary
-  const requirementSummary = summary?.requirementSummary
-  const bookingSummary = summary?.bookingSummary
-  const actionCards = useMemo((): ActionCard[] => {
-    const cards: ActionCard[] = []
-    const totalEvents = eventStatusSummary?.total ?? events.length
-    const openReqs = requirementSummary?.open ?? 0
-    const pendingBookings = bookingSummary?.pending ?? 0
-    const contractSent = bookingSummary?.contractSent ?? 0
-
-    if (totalEvents === 0) {
-      cards.push({
-        title: 'Create a new event plan',
-        description: 'Start with a guided setup and push requirements into vendor procurement.',
-        label: 'Open Builder',
-        to: '#builder',
-        tone: 'brand'
-      })
-    }
-
-    if (openReqs > 0) {
-      cards.push({
-        title: `${openReqs} open requirements`,
-        description: 'Match the open service slots to the right vendors.',
-        label: 'Find Vendors',
-        to: '/organizer/procurement',
-        tone: 'emerald'
-      })
-    }
-
-    if (pendingBookings > 0) {
-      cards.push({
-        title: `${pendingBookings} booking response${pendingBookings > 1 ? 's' : ''}`,
-        description: 'Review vendor replies and move the strongest matches forward.',
-        label: 'Review Requests',
-        to: '/organizer/portfolio',
-        tone: 'brand'
-      })
-    }
-
-    if (contractSent > 0) {
-      cards.push({
-        title: `${contractSent} contract${contractSent > 1 ? 's' : ''} pending`,
-        description: 'Track signatures and finalize procurement with confidence.',
-        label: 'Open Portfolio',
-        to: '/organizer/portfolio',
-        tone: 'slate'
-      })
-    }
-
-    return cards.slice(0, 3)
-  }, [events.length, eventStatusSummary?.total, requirementSummary?.open, bookingSummary?.pending, bookingSummary?.contractSent])
-
-  const recentActivity = summary?.recentActivity ?? []
-  const upcomingEvent = summary?.upcomingEvents?.[0] ?? events[0]
-  const upcomingEventDate = upcomingEvent
-    ? ('eventDate' in upcomingEvent ? upcomingEvent.eventDate : upcomingEvent.event_date)
-    : ''
+  const acceptedOrConfirmed = vendorRequests.filter(
+    (r) => r.status === 'accepted' || r.status === 'confirmed'
+  )
 
   return (
     <DashboardShell>
-      <div className="space-y-6">
-        <PageHeader
-          title="Organizer Dashboard"
-          subtitle="Create events, manage vendor procurement, and track event progress from one workspace."
-          action={
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+        <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950 p-6 md:p-8 text-white">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-navy-300">Eventify</p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight">Welcome back, Organizer</h1>
+              <p className="mt-2 max-w-xl text-sm text-navy-200">
+                Manage your event plans, vendor requests, bookings, and vendor marketplace progress.
+              </p>
+            </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => navigate('/organizer/procurement')}>
-                Find vendors
-              </Button>
-              <Button onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-                Build event
-              </Button>
-            </div>
-          }
-        />
-
-        <RealtimeIndicator
-          snapshot={realtimeSnapshot}
-          refreshing={realtimeRefreshing || loading}
-          onRefresh={() => {
-            void onRefreshRealtime()
-            void onLoadEvents()
-          }}
-        />
-
-        {error && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {error}
-          </div>
-        )}
-
-        <section id="builder" className="scroll-mt-24">
-          <DashboardCommandPanel
-            meta="Event setup"
-            title="Create a guided event plan"
-            description="Select the event type, define the setup, choose services, and send the plan into procurement."
-            action={
-              <Button variant="secondary" onClick={() => navigate('/organizer/procurement')}>
-                Continue to procurement
-              </Button>
-            }
-            secondary={
-              <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Current events</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-950">{eventStatusSummary?.total ?? events.length}</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Open requirements</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-950">{requirementSummary?.open ?? 0}</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Pending bookings</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-950">{bookingSummary?.pending ?? 0}</p>
-                </div>
-              </div>
-            }
-          />
-
-          <EventSetupBuilder existingEventCount={events.length} onSubmit={onCreateEvent} submitting={submitting} />
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <SummaryCard label="Total events" value={eventStatusSummary?.total ?? events.length} color="text-slate-950" sub="All active event plans" />
-          <SummaryCard label="Open requirements" value={requirementSummary?.open ?? 0} color="text-emerald-700" sub="Services waiting for vendor matching" />
-          <SummaryCard label="Pending bookings" value={bookingSummary?.pending ?? 0} color="text-indigo-700" sub="Responses from vendors" />
-          <SummaryCard label="Upcoming events" value={summary?.upcomingEvents?.length ?? 0} color="text-amber-700" sub={upcomingEvent ? upcomingEvent.title : 'Nothing on the calendar yet'} />
-        </section>
-
-        {actionCards.length > 0 && (
-          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {actionCards.map((card) => (
               <button
-                key={card.title}
-                type="button"
-                onClick={() => {
-                  if (card.to === '#builder') {
-                    document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    return
-                  }
-                  navigate(card.to)
-                }}
-                className={`group rounded-[24px] border p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
-                  card.tone === 'brand'
-                    ? 'border-brand-200 bg-brand-50'
-                    : card.tone === 'emerald'
-                      ? 'border-emerald-200 bg-emerald-50'
-                      : 'border-slate-200 bg-white'
-                }`}
+                onClick={() => navigate('/organizer/plan-event')}
+                className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] bg-white text-navy-900 hover:bg-slate-100 shadow-sm"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Action</p>
-                    <h3 className="mt-2 text-lg font-semibold text-slate-950">{card.title}</h3>
-                    <p className="mt-2 text-sm text-slate-600">{card.description}</p>
-                  </div>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 shadow-sm">{card.label}</span>
-                </div>
-                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-slate-900">
-                  Open workspace
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </span>
+                <Plus className="w-4 h-4 mr-1.5" />
+                Plan an Event
               </button>
-            ))}
-          </section>
-        )}
-
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_360px]">
-          <section className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-950">Your events</h2>
-                <p className="text-sm text-slate-500">Select an event to continue procurement or review its portfolio.</p>
-              </div>
-              {events.length > 0 && (
-                <Button variant="ghost" onClick={() => navigate('/organizer/portfolio')}>
-                  Portfolio
-                </Button>
-              )}
+              <button
+                onClick={() => navigate('/organizer/vendor-marketplace')}
+                className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] border border-navy-500 text-navy-100 hover:bg-navy-700"
+              >
+                <ShoppingBag className="w-4 h-4 mr-1.5" />
+                View Marketplace
+              </button>
+              <button
+                onClick={() => navigate('/organizer/vendor-status')}
+                className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] border border-navy-500 text-navy-100 hover:bg-navy-700"
+              >
+                <MessageSquare className="w-4 h-4 mr-1.5" />
+                Track Status
+              </button>
             </div>
-
-            {loading ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-64 animate-pulse rounded-[24px] border border-slate-200 bg-slate-100" />
-                ))}
-              </div>
-            ) : events.length === 0 ? (
-              <EmptyState
-                title="No events yet"
-                description="Use the guided builder above to create your first event and start vendor procurement."
-                action={<Button onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>Start planning</Button>}
-              />
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {events.map((event) => (
-                  <article
-                    key={event.id}
-                    className="group overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl"
-                  >
-                    <PlaceholderMedia
-                      title={event.title}
-                      subtitle={`${event.venue} · ${formatDate(event.event_date)}`}
-                      tone={event.status === 'confirmed' ? 'emerald' : event.status === 'planning' ? 'indigo' : 'slate'}
-                      icon={<CalendarDays className="h-5 w-5" />}
-                    />
-                    <div className="space-y-4 p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-slate-950">{event.title}</h3>
-                          <p className="mt-1 text-sm text-slate-500">{event.venue}</p>
-                        </div>
-                        <StatusBadge status={event.status} />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-sm text-slate-600">
-                        <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Date</p>
-                          <p className="mt-1 font-medium text-slate-900">{formatDate(event.event_date)}</p>
-                        </div>
-                        <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Budget</p>
-                          <p className="mt-1 font-medium text-slate-900">${Number(event.budget).toLocaleString()}</p>
-                        </div>
-                        <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Guests</p>
-                          <p className="mt-1 font-medium text-slate-900">{event.expected_guests}</p>
-                        </div>
-                        <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">State</p>
-                          <p className="mt-1 font-medium text-slate-900 capitalize">{event.status}</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          onClick={() => onSelectEvent(event.id)}
-                          className="flex-1"
-                        >
-                          Continue procurement
-                        </Button>
-                        {onNavigateToPortfolio && (
-                          <Button
-                            variant="secondary"
-                            onClick={() => onNavigateToPortfolio(event.id)}
-                          >
-                            Portfolio
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <aside className="space-y-4">
-            <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-slate-950 p-2 text-white">
-                  <Activity className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold text-slate-950">Recent activity</h3>
-                  <p className="text-sm text-slate-500">Status movement across the event pipeline.</p>
-                </div>
-              </div>
-
-              <div className="mt-4 space-y-3">
-                {recentActivity.length > 0 ? recentActivity.slice(0, 5).map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-slate-950">{item.previous_status ?? 'Created'} → {item.new_status}</p>
-                      <StatusBadge status={item.new_status} size="sm" />
-                    </div>
-                    <p className="mt-2 text-sm text-slate-600">
-                      {item.reason || 'No additional notes were provided.'}
-                    </p>
-                    <p className="mt-2 text-xs font-medium text-slate-400">
-                      {new Date(item.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                )) : (
-                  <EmptyState
-                    title="No recent activity"
-                    description="Activity will show up after event creation, requirement updates, and vendor responses."
-                  />
-                )}
-              </div>
-            </section>
-
-            <section className="rounded-[24px] border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Next up</p>
-                  <h3 className="mt-2 text-2xl font-semibold">{upcomingEvent ? upcomingEvent.title : 'No upcoming event'}</h3>
-                  <p className="mt-2 text-sm text-slate-300">
-                    {upcomingEvent ? `Scheduled for ${formatDate(upcomingEventDate)}` : 'Create an event to see the next milestone.'}
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-white/10 p-3">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-              </div>
-              <div className="mt-5 space-y-3">
-                <div className="flex items-center gap-2 text-sm text-slate-300">
-                  <MapPin className="h-4 w-4" />
-                  <span>{upcomingEvent && 'venue' in upcomingEvent ? upcomingEvent.venue : upcomingEvent?.title ? 'Venue will appear after creation' : 'Venue pending'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-slate-300">
-                  <Users className="h-4 w-4" />
-                  <span>{upcomingEvent && 'expected_guests' in upcomingEvent ? `${upcomingEvent.expected_guests} guests` : `${eventStatusSummary?.total ?? 0} events in pipeline`}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-slate-300">
-                  <Wallet className="h-4 w-4" />
-                  <span>{upcomingEvent && 'budget' in upcomingEvent ? `$${Number(upcomingEvent.budget).toLocaleString()} budget` : 'Budget snapshot from builder'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-slate-300">
-                  <Clock3 className="h-4 w-4" />
-                  <span>{realtimeSnapshot ? 'Realtime updates are active' : 'Realtime updates are ready'}</span>
-                </div>
-              </div>
-              <div className="mt-6">
-                <Button className="w-full" variant="secondary" onClick={() => navigate('/organizer/procurement')}>
-                  Review matching vendors
-                </Button>
-              </div>
-            </section>
-          </aside>
+          </div>
         </div>
 
-        <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-950">Planning overview</h2>
-                <p className="text-sm text-slate-500">Keep the organizer workflow visible from creation to procurement.</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[
+            { label: 'Total Events', value: summaryStats.totalEvents, icon: Calendar, color: 'text-navy-600', bg: 'bg-navy-50' },
+            { label: 'Draft Events', value: summaryStats.draftEvents, icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
+            { label: 'Active Requests', value: summaryStats.activeVendorRequests, icon: Send, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Pending Responses', value: summaryStats.pendingResponses, icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50' },
+            { label: 'Accepted', value: summaryStats.acceptedBookings, icon: ThumbsUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+            { label: 'Confirmed', value: summaryStats.confirmedBookings, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
+          ].map((stat) => {
+            const Icon = stat.icon
+            return (
+              <div key={stat.label} className={`${stat.bg} rounded-xl p-4 border border-slate-200`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-medium text-slate-500">{stat.label}</span>
+                  <Icon className={`w-4 h-4 ${stat.color}`} />
+                </div>
+                <span className="text-2xl font-bold text-slate-900">{stat.value}</span>
               </div>
-              <FolderKanban className="h-5 w-5 text-slate-400" />
+            )
+          })}
+        </div>
+
+        <div>
+          <h2 className="text-base font-semibold text-slate-700 mb-3">Quick Actions</h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { label: 'Plan a New Event', icon: Plus, to: '/organizer/plan-event', color: 'bg-navy-700 text-white hover:bg-navy-800' },
+              { label: 'Continue Draft', icon: FileText, to: '/organizer/plan-event', color: 'bg-amber-500 text-white hover:bg-amber-600' },
+              { label: 'Browse Marketplace', icon: ShoppingBag, to: '/organizer/vendor-marketplace', color: 'bg-blue-500 text-white hover:bg-blue-600' },
+              { label: 'Track Requests', icon: MessageSquare, to: '/organizer/vendor-status', color: 'bg-purple-500 text-white hover:bg-purple-600' },
+              { label: 'Confirmed Bookings', icon: CalendarCheck, to: '/organizer/vendor-status', color: 'bg-green-500 text-white hover:bg-green-600' },
+            ].map((action) => {
+              const Icon = action.icon
+              return (
+                <button
+                  key={action.label}
+                  onClick={() => navigate(action.to)}
+                  className={`${action.color} rounded-xl p-4 text-left text-sm font-medium transition-all hover:shadow-md`}
+                >
+                  <Icon className="w-5 h-5 mb-2" />
+                  {action.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-slate-700">Event Planning Summary</h2>
+            <button onClick={() => navigate('/organizer/plan-event')} className="text-xs font-medium text-navy-600 hover:text-navy-800 flex items-center gap-1">
+              View All <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            {events.map((event) => (
+              <div key={event.id} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h3 className="font-semibold text-slate-900 text-sm truncate">{event.name}</h3>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
+                    event.status === 'active' ? 'bg-green-100 text-green-700' :
+                    event.status === 'planning' ? 'bg-amber-100 text-amber-700' :
+                    'bg-slate-100 text-slate-600'
+                  }`}>
+                    {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mb-2">{event.eventType}</p>
+                <div className="h-1.5 bg-slate-100 rounded-full mb-3">
+                  <div className="h-full bg-navy-600 rounded-full" style={{ width: `${event.progress}%` }} />
+                </div>
+                <div className="space-y-1 text-xs text-slate-500 mb-3">
+                  <div className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(event.date)}</div>
+                  <div className="flex items-center gap-1"><MapPin className="w-3 h-3" />{event.location}</div>
+                  <div className="flex items-center gap-1"><Users className="w-3 h-3" />{event.guestCount.toLocaleString()} guests</div>
+                  <div className="flex items-center gap-1"><DollarSign className="w-3 h-3" />${event.budget.toLocaleString()}</div>
+                </div>
+                <button
+                  onClick={() => navigate(event.progress < 100 ? '/organizer/plan-event' : `/organizer/vendor-marketplace?eventId=${event.id}`)}
+                  className="w-full text-xs font-medium text-navy-700 bg-navy-50 rounded-lg py-2 hover:bg-navy-100 transition-colors"
+                >
+                  {event.progress < 100 ? 'Continue' : 'View Event Brief'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-slate-700">Draft Events</h2>
+              <button onClick={() => navigate('/organizer/plan-event')} className="text-xs font-medium text-navy-600 hover:text-navy-800 flex items-center gap-1">
+                View All Drafts <ChevronRight className="w-3 h-3" />
+              </button>
             </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Event flow</p>
-                <p className="mt-2 text-sm text-slate-600">Create event, select services, send requests, compare vendors, and confirm contracts.</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Procurement</p>
-                <p className="mt-2 text-sm text-slate-600">Each selected service is converted into a vendor requirement to move the search forward.</p>
-              </div>
+            <div className="space-y-2">
+              {drafts.length === 0 && (
+                <p className="text-sm text-slate-400 py-4 text-center">No draft events yet.</p>
+              )}
+              {drafts.map((draft) => (
+                <div key={draft.id} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold text-slate-900 truncate">{draft.name}</h3>
+                      <p className="text-xs text-slate-500">{draft.eventType} · Last edited {formatRelativeTime(draft.lastEdited)}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Step: {draft.lastCompletedStep}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-navy-700">{draft.progress}%</span>
+                      </div>
+                      <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 ml-auto">
+                        <div className="h-full bg-amber-500 rounded-full" style={{ width: `${draft.progress}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => navigate('/organizer/plan-event')}
+                    className="mt-2 text-xs font-medium text-navy-700 bg-navy-50 rounded-lg py-1.5 px-3 hover:bg-navy-100 transition-colors"
+                  >
+                    Continue Editing
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
-          <PlaceholderMedia
-            title="Organizer workspace"
-            subtitle="Event cards, services, and planning milestones stay visually consistent across the dashboard."
-            tone="indigo"
-            icon={<LayoutGrid className="h-5 w-5" />}
-          />
-        </section>
+
+          <div>
+            <h2 className="text-base font-semibold text-slate-700 mb-3">Vendor Request Status</h2>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {[
+                { label: 'Pending', count: vendorRequestCounts.pending, color: 'bg-amber-100 text-amber-800' },
+                { label: 'Accepted', count: vendorRequestCounts.accepted, color: 'bg-emerald-100 text-emerald-800' },
+                { label: 'Rejected', count: vendorRequestCounts.rejected, color: 'bg-red-100 text-red-800' },
+                { label: 'Confirmed', count: vendorRequestCounts.confirmed, color: 'bg-green-100 text-green-800' },
+                { label: 'Contract', count: vendorRequestCounts.contract_pending, color: 'bg-violet-100 text-violet-800' },
+              ].map((item) => (
+                <span key={item.label} className={`text-xs font-medium px-2.5 py-1 rounded-full ${item.color}`}>
+                  {item.label}: {item.count}
+                </span>
+              ))}
+            </div>
+            <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+              {pendingVendorReqs.slice(0, 4).map((req) => {
+                const color = STATUS_COLORS_DASHBOARD[req.status] || 'bg-slate-100 text-slate-600'
+                return (
+                  <div key={req.id} className="bg-white rounded-xl border border-slate-200 p-3 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="text-sm font-semibold text-slate-900 truncate">{req.vendorName}</h3>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${color}`}>
+                        {STATUS_LABELS_DASHBOARD[req.status]}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">{req.category} · {req.eventName}</p>
+                    <p className="text-xs text-slate-400 mt-1 truncate">{req.lastMessage}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-slate-400">{formatRelativeTime(req.lastUpdated)}</span>
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => navigate(`/organizer/vendor-status`)}
+                          className="text-xs font-medium text-navy-700 bg-navy-50 rounded-md py-1 px-2 hover:bg-navy-100 transition-colors"
+                        >
+                          Open Chat
+                        </button>
+                        <button
+                          onClick={() => navigate(`/organizer/vendor-status`)}
+                          className="text-xs font-medium text-slate-600 bg-slate-100 rounded-md py-1 px-2 hover:bg-slate-200 transition-colors"
+                        >
+                          Details
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-slate-700">Upcoming Bookings</h2>
+            <button onClick={() => navigate('/organizer/vendor-status')} className="text-xs font-medium text-navy-600 hover:text-navy-800 flex items-center gap-1">
+              View All <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+          {bookings.length === 0 ? (
+            <p className="text-sm text-slate-400 py-4 text-center">No upcoming bookings yet.</p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              {bookings.map((booking) => {
+                const color = STATUS_COLORS_DASHBOARD[booking.status] || 'bg-slate-100 text-slate-600'
+                return (
+                  <div key={booking.id} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="text-sm font-semibold text-slate-900">{booking.eventName}</h3>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${color}`}>
+                        {STATUS_LABELS_DASHBOARD[booking.status]}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 font-medium">{booking.vendorName}</p>
+                    <p className="text-xs text-slate-500 mb-2">{booking.category}</p>
+                    <div className="text-xs text-slate-400 space-y-0.5">
+                      <div className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(booking.date)}</div>
+                      <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{booking.timeSlot}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-slate-700">Recommended Vendors</h2>
+            <button onClick={() => navigate('/organizer/vendor-marketplace')} className="text-xs font-medium text-navy-600 hover:text-navy-800 flex items-center gap-1">
+              View Marketplace <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {recommendedVendors.map((vendor) => (
+              <div key={vendor.id} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">{vendor.name}</h3>
+                    <p className="text-xs text-slate-500">{vendor.category}</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                    <Star className="w-3 h-3" />
+                    {vendor.rating}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-600 mb-3">
+                  <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-emerald-500" />{vendor.matchScore}% match</span>
+                  <span className="font-semibold text-navy-700">From ${vendor.startingPrice.toLocaleString()}</span>
+                </div>
+                <button
+                  onClick={() => navigate(`/organizer/vendor-marketplace`)}
+                  className="w-full text-xs font-medium text-navy-700 bg-navy-50 rounded-lg py-2 hover:bg-navy-100 transition-colors"
+                >
+                  View Vendor
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+          <div>
+            <h2 className="text-base font-semibold text-slate-700 mb-3">Recent Activity</h2>
+            <div className="space-y-2">
+              {activities.length === 0 && (
+                <p className="text-sm text-slate-400 py-4 text-center">No recent activity.</p>
+              )}
+              {activities.slice(0, 5).map((activity) => {
+                const Icon = activityIcons[activity.type] || Activity
+                const color = activityColors[activity.type] || 'bg-slate-100 text-slate-600'
+                return (
+                  <div key={activity.id} className="flex items-start gap-3 bg-white rounded-xl border border-slate-200 p-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-slate-700">{activity.description}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{formatRelativeTime(activity.timestamp)}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-base font-semibold text-slate-700 mb-3">Needs Attention</h2>
+            <div className="space-y-2">
+              {notifications.length === 0 && (
+                <p className="text-sm text-slate-400 py-4 text-center">Nothing needs attention.</p>
+              )}
+              {notifications.map((notification) => {
+                const Icon = notificationIcons[notification.type] || AlertCircle
+                const color = notificationColors[notification.type] || 'bg-slate-100 text-slate-600'
+                return (
+                  <button
+                    key={notification.id}
+                    onClick={() => navigate(notification.linkTo)}
+                    className="w-full text-left flex items-start gap-3 bg-white rounded-xl border border-slate-200 p-3 hover:shadow-md transition-shadow"
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-slate-700">{notification.description}</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-slate-300 shrink-0 mt-2" />
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardShell>
   )

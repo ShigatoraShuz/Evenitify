@@ -20,8 +20,8 @@ export interface QuickAction {
 
 const quickActions: QuickAction[] = [
   { id: 'create-event', label: 'Create event', description: 'Open organizer event dashboard', path: '/organizer', roles: ['organizer', 'admin'] },
-  { id: 'add-requirement', label: 'Add requirement', description: 'Open procurement workspace', path: '/organizer/procurement', roles: ['organizer', 'admin'] },
-  { id: 'discover-vendors', label: 'Discover vendors', description: 'Search vendor matches', path: '/organizer/procurement', roles: ['organizer', 'admin'] },
+  { id: 'browse-vendors', label: 'Browse vendors', description: 'Open Vendor Marketplace', path: '/organizer/vendor-marketplace', roles: ['organizer', 'admin'] },
+  { id: 'discover-vendors', label: 'Discover vendors', description: 'Search vendor matches', path: '/organizer/vendor-marketplace', roles: ['organizer', 'admin'] },
   { id: 'notifications', label: 'Open notifications', description: 'Review unread updates', path: '/notifications', roles: ['organizer', 'vendor', 'admin'] },
   { id: 'profile', label: 'Profile settings', description: 'Open role profile settings', path: '/organizer/profile', roles: ['organizer'] },
   { id: 'vendor-profile', label: 'Vendor settings', description: 'Manage services and availability', path: '/vendor/profile', roles: ['vendor'] },

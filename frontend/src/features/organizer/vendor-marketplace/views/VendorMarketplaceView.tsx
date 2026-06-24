@@ -1,0 +1,255 @@
+import { GitCompare, ShoppingBag, X, Calendar, Clock } from 'lucide-react'
+import { DashboardShell } from '../../../../shared/components/DashboardShell'
+import { PageHeader } from '../../../../shared/components/PageHeader'
+import { Button } from '../../../../shared/components/Button'
+import { VendorMarketplaceHeader } from '../components/VendorMarketplaceHeader'
+import { VendorMarketplaceFilters } from '../components/VendorMarketplaceFilters'
+import { VendorGrid } from '../components/VendorGrid'
+import { VendorCompareDrawer } from '../components/VendorCompareDrawer'
+import { VendorDetailModal } from '../components/VendorDetailModal'
+import { SelectEventBriefModal } from '../components/SelectEventBriefModal'
+import type {
+  EventBrief,
+  VendorMarketplaceVendor,
+  VendorFilterState,
+  RequestFormData,
+  ProcurementStatus,
+  VendorAvailability,
+  TimeSlotType,
+  EventBriefReference,
+} from '../models/vendorMarketplace.model'
+
+interface VendorMarketplaceViewProps {
+  brief: EventBrief | null
+  vendorCount: number
+  filteredVendors: VendorMarketplaceVendor[]
+  filters: VendorFilterState
+  hasActiveFilters: boolean
+  eventFilterActive: boolean
+  compareVendors: VendorMarketplaceVendor[]
+  showCompareDrawer: boolean
+  showRequestModal: boolean
+  showVendorDetail: boolean
+  showSelectBriefModal: boolean
+  showGeneralInquiry: boolean
+  requestForm: RequestFormData
+  selectedVendor: VendorMarketplaceVendor | null
+  selectedGalleryImage: string
+  selectedDate: string | null
+  selectedTimeSlot: TimeSlotType | null
+  generalInquiryMessage: string
+  eventBriefs: EventBriefReference[]
+  currentAvailability: VendorAvailability | null
+  savedVendorIds: string[]
+  isInCompare: (id: string) => boolean
+  isSaved: (id: string) => boolean
+  getRequestStatus: (vendorId: string) => ProcurementStatus | null
+  onVendorClick: (vendor: VendorMarketplaceVendor) => void
+  onToggleCompare: (id: string) => void
+  onToggleSave: (id: string) => void
+  onSendRequest: (vendor: VendorMarketplaceVendor) => void
+  onUpdateFilters: (next: Partial<VendorFilterState>) => void
+  onResetFilters: () => void
+  onCloseVendorDetail: () => void
+  onSelectGalleryImage: (url: string) => void
+  onSelectDate: (date: string) => void
+  onSelectTimeSlot: (slot: TimeSlotType) => void
+  onCloseRequestModal: () => void
+  onUpdateRequestForm: (next: Partial<RequestFormData>) => void
+  onSubmitRequest: () => void
+  onSetShowCompareDrawer: (v: boolean) => void
+  onClearCompare: () => void
+  onClearEventFilter: () => void
+  onChangeEventBrief: () => void
+  onCloseSelectBriefModal: () => void
+  onSelectExistingEvent: (id: string) => void
+  onPlanNewEvent: () => void
+  onToggleGeneralInquiry: () => void
+  onSetGeneralInquiryMessage: (msg: string) => void
+  onSendGeneralInquiry: () => void
+}
+
+export function VendorMarketplaceView({
+  brief,
+  vendorCount,
+  filteredVendors,
+  filters,
+  hasActiveFilters,
+  eventFilterActive,
+  compareVendors,
+  showCompareDrawer,
+  showRequestModal,
+  showVendorDetail,
+  showSelectBriefModal,
+  showGeneralInquiry,
+  requestForm,
+  selectedVendor,
+  selectedGalleryImage,
+  selectedDate,
+  selectedTimeSlot,
+  generalInquiryMessage,
+  eventBriefs,
+  currentAvailability,
+  savedVendorIds,
+  isInCompare,
+  isSaved,
+  getRequestStatus,
+  onVendorClick,
+  onToggleCompare,
+  onToggleSave,
+  onSendRequest,
+  onUpdateFilters,
+  onResetFilters,
+  onCloseVendorDetail,
+  onSelectGalleryImage,
+  onSelectDate,
+  onSelectTimeSlot,
+  onCloseRequestModal,
+  onUpdateRequestForm,
+  onSubmitRequest,
+  onSetShowCompareDrawer,
+  onClearCompare,
+  onClearEventFilter,
+  onChangeEventBrief,
+  onCloseSelectBriefModal,
+  onSelectExistingEvent,
+  onPlanNewEvent,
+  onToggleGeneralInquiry,
+  onSetGeneralInquiryMessage,
+  onSendGeneralInquiry,
+}: VendorMarketplaceViewProps) {
+  return (
+    <DashboardShell>
+      <div className="space-y-5">
+        <PageHeader
+          title="Vendor Marketplace"
+          subtitle="Browse vendors, compare services, check availability, and send requests."
+          action={
+            compareVendors.length > 0 && (
+              <Button
+                variant="secondary"
+                onClick={() => onSetShowCompareDrawer(true)}
+                className="flex items-center gap-2"
+              >
+                <GitCompare className="h-4 w-4" />
+                Compare ({compareVendors.length})
+              </Button>
+            )
+          }
+        />
+
+        {eventFilterActive && brief && (
+          <div className="rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-600 to-brand-700 px-5 py-4 shadow-md">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-white/20 p-2">
+                  <ShoppingBag className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Showing vendors matched for {brief.eventName}
+                  </h2>
+                  <p className="text-sm text-brand-100">
+                    Vendors are automatically filtered based on your event brief.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={onClearEventFilter}
+                  className="flex items-center gap-1.5 bg-white/15 text-white border-white/25 hover:bg-white/25"
+                >
+                  <X className="h-4 w-4" />
+                  Clear Event Filter
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={onChangeEventBrief}
+                  className="flex items-center gap-1.5 bg-white/15 text-white border-white/25 hover:bg-white/25"
+                >
+                  Change Event Brief
+                </Button>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-4 text-sm text-brand-100">
+              <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{brief.eventDate}</span>
+              <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{brief.startTime} - {brief.endTime}</span>
+              <span>{brief.location} · {brief.guestCount} guests</span>
+            </div>
+          </div>
+        )}
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <VendorMarketplaceFilters
+            filters={filters}
+            hasActiveFilters={hasActiveFilters}
+            onUpdateFilters={onUpdateFilters}
+            onResetFilters={onResetFilters}
+          />
+        </div>
+
+        <div className="text-sm text-slate-500 mb-2">
+          Showing {filteredVendors.length} of {vendorCount} vendors
+          {eventFilterActive && brief && ` · Matched for ${brief.eventName}`}
+        </div>
+
+        <VendorGrid
+          vendors={filteredVendors}
+          hasActiveFilters={hasActiveFilters}
+          eventFilterActive={eventFilterActive}
+          isInCompare={isInCompare}
+          isSaved={isSaved}
+          onVendorClick={onVendorClick}
+          onToggleCompare={onToggleCompare}
+          onToggleSave={onToggleSave}
+          onSendRequest={onSendRequest}
+          onResetFilters={onResetFilters}
+          onClearEventFilter={onClearEventFilter}
+        />
+      </div>
+
+      <VendorDetailModal
+        open={showVendorDetail}
+        vendor={selectedVendor}
+        selectedGalleryImage={selectedGalleryImage}
+        selectedDate={selectedDate}
+        selectedTimeSlot={selectedTimeSlot}
+        currentAvailability={currentAvailability}
+        eventFilterActive={eventFilterActive}
+        isInCompare={isInCompare}
+        isSaved={isSaved}
+        requestStatus={selectedVendor ? getRequestStatus(selectedVendor.id) : null}
+        onClose={onCloseVendorDetail}
+        onSelectGalleryImage={onSelectGalleryImage}
+        onSelectDate={onSelectDate}
+        onSelectTimeSlot={onSelectTimeSlot}
+        onSendRequest={onSendRequest}
+        onToggleCompare={onToggleCompare}
+        onToggleSave={onToggleSave}
+      />
+
+      <VendorCompareDrawer
+        open={showCompareDrawer}
+        vendors={compareVendors}
+        onClose={() => onSetShowCompareDrawer(false)}
+        onRemove={(id) => onToggleCompare(id)}
+        onClear={onClearCompare}
+        onSendRequest={onSendRequest}
+      />
+
+      <SelectEventBriefModal
+        open={showSelectBriefModal}
+        showGeneralInquiry={showGeneralInquiry}
+        generalInquiryMessage={generalInquiryMessage}
+        eventBriefs={eventBriefs}
+        onClose={onCloseSelectBriefModal}
+        onSelectEvent={onSelectExistingEvent}
+        onPlanEvent={onPlanNewEvent}
+        onToggleGeneralInquiry={onToggleGeneralInquiry}
+        onSetGeneralInquiryMessage={onSetGeneralInquiryMessage}
+        onSendGeneralInquiry={onSendGeneralInquiry}
+      />
+    </DashboardShell>
+  )
+}

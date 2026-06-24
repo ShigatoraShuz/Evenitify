@@ -13,7 +13,9 @@ export const ROUTES: Record<string, RouteConfig> = {
   CHOOSE_ROLE: { path: '/choose-role', label: 'Choose Role', roles: [], sidebar: false },
   ONBOARDING: { path: '/onboarding', label: 'Onboarding', roles: [], sidebar: false },
   ORGANIZER_DASHBOARD: { path: '/organizer', label: 'Dashboard', roles: ['organizer', 'admin'], sidebar: true, icon: 'LayoutDashboard' },
-  ORGANIZER_PROCUREMENT: { path: '/organizer/procurement', label: 'Procurement', roles: ['organizer', 'admin'], sidebar: true, icon: 'Search' },
+  ORGANIZER_PLAN_EVENT: { path: '/organizer/plan-event', label: 'Plan an Event', roles: ['organizer', 'admin'], sidebar: true, icon: 'CalendarPlus' },
+  ORGANIZER_VENDOR_MARKETPLACE: { path: '/organizer/vendor-marketplace', label: 'Vendor Marketplace', roles: ['organizer', 'admin'], sidebar: true, icon: 'ShoppingBag' },
+  ORGANIZER_VENDOR_STATUS: { path: '/organizer/vendor-status', label: 'Track Vendors', roles: ['organizer', 'admin'], sidebar: true, icon: 'MessageSquare' },
   ORGANIZER_PORTFOLIO: { path: '/organizer/portfolio', label: 'Portfolio', roles: ['organizer', 'admin'], sidebar: true, icon: 'FolderHeart' },
   ORGANIZER_COMPARE: { path: '/organizer/compare', label: 'Compare Vendors', roles: ['organizer', 'admin'], sidebar: true, icon: 'GitCompare' },
   ORGANIZER_REPORTS: { path: '/organizer/reports', label: 'Reports', roles: ['organizer', 'admin'], sidebar: true, icon: 'BarChart3' },
@@ -30,7 +32,9 @@ export const ROUTES: Record<string, RouteConfig> = {
 
 export const ORGANIZER_SIDEBAR: RouteConfig[] = [
   ROUTES.ORGANIZER_DASHBOARD,
-  ROUTES.ORGANIZER_PROCUREMENT,
+  ROUTES.ORGANIZER_PLAN_EVENT,
+  ROUTES.ORGANIZER_VENDOR_MARKETPLACE,
+  ROUTES.ORGANIZER_VENDOR_STATUS,
   ROUTES.ORGANIZER_PORTFOLIO,
   ROUTES.ORGANIZER_COMPARE,
   ROUTES.ORGANIZER_REPORTS,
