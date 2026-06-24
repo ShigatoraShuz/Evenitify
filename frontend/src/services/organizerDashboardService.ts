@@ -73,7 +73,22 @@ export interface DashboardNotification {
   linkTo: string
 }
 
+export interface OrganizerDashboardPayload {
+  summary: DashboardSummary
+  events: DashboardEventPreview[]
+  drafts: DashboardDraft[]
+  vendorRequests: DashboardVendorRequest[]
+  bookings: DashboardBooking[]
+  recommendedVendors: RecommendedVendorPreview[]
+  activities: DashboardActivity[]
+  notifications: DashboardNotification[]
+}
+
 export const organizerDashboardService = {
+  async getDashboardData(): Promise<OrganizerDashboardPayload> {
+    return api.get<OrganizerDashboardPayload>('/organizer/dashboard')
+  },
+
   async getSummary(): Promise<DashboardSummary> {
     return api.get<DashboardSummary>('/organizer/dashboard/summary')
   },

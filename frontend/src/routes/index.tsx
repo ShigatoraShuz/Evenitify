@@ -54,10 +54,12 @@ interface RouteGuardProps {
   roleChosen: boolean
   requiredRole: UserRole[]
   profileComplete: boolean
+  loading: boolean
   children: React.ReactNode
 }
 
-function RouteGuard({ authenticated, role, roles, roleChosen, requiredRole, profileComplete, children }: RouteGuardProps) {
+function RouteGuard({ authenticated, role, roles, roleChosen, requiredRole, profileComplete, loading, children }: RouteGuardProps) {
+  if (loading) return <LoadingFallback />
   if (!authenticated) return <Navigate to="/login" replace />
   if (!roleChosen) return <Navigate to="/choose-role" replace />
   if (!role) return <Navigate to="/choose-role" replace />
@@ -114,14 +116,14 @@ export function AppRoutes({
         } />
         <Route path="/organizer" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><OrganizerDashboardView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/organizer/plan-event" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><OrganizerPlanEventView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
@@ -130,49 +132,49 @@ export function AppRoutes({
         <Route path="/organizer/procurement/marketplace" element={<Navigate to="/organizer/vendor-marketplace" replace />} />
         <Route path="/organizer/vendor-marketplace" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><VendorMarketplaceView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/organizer/vendor-status" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><OrganizerVendorStatusView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/organizer/portfolio" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><EventPortfolioView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/organizer/compare" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><VendorComparisonView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/organizer/reports" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><OrganizerReportsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/admin" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['admin']} profileComplete={profileComplete}>
               <PageTransition><AdminDashboardView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/admin/reports" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['admin']} profileComplete={profileComplete}>
               <PageTransition><AdminReportsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
@@ -184,35 +186,35 @@ export function AppRoutes({
         } />
         <Route path="/organizer/profile" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><OrganizerProfileView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/vendor/profile" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
               <PageTransition><VendorProfileView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/vendor/reports" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
               <PageTransition><VendorReportsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/admin/settings" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['admin']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['admin']} profileComplete={profileComplete}>
               <PageTransition><AdminSettingsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/vendor" element={
           <SuspenseWrapper>
-            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
               <PageTransition><VendorB2BDashboardView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>

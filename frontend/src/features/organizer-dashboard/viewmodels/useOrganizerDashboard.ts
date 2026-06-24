@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
+import { hasAuthToken } from '../../../services/apiClient'
 import { organizerDashboardService } from '../../../services/organizerDashboardService'
 import type {
   DashboardEventPreview as ModelEventPreview,
@@ -36,44 +37,55 @@ export function useOrganizerDashboard() {
     error: null,
   })
 
+  const applyDashboardState = useCallback((payload: Awaited<ReturnType<typeof organizerDashboardService.getDashboardData>>) => {
+    setState({
+      events: payload.events as ModelEventPreview[],
+      drafts: payload.drafts as ModelDraft[],
+      vendorRequests: payload.vendorRequests as ModelVendorRequest[],
+      bookings: payload.bookings as ModelBooking[],
+      recommendedVendors: payload.recommendedVendors as ModelRecommendedVendor[],
+      activities: payload.activities as ModelActivity[],
+      notifications: payload.notifications as ModelNotification[],
+      loading: false,
+      error: null,
+    })
+  }, [])
+
+  const loadDashboard = useCallback(async (cancelled?: () => boolean) => {
+    if (!hasAuthToken()) {
+      setState({
+        events: [],
+        drafts: [],
+        vendorRequests: [],
+        bookings: [],
+        recommendedVendors: [],
+        activities: [],
+        notifications: [],
+        loading: false,
+        error: null,
+      })
+      return
+    }
+    setState((s) => ({ ...s, loading: true, error: null }))
+    try {
+      const payload = await organizerDashboardService.getDashboardData()
+      if (cancelled?.()) return
+      applyDashboardState(payload)
+    } catch (err) {
+      if (cancelled?.()) return
+      setState((s) => ({
+        ...s,
+        loading: false,
+        error: err instanceof Error ? err.message : 'Failed to load dashboard data',
+      }))
+    }
+  }, [applyDashboardState])
+
   useEffect(() => {
     let cancelled = false
-    async function load() {
-      setState((s) => ({ ...s, loading: true, error: null }))
-      try {
-        const [eventsData, draftsData, vendorRequestsData, bookingsData, recommendedData, activitiesData, notificationsData] = await Promise.all([
-          organizerDashboardService.getEvents(),
-          organizerDashboardService.getDrafts(),
-          organizerDashboardService.getVendorRequests(),
-          organizerDashboardService.getBookings(),
-          organizerDashboardService.getRecommendedVendors(),
-          organizerDashboardService.getActivities(),
-          organizerDashboardService.getNotifications(),
-        ])
-        if (cancelled) return
-        setState({
-          events: eventsData as ModelEventPreview[],
-          drafts: draftsData as ModelDraft[],
-          vendorRequests: vendorRequestsData as ModelVendorRequest[],
-          bookings: bookingsData as ModelBooking[],
-          recommendedVendors: recommendedData as ModelRecommendedVendor[],
-          activities: activitiesData as ModelActivity[],
-          notifications: notificationsData as ModelNotification[],
-          loading: false,
-          error: null,
-        })
-      } catch (err) {
-        if (cancelled) return
-        setState((s) => ({
-          ...s,
-          loading: false,
-          error: err instanceof Error ? err.message : 'Failed to load dashboard data',
-        }))
-      }
-    }
-    load()
+    void loadDashboard(() => cancelled)
     return () => { cancelled = true }
-  }, [])
+  }, [loadDashboard])
 
   const summaryStats = useMemo(() => {
     const totalEvents = state.events.length
@@ -108,36 +120,8 @@ export function useOrganizerDashboard() {
   }, [state.vendorRequests])
 
   const refresh = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true, error: null }))
-    try {
-      const [eventsData, draftsData, vendorRequestsData, bookingsData, recommendedData, activitiesData, notificationsData] = await Promise.all([
-        organizerDashboardService.getEvents(),
-        organizerDashboardService.getDrafts(),
-        organizerDashboardService.getVendorRequests(),
-        organizerDashboardService.getBookings(),
-        organizerDashboardService.getRecommendedVendors(),
-        organizerDashboardService.getActivities(),
-        organizerDashboardService.getNotifications(),
-      ])
-      setState({
-        events: eventsData as ModelEventPreview[],
-        drafts: draftsData as ModelDraft[],
-        vendorRequests: vendorRequestsData as ModelVendorRequest[],
-        bookings: bookingsData as ModelBooking[],
-        recommendedVendors: recommendedData as ModelRecommendedVendor[],
-        activities: activitiesData as ModelActivity[],
-        notifications: notificationsData as ModelNotification[],
-        loading: false,
-        error: null,
-      })
-    } catch (err) {
-      setState((s) => ({
-        ...s,
-        loading: false,
-        error: err instanceof Error ? err.message : 'Failed to refresh dashboard',
-      }))
-    }
-  }, [])
+    await loadDashboard()
+  }, [loadDashboard])
 
   const meta = buildViewModelStateMeta({
     loading: state.loading,

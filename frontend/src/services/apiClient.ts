@@ -12,6 +12,22 @@ function getAuthToken(): string | null {
   }
 }
 
+export function hasAuthToken(): boolean {
+  return getAuthToken() !== null
+}
+
+export class ApiError extends Error {
+  status: number
+  code?: string
+
+  constructor(message: string, status: number, code?: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = code
+  }
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -36,7 +52,7 @@ async function request<T>(
   const json: ApiResponse<T> = await res.json()
 
   if (!json.success) {
-    throw new Error(json.error?.message || 'Request failed')
+    throw new ApiError(json.error?.message || 'Request failed', res.status, json.error?.code)
   }
 
   return json.data

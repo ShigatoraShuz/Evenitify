@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
+import { hasAuthToken } from '../../../services/apiClient'
 import { notificationService } from '../../../services/notificationService'
 import type { AppNotification } from '../models/notifications.model'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
@@ -53,6 +54,10 @@ export function useNotifications() {
   }, [state.notifications])
 
   const loadNotifications = useCallback(async () => {
+    if (!hasAuthToken()) {
+      setState((s) => ({ ...s, notifications: [], loading: false, error: null }))
+      return
+    }
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
       const notifications = await notificationService.listNotifications()
@@ -63,6 +68,7 @@ export function useNotifications() {
   }, [])
 
   const loadUnreadCount = useCallback(async () => {
+    if (!hasAuthToken()) return
     try {
       const { count } = await notificationService.getUnreadCount()
       setState((s) => ({ ...s, unreadCount: count }))

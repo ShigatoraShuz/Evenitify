@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { authService, type UserProfile, type UserRole } from '../../../services/authService'
 import { onboardingService } from '../../../services/onboardingService'
 import type { AuthState } from '../models/auth.model'
+import { ApiError } from '../../../services/apiClient'
 
 const USER_CACHE_KEY = 'auth_user_cache'
 const CHOSEN_ROLES_KEY = 'eventify_chosen_roles'
@@ -143,7 +144,11 @@ export function useAuthSession() {
       cacheUser(user)
       const activeRole = getActiveRole(user)
       setState({ user, loading: false, error: null, profileComplete, activeRole })
-    } catch {
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        localStorage.removeItem('supabase.auth.token')
+        cacheUser(null)
+      }
       const cached = getCachedUser()
       const hasSession = getStoredSession()
       setState({ user: hasSession ? cached : null, loading: false, error: null, profileComplete: true, activeRole: getActiveRole(cached) })
