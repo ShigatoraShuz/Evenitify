@@ -238,6 +238,11 @@ export function useAuthSession() {
     window.dispatchEvent(new Event(AUTH_SESSION_EVENT))
   }, [state.user])
 
+  const reload = useCallback(async () => {
+    sessionChecked.current = false
+    await loadSession()
+  }, [loadSession])
+
   const authState = getAuthState(state.user, state.loading, state.profileComplete)
 
   return {
@@ -252,7 +257,7 @@ export function useAuthSession() {
     login,
     register,
     logout,
-    reload: loadSession,
+    reload,
     setProfileComplete,
     chooseRoles,
     setActiveRole

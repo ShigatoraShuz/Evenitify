@@ -1052,3 +1052,10 @@ using (true);
 create policy "vendors can manage own blocked dates"
 on public.vendor_blocked_dates for all
 using (vendor_id = public.current_vendor_profile_id() or public.is_admin());
+
+-- 0013: Additional Profile Fields
+alter table public.organizer_profiles
+  add column if not exists organization_type text;
+
+alter table public.vendor_profiles
+  add column if not exists business_description text;
