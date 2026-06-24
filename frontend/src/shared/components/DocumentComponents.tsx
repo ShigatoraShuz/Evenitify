@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from './Button'
 import { Modal } from './Modal'
 import { StatusBadge } from './StatusBadge'
@@ -20,15 +20,29 @@ export function ContractDocumentCard({ document, onPreview }: { document: Docume
   )
 }
 
-export function UploadDocumentDropzone({ onMockUpload }: { onMockUpload: (fileName: string) => void }) {
-  const [fileName, setFileName] = useState('')
+export function UploadDocumentDropzone({ onUpload }: { onUpload: (file: File) => Promise<void> }) {
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      await onUpload(file)
+    } finally {
+      setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
   return (
     <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
-      <p className="text-sm font-medium text-slate-700">Mock document upload</p>
-      <p className="mt-1 text-xs text-slate-500">Stores metadata only. No files are persisted.</p>
+      <p className="text-sm font-medium text-slate-700">Upload document</p>
+      <p className="mt-1 text-xs text-slate-500">Attach files to this event portfolio.</p>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <input value={fileName} onChange={(e) => setFileName(e.target.value)} placeholder="filename.pdf" className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
-        <Button onClick={() => { if (fileName.trim()) { onMockUpload(fileName.trim()); setFileName('') } }}>Add metadata</Button>
+        <input ref={fileRef} type="file" onChange={handleFile} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-sm file:font-medium file:text-brand-700" />
+        {uploading && <span className="text-sm text-slate-500">Uploading...</span>}
       </div>
     </div>
   )

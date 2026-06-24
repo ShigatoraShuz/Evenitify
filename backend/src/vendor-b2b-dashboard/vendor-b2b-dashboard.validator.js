@@ -3,7 +3,9 @@ const { z } = require('zod');
 const profileUpdateSchema = z.object({
   body: z.object({
     businessName: z.string().min(1).max(200).optional(),
+    businessDescription: z.string().max(1000).optional().nullable(),
     contactNumber: z.string().max(50).optional().nullable(),
+    phone: z.string().max(50).optional().nullable(),
     serviceArea: z.string().max(200).optional().nullable()
   }),
   params: z.object({}).optional(),

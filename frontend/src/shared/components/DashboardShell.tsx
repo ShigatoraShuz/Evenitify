@@ -6,7 +6,6 @@ import { useNotifications } from '../../features/notifications/viewmodels/useNot
 import { NotificationDropdown } from '../../features/notifications/components/NotificationDropdown'
 import { ToastProvider } from './ToastContext'
 import { getSidebarByRole, type RouteConfig } from '../../routes/routeConstants'
-import { DemoRoleSwitcher } from './DemoRoleSwitcher'
 import { CommandPalette } from './CommandPalette'
 import { useCommandPalette } from '../hooks/useCommandPalette'
 import { RoleHelpDrawer } from './GuidanceComponents'
@@ -20,8 +19,35 @@ interface DashboardShellProps {
 export function DashboardShell({ children }: DashboardShellProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  const { logout, activeRole, userRoles, setActiveRole } = useAuthSession()
+  const { logout, activeRole, userRoles, setActiveRole, user } = useAuthSession()
   const userRole = activeRole
+
+  const profileLabel = (() => {
+    type WithOrgName = { organization_name?: string }
+    type WithBusName = { business_name?: string }
+    if (userRole === 'organizer') {
+      const org = user?.organizerProfile as WithOrgName | null | undefined
+      return org?.organization_name
+        || user?.display_name
+        || user?.displayName
+        || user?.email
+        || 'Organizer'
+    }
+    if (userRole === 'vendor') {
+      const ven = user?.vendorProfile as WithBusName | null | undefined
+      return ven?.business_name
+        || user?.display_name
+        || user?.displayName
+        || user?.email
+        || 'Vendor'
+    }
+    return user?.display_name
+      || user?.displayName
+      || user?.email
+      || 'Admin'
+  })()
+
+  const avatarInitial = profileLabel.charAt(0).toUpperCase()
   const sidebarItems = getSidebarByRole(userRole)
   const { notifications, unreadCount, loading, loadNotifications, markAsRead } = useNotifications()
   const commandPalette = useCommandPalette(userRole)
@@ -152,9 +178,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
                     aria-expanded={profileMenuOpen}
                   >
                     <span className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold">
-                      {userRole.charAt(0).toUpperCase()}
+                      {avatarInitial}
                     </span>
-                    <span className="hidden sm:inline text-xs capitalize text-slate-500">{userRole}</span>
+                    <span className="hidden sm:flex sm:flex-col sm:items-start">
+                      <span className="text-xs font-medium text-slate-700 truncate max-w-[120px]">{profileLabel}</span>
+                      <span className="text-[10px] capitalize text-slate-400 leading-tight">{userRole}</span>
+                    </span>
                   </button>
                   {profileMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-slate-200 shadow-lg z-50 py-1">
@@ -245,9 +274,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
           )}
 
           <main id="main-content" className="min-h-[calc(100vh-64px)] flex-1 p-4 md:p-6 lg:p-8">
-            <div className="mb-4">
-              <DemoRoleSwitcher compact />
-            </div>
             <CommandPalette
               open={commandPalette.open}
               query={commandPalette.query}

@@ -9,7 +9,16 @@ async function getProfile(actor) {
   }
 
   const services = await vendorRepository.listServices(profile.id);
-  return { ...profile, services };
+  return {
+    businessName: profile.business_name,
+    serviceArea: profile.service_area,
+    businessDescription: profile.business_description || null,
+    phone: profile.contact_number,
+    verificationStatus: profile.verification_status,
+    isVerified: profile.verification_status === 'verified',
+    rating: profile.rating,
+    services
+  };
 }
 
 async function updateProfile(actor, payload) {

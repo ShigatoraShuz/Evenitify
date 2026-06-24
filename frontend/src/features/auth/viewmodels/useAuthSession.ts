@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { authService, type UserProfile, type UserRole } from '../../../services/authService'
 import { onboardingService } from '../../../services/onboardingService'
-import { DEMO_SESSION_EVENT, demoJourneyService, type DemoRole } from '../../../services/demoJourneyService'
 import type { AuthState } from '../models/auth.model'
 
 const USER_CACHE_KEY = 'auth_user_cache'
@@ -96,12 +95,14 @@ export function getAuthState(user: UserProfile | null, loading: boolean, profile
 
 export function useAuthSession() {
   const cachedUser = getCachedUser()
+  const hasStoredSession = getStoredSession()
+  const sessionChecked = useRef(false)
   const [state, setState] = useState<AuthSessionState>({
-    user: cachedUser,
-    loading: getStoredSession(),
+    user: hasStoredSession ? cachedUser : null,
+    loading: hasStoredSession,
     error: null,
     profileComplete: true,
-    activeRole: getActiveRole(cachedUser)
+    activeRole: getActiveRole(hasStoredSession ? cachedUser : null)
   })
 
   const checkProfileComplete = useCallback(async (user: UserProfile) => {
@@ -129,6 +130,12 @@ export function useAuthSession() {
   }, [])
 
   const loadSession = useCallback(async () => {
+    if (sessionChecked.current) return
+    sessionChecked.current = true
+    if (!getStoredSession()) {
+      setState((s) => ({ ...s, loading: false }))
+      return
+    }
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
       const user = await authService.getMe()
@@ -154,10 +161,8 @@ export function useAuthSession() {
         setState({ user: cached, loading: false, error: null, profileComplete, activeRole: getActiveRole(cached) })
       }
     }
-    window.addEventListener(DEMO_SESSION_EVENT, syncSession)
     window.addEventListener(AUTH_SESSION_EVENT, syncSession)
     return () => {
-      window.removeEventListener(DEMO_SESSION_EVENT, syncSession)
       window.removeEventListener(AUTH_SESSION_EVENT, syncSession)
     }
   }, [])
@@ -203,6 +208,7 @@ export function useAuthSession() {
     clearSetupCache()
     localStorage.removeItem(CHOSEN_ROLES_KEY)
     localStorage.removeItem(ACTIVE_ROLE_KEY)
+    sessionChecked.current = false
     cacheUser(null)
     setState({ user: null, loading: false, error: null, profileComplete: true, activeRole: null })
   }, [])
@@ -232,13 +238,6 @@ export function useAuthSession() {
     window.dispatchEvent(new Event(AUTH_SESSION_EVENT))
   }, [state.user])
 
-  const switchDemoRole = useCallback((role: DemoRole) => {
-    const journey = demoJourneyService.start(role)
-    const cached = getCachedUser()
-    if (cached) setState({ user: cached, loading: false, error: null, profileComplete: true, activeRole: getActiveRole(cached) })
-    return journey
-  }, [])
-
   const authState = getAuthState(state.user, state.loading, state.profileComplete)
 
   return {
@@ -256,7 +255,6 @@ export function useAuthSession() {
     reload: loadSession,
     setProfileComplete,
     chooseRoles,
-    setActiveRole,
-    switchDemoRole
+    setActiveRole
   }
 }

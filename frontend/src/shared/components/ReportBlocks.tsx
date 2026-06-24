@@ -27,7 +27,7 @@ export function ExportActionBar({ onCsv, onPrint, onPdf }: { onCsv: () => void; 
     <div className="flex flex-wrap gap-2">
       <Button onClick={onCsv}>Export CSV</Button>
       <Button variant="secondary" onClick={onPrint}>Print</Button>
-      <Button variant="ghost" onClick={onPdf}>PDF placeholder</Button>
+      <Button variant="ghost" onClick={onPdf}>Export PDF</Button>
     </div>
   )
 }

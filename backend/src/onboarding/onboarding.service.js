@@ -23,7 +23,8 @@ async function complete(userId, payload) {
       userId,
       payload.organizationName,
       payload.phone || null,
-      payload.address || null
+      payload.address || null,
+      payload.organizationType || null
     );
   }
 
@@ -32,7 +33,8 @@ async function complete(userId, payload) {
       userId,
       payload.businessName,
       payload.phone || null,
-      payload.serviceArea || null
+      payload.serviceArea || null,
+      payload.businessDescription || null
     );
   }
 

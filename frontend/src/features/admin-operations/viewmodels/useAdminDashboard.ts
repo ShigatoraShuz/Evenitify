@@ -54,7 +54,7 @@ export function useAdminDashboard() {
         adminService.getDashboardSummary(),
         auditService.listActivities('admin:operations')
       ])
-      const analytics = await analyticsService.getOperationalAnalytics(summary)
+      const analytics = await analyticsService.getOperationalAnalytics()
       setState((s) => ({ ...s, summary, auditActivities, analytics, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))

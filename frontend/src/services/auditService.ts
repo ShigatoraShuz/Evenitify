@@ -1,3 +1,5 @@
+import { api } from './apiClient'
+
 export type AuditActorRole = 'organizer' | 'vendor' | 'admin' | 'system'
 
 export interface AuditActivity {
@@ -11,23 +13,8 @@ export interface AuditActivity {
 }
 
 export const auditService = {
-  listActivities: async (scope: string): Promise<AuditActivity[]> => [
-    {
-      id: `${scope}-audit-1`,
-      actorName: 'System',
-      actorRole: 'system',
-      action: 'Snapshot refreshed',
-      target: scope,
-      createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
-      detail: 'Frontend mock audit trail placeholder.'
-    },
-    {
-      id: `${scope}-audit-2`,
-      actorName: 'Admin Ops',
-      actorRole: 'admin',
-      action: 'Reviewed workflow',
-      target: scope,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString()
-    }
-  ]
+  listActivities: async (scope = ''): Promise<AuditActivity[]> => {
+    const params = scope ? `?scope=${encodeURIComponent(scope)}` : ''
+    return api.get<AuditActivity[]>(`/audit/activity${params}`)
+  }
 }

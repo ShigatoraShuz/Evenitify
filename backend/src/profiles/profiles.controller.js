@@ -1,13 +1,11 @@
 const asyncHandler = require('../shared/utils/asyncHandler');
 const { sendSuccess } = require('../shared/utils/response');
 const authRepository = require('../auth/auth.repository');
-const { supabaseAdmin } = require('../config/supabase');
 const AppError = require('../shared/utils/appError');
 
 const getOrganizerProfile = asyncHandler(async (req, res) => {
   const profile = await authRepository.findOrganizerProfile(req.user.id);
   if (!profile) {
-    // If no profile yet, return default empty structure to avoid frontend crashes
     return sendSuccess(res, {
       organizationName: '',
       organizationType: '',
@@ -29,29 +27,9 @@ const updateOrganizerProfile = asyncHandler(async (req, res) => {
     req.user.id,
     organizationName,
     phone || null,
-    address || null
+    address || null,
+    organizationType || null
   );
-
-  const updates = {};
-  if (organizationType !== undefined) updates.organization_type = organizationType;
-
-  if (Object.keys(updates).length > 0) {
-    const { data, error } = await supabaseAdmin
-      .from('organizer_profiles')
-      .update(updates)
-      .eq('user_id', req.user.id)
-      .select('*')
-      .single();
-    if (error && error.code !== 'PGRST116') throw error;
-    if (data) {
-      return sendSuccess(res, {
-        organizationName: data.organization_name,
-        organizationType: data.organization_type || '',
-        phone: data.contact_number,
-        address: data.business_address
-      });
-    }
-  }
 
   return sendSuccess(res, {
     organizationName: profile.organization_name,

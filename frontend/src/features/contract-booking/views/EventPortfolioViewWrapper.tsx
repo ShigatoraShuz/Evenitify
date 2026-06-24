@@ -43,7 +43,7 @@ export default function EventPortfolioViewWrapper() {
       onSendContract={vm.sendContract}
       onSignOrganizer={vm.signContractAsOrganizer}
       onSignVendor={vm.signContractAsVendor}
-      onMockUploadDocument={vm.mockUploadDocument}
+      onUploadDocument={vm.uploadDocument}
       onClearError={vm.clearError}
     />
   )

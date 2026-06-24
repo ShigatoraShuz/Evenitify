@@ -80,7 +80,7 @@ interface EventPortfolioViewProps {
   onSendContract: (contractId: string) => Promise<void>
   onSignOrganizer: (contractId: string) => Promise<void>
   onSignVendor: (contractId: string) => Promise<void>
-  onMockUploadDocument: (fileName: string) => Promise<void>
+  onUploadDocument: (file: File) => Promise<void>
   onClearError: () => void
 }
 
@@ -125,7 +125,7 @@ export function EventPortfolioView({
   onSendContract,
   onSignOrganizer,
   onSignVendor,
-  onMockUploadDocument,
+  onUploadDocument,
   onClearError
 }: EventPortfolioViewProps) {
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -452,11 +452,11 @@ export function EventPortfolioView({
 
       {activeTab === 'documents' && (
         <div className="space-y-4">
-          <UploadDocumentDropzone onMockUpload={(fileName) => { void onMockUploadDocument(fileName) }} />
+          <UploadDocumentDropzone onUpload={onUploadDocument} />
           {documents.length > 0 ? (
             <AttachmentList documents={documents} onPreview={setPreviewDocument} />
           ) : (
-            <EmptyState title="No documents" description="Mock document metadata will appear after adding an attachment." />
+            <EmptyState title="No documents" description="Upload a document to attach it to this event portfolio." />
           )}
         </div>
       )}

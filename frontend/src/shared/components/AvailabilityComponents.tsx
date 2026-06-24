@@ -59,7 +59,7 @@ export function AvailabilityCalendar({ preview }: { preview: VendorAvailabilityP
 
 export function BlockedDateList({ dates }: { dates: BlockedDate[] }) {
   if (!dates.length) {
-    return <p className="text-sm text-gray-500">No blocked dates in the current mock schedule.</p>
+    return <p className="text-sm text-gray-500">No blocked dates.</p>
   }
 
   return (

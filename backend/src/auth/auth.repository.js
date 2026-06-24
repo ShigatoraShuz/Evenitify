@@ -61,12 +61,13 @@ async function updateRole(userId, role) {
   return data;
 }
 
-async function upsertOrganizerProfile(userId, organizationName, contactNumber, businessAddress) {
+async function upsertOrganizerProfile(userId, organizationName, contactNumber, businessAddress, organizationType) {
   const { data, error } = await supabaseAdmin
     .from('organizer_profiles')
     .upsert({
       user_id: userId,
       organization_name: organizationName,
+      organization_type: organizationType || null,
       contact_number: contactNumber || null,
       business_address: businessAddress || null
     }, { onConflict: 'user_id' })
@@ -77,14 +78,15 @@ async function upsertOrganizerProfile(userId, organizationName, contactNumber, b
   return data;
 }
 
-async function upsertVendorProfile(userId, businessName, contactNumber, serviceArea) {
+async function upsertVendorProfile(userId, businessName, contactNumber, serviceArea, businessDescription) {
   const { data, error } = await supabaseAdmin
     .from('vendor_profiles')
     .upsert({
       user_id: userId,
       business_name: businessName,
       contact_number: contactNumber || null,
-      service_area: serviceArea || null
+      service_area: serviceArea || null,
+      business_description: businessDescription || null
     }, { onConflict: 'user_id' })
     .select('*')
     .single();

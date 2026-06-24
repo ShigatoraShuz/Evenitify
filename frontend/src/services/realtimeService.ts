@@ -1,17 +1,14 @@
+import { api } from './apiClient'
+
 export interface RealtimeSnapshot {
   channel: string
   connected: boolean
   lastUpdatedAt: string
   pendingSyncCount: number
-  source: 'mock' | 'api'
+  source: 'api'
 }
 
 export const realtimeService = {
-  getSnapshot: async (channel: string): Promise<RealtimeSnapshot> => ({
-    channel,
-    connected: true,
-    lastUpdatedAt: new Date().toISOString(),
-    pendingSyncCount: 0,
-    source: 'mock'
-  })
+  getSnapshot: async (channel: string): Promise<RealtimeSnapshot> =>
+    api.get<RealtimeSnapshot>(`/realtime/snapshot?channel=${encodeURIComponent(channel)}`)
 }

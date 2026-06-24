@@ -1,3 +1,6 @@
+import { api } from './apiClient'
+import { getApiBaseUrl } from '../config/apiConfig'
+
 export type DocumentState = 'not_uploaded' | 'uploaded' | 'pending_review' | 'approved' | 'rejected'
 
 export interface DocumentMetadata {
@@ -11,31 +14,50 @@ export interface DocumentMetadata {
   notes?: string
 }
 
-const mockDocuments: DocumentMetadata[] = [
-  {
-    id: 'doc-contract-template',
-    ownerId: 'system',
-    title: 'Contract template',
-    fileName: 'standard-contract.pdf',
-    state: 'approved',
-    uploadedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-    reviewedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-    notes: 'Mock metadata only. No file storage is connected.'
+function getAuthToken(): string | null {
+  try {
+    const raw = localStorage.getItem('supabase.auth.token')
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return parsed?.access_token || null
+  } catch {
+    return null
   }
-]
+}
+
+async function uploadDocumentFile(
+  ownerId: string,
+  file: File,
+  title?: string
+): Promise<DocumentMetadata> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('ownerId', ownerId)
+  if (title) formData.append('title', title)
+
+  const token = getAuthToken()
+  const headers: Record<string, string> = {}
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const res = await fetch(`${getApiBaseUrl()}/documents/upload`, {
+    method: 'POST',
+    headers,
+    body: formData
+  })
+
+  const json = await res.json()
+  if (!json.success) {
+    throw new Error(json.error?.message || 'Upload failed')
+  }
+  return json.data
+}
 
 export const documentService = {
   listDocuments: async (ownerId = 'system'): Promise<DocumentMetadata[]> =>
-    mockDocuments.filter((doc) => doc.ownerId === ownerId || doc.ownerId === 'system'),
+    api.get<DocumentMetadata[]>(`/documents?ownerId=${encodeURIComponent(ownerId)}`),
 
-  mockUpload: async (ownerId: string, fileName: string, title = 'Uploaded document'): Promise<DocumentMetadata> => ({
-    id: `doc-${Date.now()}`,
-    ownerId,
-    title,
-    fileName,
-    state: 'pending_review',
-    uploadedAt: new Date().toISOString(),
-    reviewedAt: null,
-    notes: 'Mock upload metadata only. The file is not persisted.'
-  })
+  uploadDocument: uploadDocumentFile,
+
+  listByOwner: async (ownerId: string): Promise<DocumentMetadata[]> =>
+    api.get<DocumentMetadata[]>(`/documents?ownerId=${encodeURIComponent(ownerId)}`)
 }

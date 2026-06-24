@@ -1,9 +1,22 @@
 const { Router } = require('express');
 const multer = require('multer');
 const authenticate = require('../shared/middleware/auth.middleware');
+const AppError = require('../shared/utils/appError');
 const controller = require('./phase8.controller');
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.jpg', '.jpeg', '.png', '.txt'];
+    const ext = file.originalname.substring(file.originalname.lastIndexOf('.')).toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new AppError('Invalid file type. Allowed: ' + allowed.join(', '), 400, 'INVALID_FILE_TYPE'));
+    }
+  }
+});
 const router = Router();
 
 router.get('/events/:eventId/planning-timeline', authenticate, controller.getPlanningTimeline);

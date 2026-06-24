@@ -7,7 +7,8 @@ const required = [
   'SUPABASE_URL',
   'SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
-  'JWT_SECRET'
+  'JWT_SECRET',
+  'CLIENT_ORIGIN'
 ];
 
 for (const key of required) {
@@ -22,7 +23,7 @@ const env = {
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
   jwtSecret: process.env.JWT_SECRET,
-  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  clientOrigin: process.env.CLIENT_ORIGIN,
   nodeEnv: process.env.NODE_ENV || 'development'
 };
 

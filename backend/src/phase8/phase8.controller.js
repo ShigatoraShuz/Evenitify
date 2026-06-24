@@ -1,3 +1,4 @@
+const asyncHandler = require('../shared/utils/asyncHandler');
 const { supabase, supabaseAdmin } = require('../config/supabase');
 const AppError = require('../shared/utils/appError');
 const { sendSuccess } = require('../shared/utils/response');
@@ -730,23 +731,18 @@ const updateMyAvailabilityStatus = asyncHandler(async (req, res) => {
   return sendSuccess(res, preview);
 });
 
-const asyncHandlerWrapper = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
-
-// Wrap all exports with the async handler wrapper helper
 module.exports = {
-  getPlanningTimeline: asyncHandlerWrapper(getPlanningTimeline),
-  getBudgetCenter: asyncHandlerWrapper(getBudgetCenter),
-  getOperationalAnalytics: asyncHandlerWrapper(getOperationalAnalytics),
-  getAuditActivity: asyncHandlerWrapper(getAuditActivity),
-  getRealtimeSnapshot: asyncHandlerWrapper(getRealtimeSnapshot),
-  globalSearch: asyncHandlerWrapper(globalSearch),
-  listDocuments: asyncHandlerWrapper(listDocuments),
-  uploadDocument: asyncHandlerWrapper(uploadDocument),
-  listBookingMessages: asyncHandlerWrapper(listBookingMessages),
-  createBookingMessage: asyncHandlerWrapper(createBookingMessage),
-  getVendorAvailability: asyncHandlerWrapper(getVendorAvailability),
-  getMyAvailability: asyncHandlerWrapper(getMyAvailability),
-  updateMyAvailabilityStatus: asyncHandlerWrapper(updateMyAvailabilityStatus)
+  getPlanningTimeline: asyncHandler(getPlanningTimeline),
+  getBudgetCenter: asyncHandler(getBudgetCenter),
+  getOperationalAnalytics: asyncHandler(getOperationalAnalytics),
+  getAuditActivity: asyncHandler(getAuditActivity),
+  getRealtimeSnapshot: asyncHandler(getRealtimeSnapshot),
+  globalSearch: asyncHandler(globalSearch),
+  listDocuments: asyncHandler(listDocuments),
+  uploadDocument: asyncHandler(uploadDocument),
+  listBookingMessages: asyncHandler(listBookingMessages),
+  createBookingMessage: asyncHandler(createBookingMessage),
+  getVendorAvailability: asyncHandler(getVendorAvailability),
+  getMyAvailability: asyncHandler(getMyAvailability),
+  updateMyAvailabilityStatus: asyncHandler(updateMyAvailabilityStatus)
 };

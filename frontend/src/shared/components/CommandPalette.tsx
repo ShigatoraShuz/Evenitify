@@ -65,7 +65,7 @@ export function CommandPalette({
             {results.map((item) => (
               <SearchResultItem key={item.id} item={item} onSelect={onSelect} />
             ))}
-            {results.length === 0 && <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-500">No matching mock records.</p>}
+            {results.length === 0 && <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-500">No results found.</p>}
           </div>
         </div>
         <div>

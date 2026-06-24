@@ -2,21 +2,21 @@
 -- Run after migrations have been applied
 
 -- Insert test organizer (user_id references a placeholder - update with actual auth user)
-INSERT INTO organizer_profiles (user_id, organization_name, phone, address)
+INSERT INTO organizer_profiles (user_id, organization_name, contact_number, business_address)
 VALUES
   ('00000000-0000-0000-0000-000000000001', 'Eventful Inc.', '+1-555-0100', '123 Event St, New York, NY'),
   ('00000000-0000-0000-0000-000000000002', 'Gala Planners', '+1-555-0101', '456 Gala Ave, Los Angeles, CA')
 ON CONFLICT DO NOTHING;
 
 -- Insert test vendors
-INSERT INTO vendor_profiles (user_id, business_name, contact_number, service_area, rating, verification_status, availability_status)
+INSERT INTO vendor_profiles (user_id, business_name, contact_number, service_area, rating, verification_status)
 VALUES
-  ('00000000-0000-0000-0000-000000000010', 'Elite Catering Co.', '+1-555-0200', 'New York, NY', 4.8, 'verified', 'available'),
-  ('00000000-0000-0000-0000-000000000011', 'SoundWave Productions', '+1-555-0201', 'Los Angeles, CA', 4.5, 'verified', 'available'),
-  ('00000000-0000-0000-0000-000000000012', 'Grand Venues Ltd.', '+1-555-0202', 'New York, NY', 4.9, 'verified', 'available'),
-  ('00000000-0000-0000-0000-000000000013', 'CaptureTheMoment', '+1-555-0203', 'San Francisco, CA', 4.6, 'verified', 'available'),
-  ('00000000-0000-0000-0000-000000000014', 'ProStaff Events', '+1-555-0204', 'Miami, FL', 4.3, 'verified', 'available'),
-  ('00000000-0000-0000-0000-000000000015', 'Luxury Transports', '+1-555-0205', 'New York, NY', 4.7, 'verified', 'limited')
+  ('00000000-0000-0000-0000-000000000010', 'Elite Catering Co.', '+1-555-0200', 'New York, NY', 4.8, 'verified'),
+  ('00000000-0000-0000-0000-000000000011', 'SoundWave Productions', '+1-555-0201', 'Los Angeles, CA', 4.5, 'verified'),
+  ('00000000-0000-0000-0000-000000000012', 'Grand Venues Ltd.', '+1-555-0202', 'New York, NY', 4.9, 'verified'),
+  ('00000000-0000-0000-0000-000000000013', 'CaptureTheMoment', '+1-555-0203', 'San Francisco, CA', 4.6, 'verified'),
+  ('00000000-0000-0000-0000-000000000014', 'ProStaff Events', '+1-555-0204', 'Miami, FL', 4.3, 'verified'),
+  ('00000000-0000-0000-0000-000000000015', 'Luxury Transports', '+1-555-0205', 'New York, NY', 4.7, 'verified')
 ON CONFLICT DO NOTHING;
 
 -- Insert vendor services

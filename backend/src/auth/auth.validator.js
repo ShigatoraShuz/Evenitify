@@ -28,4 +28,12 @@ const syncProfileSchema = z.object({
   query: z.object({}).optional()
 });
 
-module.exports = { registerSchema, loginSchema, syncProfileSchema };
+const refreshSchema = z.object({
+  body: z.object({
+    refreshToken: z.string().min(1, 'Refresh token is required')
+  }),
+  params: z.object({}).optional(),
+  query: z.object({}).optional()
+});
+
+module.exports = { registerSchema, loginSchema, syncProfileSchema, refreshSchema };

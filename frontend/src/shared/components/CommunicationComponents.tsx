@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { BookingMessage } from '../../services/communicationService'
 import { Button } from './Button'
 
@@ -20,19 +21,33 @@ export function MessageBubble({ message }: { message: BookingMessage }) {
   )
 }
 
-export function MessageComposer() {
+export function MessageComposer({ onSend }: { onSend?: (body: string) => Promise<void> }) {
+  const [body, setBody] = useState('')
+  const [sending, setSending] = useState(false)
+
+  const handleSend = async () => {
+    if (!body.trim() || !onSend) return
+    setSending(true)
+    try {
+      await onSend(body.trim())
+      setBody('')
+    } finally {
+      setSending(false)
+    }
+  }
+
   return (
-    <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-3">
-      <label className="text-xs font-semibold text-gray-500" htmlFor="disabled-message-composer">Message composer</label>
+    <div className="rounded-xl border border-gray-200 bg-white p-3">
+      <label className="text-xs font-semibold text-gray-500" htmlFor="message-composer">Send a message</label>
       <textarea
-        id="disabled-message-composer"
-        disabled
-        value="Messaging backend is not connected yet."
-        className="mt-2 min-h-20 w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-500"
-        readOnly
+        id="message-composer"
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder="Type your message here..."
+        className="mt-2 min-h-20 w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900"
       />
       <div className="mt-2 flex justify-end">
-        <Button disabled>Send message</Button>
+        <Button onClick={handleSend} loading={sending} disabled={!body.trim()}>Send message</Button>
       </div>
     </div>
   )
@@ -47,7 +62,7 @@ export function InternalNoteCard({ message }: { message: BookingMessage }) {
   )
 }
 
-export function BookingMessageThread({ messages }: { messages: BookingMessage[] }) {
+export function BookingMessageThread({ messages, onSendMessage }: { messages: BookingMessage[]; onSendMessage?: (body: string) => Promise<void> }) {
   const notes = messages.filter((message) => message.type === 'admin_note')
   const visibleMessages = messages.filter((message) => message.type !== 'admin_note')
 
@@ -55,7 +70,7 @@ export function BookingMessageThread({ messages }: { messages: BookingMessage[] 
     <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
       <div className="mb-4">
         <h3 className="font-semibold text-gray-950">Booking conversation</h3>
-        <p className="text-sm text-gray-500">Frontend placeholder for organizer, vendor, system, and admin message types.</p>
+        <p className="text-sm text-gray-500">Conversation between organizer, vendor, and admin about this booking.</p>
       </div>
       <div className="space-y-3">
         {visibleMessages.map((message) => (
@@ -70,9 +85,8 @@ export function BookingMessageThread({ messages }: { messages: BookingMessage[] 
         </div>
       )}
       <div className="mt-4">
-        <MessageComposer />
+        <MessageComposer onSend={onSendMessage} />
       </div>
     </section>
   )
 }
-

@@ -1,6 +1,22 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuthSession } from '../viewmodels/useAuthSession'
 import { LoginView } from './LoginView'
+import type { UserProfile, UserRole } from '../../../services/authService'
+
+function getCachedUser(): UserProfile | null {
+  try {
+    const raw = localStorage.getItem('auth_user_cache')
+    return raw ? (JSON.parse(raw) as UserProfile) : null
+  } catch {
+    return null
+  }
+}
+
+function getUserRoles(user: UserProfile | null): UserRole[] {
+  if (!user) return []
+  if (user.roles?.length) return user.roles
+  return user.role ? [user.role] : []
+}
 
 export default function LoginViewWrapper() {
   const navigate = useNavigate()
@@ -8,7 +24,22 @@ export default function LoginViewWrapper() {
 
   const handleLogin = async (email: string, password: string) => {
     await login(email, password)
-    navigate('/choose-role')
+
+    const user = getCachedUser()
+    const roles = getUserRoles(user)
+    const setupComplete = user?.setupComplete ?? false
+
+    if (!user || roles.length === 0) {
+      navigate('/choose-role')
+    } else if (!setupComplete) {
+      navigate('/onboarding')
+    } else if (user.role === 'vendor') {
+      navigate('/vendor')
+    } else if (user.role === 'admin') {
+      navigate('/admin')
+    } else {
+      navigate('/organizer')
+    }
   }
 
   return (

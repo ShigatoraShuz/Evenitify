@@ -44,21 +44,21 @@ const OPTIONS: RoleOption[] = [
     roles: ['organizer'],
     icon: Building2,
     image: createPlaceholderImage('Organizer', '#1d4ed8', 'Plan large events and manage procurement'),
-    imageAlt: 'Organizer role preview placeholder'
+    imageAlt: 'Organizer role illustration'
   },
   {
     label: 'Vendor',
     roles: ['vendor'],
     icon: Store,
     image: createPlaceholderImage('Vendor', '#0f766e', 'Manage services and B2B requests'),
-    imageAlt: 'Vendor role preview placeholder'
+    imageAlt: 'Vendor role illustration'
   },
   {
     label: 'Organizer + Vendor',
     roles: ['organizer', 'vendor'],
     icon: Repeat2,
     image: createPlaceholderImage('Dual Role', '#7c3aed', 'Switch between organizer and vendor'),
-    imageAlt: 'Organizer and vendor role preview placeholder'
+    imageAlt: 'Dual role illustration'
   }
 ]
 

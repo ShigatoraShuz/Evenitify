@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 
+const { supabaseAdmin } = require('./config/supabase');
 const errorMiddleware = require('./shared/middleware/error.middleware');
 const env = require('./config/env');
 const logger = require('./shared/utils/logger');
@@ -13,6 +15,27 @@ app.use(helmet());
 app.use(cors({ origin: env.clientOrigin, credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests, please try again later.' } }
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests, please try again later.' } }
+});
+
+app.use('/auth/login', authLimiter);
+app.use('/auth/register', authLimiter);
+app.use('/auth', apiLimiter);
+app.use('/api', apiLimiter);
+
 app.use(morgan('short', {
   stream: { write: (msg) => logger.info(msg.trim()) }
 }));
@@ -22,13 +45,23 @@ app.use((req, _res, next) => {
   next();
 });
 
-app.get('/health', (_req, res) => {
+app.get('/health', async (_req, res) => {
+  let dbStatus = 'ok';
+  try {
+    const { error } = await supabaseAdmin.from('user_profiles').select('id').limit(1);
+    if (error) dbStatus = 'degraded';
+  } catch {
+    dbStatus = 'unreachable';
+  }
+
   res.json({
     success: true,
     data: {
-      status: 'ok',
+      status: dbStatus === 'ok' ? 'ok' : 'degraded',
       version: '1.0.0',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      database: dbStatus,
+      uptime: process.uptime()
     }
   });
 });

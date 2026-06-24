@@ -1,5 +1,4 @@
 import EventifyLandingPage from '@/components/ui/eventify-landing-page'
-import { DemoRoleSwitcher } from '../../../shared/components/DemoRoleSwitcher'
 import { useLandingViewModel } from '../viewmodels/useLandingViewModel'
 
 export default function LandingView() {
@@ -9,7 +8,6 @@ export default function LandingView() {
     <EventifyLandingPage
       onStartPlanning={goToPlanning}
       onBrowseVendors={goToVendors}
-      demoPanel={<DemoRoleSwitcher />}
     />
   )
 }

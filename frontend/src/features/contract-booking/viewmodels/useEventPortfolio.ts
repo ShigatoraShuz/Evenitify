@@ -104,9 +104,9 @@ export function useEventPortfolio() {
     }
   }, [])
 
-  const mockUploadDocument = useCallback(async (fileName: string) => {
+  const uploadDocument = useCallback(async (file: File) => {
     const ownerId = state.portfolio?.event.id || 'system'
-    const document = await documentService.mockUpload(ownerId, fileName, 'Contract attachment')
+    const document = await documentService.uploadDocument(ownerId, file, 'Contract attachment')
     setState((s) => ({ ...s, documents: [document, ...s.documents] }))
   }, [state.portfolio?.event.id])
 
@@ -200,7 +200,7 @@ export function useEventPortfolio() {
     setActiveTab,
     expandBooking,
     createContract,
-    mockUploadDocument,
+    uploadDocument,
     sendContract,
     signContractAsOrganizer,
     signContractAsVendor,

@@ -1,19 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { auditService } from '../services/auditService'
-import { documentService } from '../services/documentService'
-import { realtimeService } from '../services/realtimeService'
 import { reportToCsv, type ReportBundle } from '../services/reportService'
 import { buildVendorRecommendations } from '../features/vendor-procurement/viewmodels/vendorScoring'
 import type { EventRequirement } from '../services/eventService'
 import type { VendorSearchResult } from '../services/vendorService'
 
 describe('Phase 6 frontend helpers', () => {
-  it('exports realtime, document, and audit mock service data', async () => {
-    await expect(realtimeService.getSnapshot('test')).resolves.toMatchObject({ channel: 'test', connected: true })
-    await expect(documentService.mockUpload('owner-1', 'contract.pdf')).resolves.toMatchObject({ ownerId: 'owner-1', state: 'pending_review' })
-    await expect(auditService.listActivities('scope')).resolves.toHaveLength(2)
-  })
-
   it('serializes report bundles to CSV', () => {
     const report: ReportBundle = {
       title: 'Test Report',

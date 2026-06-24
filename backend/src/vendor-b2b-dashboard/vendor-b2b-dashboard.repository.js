@@ -25,7 +25,9 @@ async function findById(vendorId) {
 async function updateProfile(vendorId, input) {
   const updates = {};
   if (input.businessName !== undefined) updates.business_name = input.businessName;
+  if (input.businessDescription !== undefined) updates.business_description = input.businessDescription;
   if (input.contactNumber !== undefined) updates.contact_number = input.contactNumber;
+  if (input.phone !== undefined) updates.contact_number = input.phone;
   if (input.serviceArea !== undefined) updates.service_area = input.serviceArea;
 
   const { data, error } = await supabase
@@ -104,12 +106,6 @@ async function searchVendors(filters) {
 
   if (filters.location) {
     query = query.ilike('service_area', `%${filters.location}%`);
-  }
-
-  if (filters.availability === 'available') {
-    query = query.eq('availability_status', 'available');
-  } else if (filters.availability === 'all') {
-    // no filter
   }
 
   const orderColumn = filters.sortBy === 'name' ? 'business_name' : 'rating';
