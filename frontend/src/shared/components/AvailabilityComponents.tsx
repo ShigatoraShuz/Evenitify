@@ -19,7 +19,7 @@ export function DateConflictBanner({ preview }: { preview: VendorAvailabilityPre
   if (!preview?.conflictDate) return null
 
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+    <div className="rounded-[20px] border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
       <p className="font-semibold">Availability conflict warning</p>
       <p className="mt-1">{preview.conflictReason} Review {new Date(preview.conflictDate).toLocaleDateString()} before booking.</p>
     </div>
@@ -29,18 +29,18 @@ export function DateConflictBanner({ preview }: { preview: VendorAvailabilityPre
 export function AvailabilityCalendar({ preview }: { preview: VendorAvailabilityPreview | null }) {
   if (!preview) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+      <div className="rounded-[20px] border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
         Select a vendor to preview availability.
       </div>
     )
   }
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
+    <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-gray-950">Availability preview</h3>
-          <p className="text-xs text-gray-500">Updated {new Date(preview.updatedAt).toLocaleString()}</p>
+          <h3 className="font-semibold tracking-tight text-slate-950">Availability preview</h3>
+          <p className="text-xs text-slate-500">Updated {new Date(preview.updatedAt).toLocaleString()}</p>
         </div>
         <AvailabilityStatusPill status={preview.status} />
       </div>
@@ -59,15 +59,15 @@ export function AvailabilityCalendar({ preview }: { preview: VendorAvailabilityP
 
 export function BlockedDateList({ dates }: { dates: BlockedDate[] }) {
   if (!dates.length) {
-    return <p className="text-sm text-gray-500">No blocked dates in the current mock schedule.</p>
+    return <p className="text-sm leading-6 text-slate-500">No blocked dates in the current mock schedule.</p>
   }
 
   return (
     <div className="space-y-2">
       {dates.map((date) => (
-        <div key={date.id} className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm">
-          <span className="font-medium text-gray-900">{new Date(date.date).toLocaleDateString()}</span>
-          <span className="text-gray-500">{date.reason}</span>
+        <div key={date.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm">
+          <span className="font-semibold text-slate-950">{new Date(date.date).toLocaleDateString()}</span>
+          <span className="text-slate-500">{date.reason}</span>
         </div>
       ))}
     </div>
@@ -98,4 +98,3 @@ export function AvailabilityQuickUpdate({
     </div>
   )
 }
-

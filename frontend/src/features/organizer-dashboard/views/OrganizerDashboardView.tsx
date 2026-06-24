@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, CalendarDays, FolderKanban, LayoutGrid, Sparkles, Users, Wallet, MapPin, Clock3, Activity, ShieldCheck } from 'lucide-react'
+import { ArrowRight, CalendarDays, FolderKanban, LayoutGrid, Sparkles, Users, Wallet, MapPin, Clock3, Activity } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { EmptyState } from '../../../shared/components/EmptyState'

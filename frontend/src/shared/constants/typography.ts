@@ -1,9 +1,9 @@
-export const PAGE_TITLE = 'text-2xl md:text-3xl font-semibold tracking-tight text-slate-950'
+export const PAGE_TITLE = 'text-3xl md:text-4xl font-semibold tracking-tighter text-ink-950'
 
-export const SECTION_TITLE = 'text-lg font-semibold text-slate-900'
+export const SECTION_TITLE = 'text-lg md:text-xl font-semibold tracking-tight text-ink-950'
 
-export const BODY_TEXT = 'text-sm md:text-base text-slate-600'
+export const BODY_TEXT = 'text-sm md:text-[15px] text-ink-700 leading-6'
 
-export const MUTED_TEXT = 'text-sm text-slate-500'
+export const MUTED_TEXT = 'text-sm text-ink-500'
 
-export const LABEL_TEXT = 'text-sm font-medium text-slate-700'
+export const LABEL_TEXT = 'text-[11px] font-semibold uppercase tracking-[0.24em] text-ink-500'

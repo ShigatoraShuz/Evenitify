@@ -16,6 +16,7 @@ export default function OnboardingViewWrapper() {
 
   return (
     <OnboardingView
+      key={vm.role ?? 'unset'}
       role={vm.role}
       organizerForm={vm.organizerForm}
       vendorForm={vm.vendorForm}

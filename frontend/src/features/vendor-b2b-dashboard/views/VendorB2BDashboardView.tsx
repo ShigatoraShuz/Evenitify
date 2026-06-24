@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BadgeCheck, CalendarDays, Clock3, DollarSign, Mail, ShieldCheck, Star, Truck, Users, Wallet, Music4, Camera, LayoutPanelTop } from 'lucide-react'
+import { ArrowRight, BadgeCheck, CalendarDays, Mail, ShieldCheck, Truck, Wallet, Music4, Camera, LayoutPanelTop } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { SummaryCard } from '../../../shared/components/SummaryCard'

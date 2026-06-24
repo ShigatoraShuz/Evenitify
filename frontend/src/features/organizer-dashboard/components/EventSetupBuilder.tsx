@@ -93,16 +93,6 @@ const initialState = {
   selectedServices: EVENT_TYPE_OPTIONS[2].recommendedServices
 }
 
-const stepMaxByIndex: Record<number, number> = {
-  0: 1,
-  1: 1,
-  2: 4,
-  3: 3,
-  4: 1,
-  5: 4,
-  6: 0
-}
-
 function ServiceCard({
   label,
   description,
