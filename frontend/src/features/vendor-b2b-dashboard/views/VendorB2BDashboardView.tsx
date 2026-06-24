@@ -1,51 +1,27 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BadgeCheck, CalendarDays, Clock3, DollarSign, Mail, ShieldCheck, Star, Truck, Users, Wallet, Music4, Camera, LayoutPanelTop } from 'lucide-react'
+import { ArrowRight, BadgeCheck, CalendarDays, Mail, Music4, Camera, ShieldCheck, Truck, LayoutPanelTop, TrendingUp, Users } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { SummaryCard } from '../../../shared/components/SummaryCard'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
-import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
-import { ContractTimeline, buildContractTimeline } from '../../contract-booking/components/ContractTimeline'
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
-import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { DashboardCommandPanel } from '../../../shared/components/DashboardCommandPanel'
-import { AvailabilityCalendar, AvailabilityQuickUpdate, BlockedDateList } from '../../../shared/components/AvailabilityComponents'
-import { BookingMessageThread } from '../../../shared/components/CommunicationComponents'
 import { PlaceholderMedia } from '../../../shared/components/PlaceholderMedia'
-import { B2B_TABS } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
-import type { ContractDetail } from '../../../services/contractService'
-import type { AuditActivity } from '../../../services/auditService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
-import type { AvailabilityStatus, VendorAvailabilityPreview } from '../../../services/availabilityService'
-import type { BookingMessage } from '../../../services/communicationService'
 
 interface VendorB2BDashboardViewProps {
   bookings: BookingRequest[]
-  selectedBooking: BookingRequest | null
-  activeTab: string
   loading: boolean
-  submitting: boolean
   error: string | null
-  contract: ContractDetail | null
-  contractLoading: boolean
-  auditActivities: AuditActivity[]
-  availability: VendorAvailabilityPreview | null
-  bookingMessages: BookingMessage[]
   realtimeSnapshot: RealtimeSnapshot | null
   realtimeRefreshing: boolean
-  onLoadBookings: (status?: string) => Promise<void>
+  onLoadBookings: () => Promise<void>
   onRefreshRealtime: () => Promise<void>
-  onSetTab: (tab: string) => void
-  onSelectBooking: (bookingId: string) => Promise<void>
-  onUpdateStatus: (bookingId: string, status: 'accepted' | 'rejected' | 'changes_requested', reason?: string) => Promise<void>
   onClearError: () => void
-  onLoadContract: (bookingId: string) => Promise<void>
-  onSignVendorContract: (contractId: string) => Promise<void>
-  onUpdateAvailabilityStatus: (status: AvailabilityStatus) => Promise<void>
 }
 
 interface RequestCard {
@@ -72,41 +48,17 @@ function formatDate(date: string) {
   return new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function BookingChip({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-950">{value}</p>
-    </div>
-  )
-}
-
 export function VendorB2BDashboardView({
   bookings,
-  selectedBooking,
-  activeTab,
   loading,
-  submitting,
   error,
-  contract,
-  contractLoading,
-  auditActivities,
-  availability,
-  bookingMessages,
   realtimeSnapshot,
   realtimeRefreshing,
   onLoadBookings,
   onRefreshRealtime,
-  onSetTab,
-  onSelectBooking,
-  onUpdateStatus,
   onClearError,
-  onLoadContract,
-  onSignVendorContract,
-  onUpdateAvailabilityStatus
 }: VendorB2BDashboardViewProps) {
   const navigate = useNavigate()
-  const [confirmDecline, setConfirmDecline] = useState<string | null>(null)
 
   useEffect(() => {
     void onLoadBookings()
@@ -124,7 +76,12 @@ export function VendorB2BDashboardView({
   })), [bookings])
 
   const largeEventOpportunities = useMemo(
-    () => requestCards.filter((card) => (card.guests >= 500) || (card.budget ?? 0) >= 25000).slice(0, 3),
+    () => requestCards.filter((card) => (card.guests >= 500) || (card.budget ?? 0) >= 25000).slice(0, 4),
+    [requestCards]
+  )
+
+  const upcomingConfirmed = useMemo(
+    () => requestCards.filter((card) => card.booking.status === 'confirmed').slice(0, 3),
     [requestCards]
   )
 
@@ -138,392 +95,201 @@ export function VendorB2BDashboardView({
     }
   }, [bookings])
 
-  const handleDecline = async () => {
-    if (confirmDecline) {
-      await onUpdateStatus(confirmDecline, 'rejected')
-      setConfirmDecline(null)
-    }
+  if (error === 'Vendor profile not found' || error === 'VENDOR_NOT_FOUND') {
+    return (
+      <DashboardShell>
+        <PageHeader title="Vendor Overview" subtitle="Welcome to your clean, dedicated workspace." />
+        <div className="mt-12 max-w-2xl mx-auto">
+          <EmptyState
+            title="Vendor Profile Required"
+            description="You need to complete your vendor profile to unlock the dashboard, manage services, and receive bookings."
+            mediaTitle="Dashboard Locked"
+            mediaSubtitle="Profile setup incomplete."
+            action={<Button onClick={() => window.location.href = '/onboarding'}>Complete Onboarding</Button>}
+          />
+        </div>
+      </DashboardShell>
+    )
   }
-
-  const selectedCategory = selectedBooking?.event_requirements?.category || selectedBooking?.booking_type || 'Booking'
-  const SelectedIcon = bookingIconMap[selectedCategory] ?? CalendarDays
 
   return (
     <DashboardShell>
-      <ConfirmDialog
-        open={!!confirmDecline}
-        title="Decline booking request"
-        message="Declining will remove this request from the active response queue."
-        confirmLabel="Decline"
-        variant="danger"
-        loading={submitting}
-        onConfirm={handleDecline}
-        onCancel={() => setConfirmDecline(null)}
-      />
-
-      <div className="space-y-6">
-        <PageHeader
-          title="Vendor Dashboard"
-          subtitle="Separate organizer booking requests from other bookings and manage your B2B event queue with clarity."
-          action={
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => navigate('/vendor/profile')}>
-                Manage services
-              </Button>
-              <Button onClick={() => navigate('/vendor/reports')}>
-                View reports
-              </Button>
-            </div>
-          }
-        />
-
-        <RealtimeIndicator
-          snapshot={realtimeSnapshot}
-          refreshing={realtimeRefreshing || loading}
-          onRefresh={() => {
-            void onRefreshRealtime()
-            void onLoadBookings(activeTab === 'all' ? undefined : activeTab)
-          }}
-        />
+      <div className="space-y-10 max-w-[1400px] mx-auto pb-12">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <PageHeader
+            title="Vendor Overview"
+            subtitle="Your high-level command center for B2B operations."
+          />
+          <RealtimeIndicator
+            snapshot={realtimeSnapshot}
+            refreshing={realtimeRefreshing || loading}
+            onRefresh={() => {
+              void onRefreshRealtime()
+              void onLoadBookings()
+            }}
+          />
+        </div>
 
         {error && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 flex items-center justify-between gap-3">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 flex items-center justify-between gap-3 shadow-sm">
             <span>{error}</span>
-            <button type="button" onClick={onClearError} className="text-rose-500 hover:text-rose-700">Dismiss</button>
+            <button type="button" onClick={onClearError} className="text-rose-500 hover:text-rose-700 font-medium">Dismiss</button>
           </div>
         )}
 
-        <DashboardCommandPanel
-          meta="B2B request queue"
-          title="Respond to organizer and large-event bookings"
-          description="The active queue stays separate from consumer work so you can prioritize high-value procurement requests first."
-          action={
-            <>
-              <Button onClick={() => onSetTab('pending')}>Review pending</Button>
-              <Button variant="secondary" onClick={() => navigate('/vendor/profile')}>
-                Update availability
-              </Button>
-            </>
-          }
-          secondary={
-            <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Pending requests</p>
-                <p className="mt-1 text-lg font-semibold text-slate-950">{revenueSummary.pending}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Accepted bookings</p>
-                <p className="mt-1 text-lg font-semibold text-slate-950">{revenueSummary.accepted}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Confirmed events</p>
-                <p className="mt-1 text-lg font-semibold text-slate-950">{revenueSummary.confirmed}</p>
-              </div>
+        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col justify-between">
+            <div className="flex items-center gap-3 mb-4 text-slate-500">
+              <div className="p-2 bg-slate-50 rounded-xl"><Users className="w-5 h-5" /></div>
+              <span className="text-sm font-bold uppercase tracking-widest">Total Requests</span>
             </div>
-          }
-        />
+            <p className="text-4xl font-bold text-slate-900">{bookings.length}</p>
+          </div>
+          
+          <div className="rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-700 p-6 shadow-[0_8px_30px_rgb(16,185,129,0.2)] border border-emerald-400 flex flex-col justify-between text-white">
+            <div className="flex items-center gap-3 mb-4 text-emerald-100">
+              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm"><TrendingUp className="w-5 h-5" /></div>
+              <span className="text-sm font-bold uppercase tracking-widest">Pipeline Value</span>
+            </div>
+            <p className="text-4xl font-bold">${revenueSummary.requested.toLocaleString()}</p>
+          </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)]">
-          <AvailabilityCalendar preview={availability} />
-          <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-slate-950 p-2 text-white">
-                <ShieldCheck className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-slate-950">Service availability</h3>
-                <p className="text-sm text-slate-500">Keep your calendar and blocked dates in sync before accepting organizer work.</p>
-              </div>
+          <div className="rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col justify-between">
+            <div className="flex items-center gap-3 mb-4 text-slate-500">
+              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><ShieldCheck className="w-5 h-5" /></div>
+              <span className="text-sm font-bold uppercase tracking-widest">Accepted</span>
             </div>
-            <div className="mt-4">
-              <AvailabilityQuickUpdate
-                status={availability?.status || 'available'}
-                updating={submitting}
-                onUpdate={(status) => { void onUpdateAvailabilityStatus(status) }}
-              />
-            </div>
-            <div className="mt-4">
-              <h4 className="text-sm font-semibold text-slate-950">Blocked dates</h4>
-              <BlockedDateList dates={availability?.blockedDates || []} />
-            </div>
-          </section>
-        </div>
+            <p className="text-4xl font-bold text-slate-900">{bookings.filter((b) => b.status === 'accepted').length}</p>
+          </div>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <SummaryCard label="Total requests" value={bookings.length} color="text-slate-950" sub="All organizer and B2B bookings" />
-          <SummaryCard label="Requested value" value={`$${revenueSummary.requested.toLocaleString()}`} color="text-emerald-700" sub="Combined budget across active requests" />
-          <SummaryCard label="Accepted" value={bookings.filter((b) => b.status === 'accepted').length} color="text-indigo-700" sub="Requests you have accepted" />
-          <SummaryCard label="Confirmed" value={revenueSummary.confirmed} color="text-amber-700" sub="Events locked in your calendar" />
+          <div className="rounded-3xl bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col justify-between">
+            <div className="flex items-center gap-3 mb-4 text-slate-500">
+              <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><BadgeCheck className="w-5 h-5" /></div>
+              <span className="text-sm font-bold uppercase tracking-widest">Confirmed</span>
+            </div>
+            <p className="text-4xl font-bold text-slate-900">{revenueSummary.confirmed}</p>
+          </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-950">Large event opportunities</h2>
-                <p className="text-sm text-slate-500">Highlighted requests with bigger budgets or guest counts.</p>
+        <section className="rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-8 text-slate-900 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-brand-100/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+          <div className="grid gap-8 lg:grid-cols-[1fr_400px] relative z-10">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 border border-brand-200 text-brand-700 text-xs font-bold uppercase tracking-widest mb-4">
+                <Mail className="w-3.5 h-3.5" /> Workspace Ready
               </div>
-              <BadgeCheck className="h-5 w-5 text-slate-400" />
+              <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Your clean command center</h2>
+              <p className="mt-3 max-w-2xl text-base text-slate-600 leading-relaxed">
+                We've organized your tools into dedicated pages. Create events, respond to incoming bookings, and adjust your availability from the sidebar navigation.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <Button onClick={() => navigate('/vendor/bookings')} className="shadow-lg shadow-brand-500/20">Go to Bookings</Button>
+                <Button variant="secondary" onClick={() => navigate('/vendor/services')}>Manage Services</Button>
+              </div>
+            </div>
+            <div className="hidden lg:block">
+              <PlaceholderMedia
+                title="Active Workspace"
+                subtitle="Everything is running smoothly."
+                tone="indigo"
+                icon={<LayoutPanelTop className="h-6 w-6" />}
+              />
+            </div>
+          </div>
+        </section>
+
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <section className="rounded-3xl border border-slate-100 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div className="flex items-center justify-between gap-3 mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <BadgeCheck className="h-6 w-6 text-brand-600" /> Large event opportunities
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">High-value requests demanding your attention.</p>
+              </div>
             </div>
 
-            <div className="mt-4 grid gap-3">
+            <div className="grid gap-4">
               {largeEventOpportunities.length > 0 ? largeEventOpportunities.map((card) => {
                 const Icon = bookingIconMap[card.category] ?? CalendarDays
                 return (
                   <button
                     key={card.booking.id}
                     type="button"
-                    onClick={() => onSelectBooking(card.booking.id)}
-                    className="group rounded-[22px] border border-slate-200 bg-slate-50 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:bg-brand-50"
+                    onClick={() => navigate('/vendor/bookings')}
+                    className="group rounded-2xl border border-slate-100 bg-slate-50/50 p-5 text-left transition-all duration-300 hover:border-brand-300 hover:bg-brand-50 hover:shadow-md"
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-2xl border border-white bg-white p-2 text-slate-700 shadow-sm">
-                          <Icon className="h-4 w-4" />
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 shadow-sm group-hover:scale-110 transition-transform">
+                          <Icon className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="text-base font-semibold text-slate-950">{card.title}</h3>
-                          <p className="mt-1 text-sm text-slate-600">{card.organizer} · {card.category}</p>
+                          <h3 className="text-base font-bold text-slate-900">{card.title}</h3>
+                          <p className="text-sm font-medium text-slate-500 mt-0.5">{card.organizer} · {card.category}</p>
                         </div>
                       </div>
                       <StatusBadge status={card.booking.status} size="sm" />
                     </div>
-                    <div className="mt-4 grid gap-2 sm:grid-cols-3 text-sm">
-                      <BookingChip label="Budget" value={card.budget ? `$${card.budget.toLocaleString()}` : 'N/A'} />
-                      <BookingChip label="Date" value={formatDate(card.eventDate)} />
-                      <BookingChip label="Guests" value={card.guests ? card.guests.toLocaleString() : 'N/A'} />
+                    <div className="mt-5 flex items-center gap-6 text-sm">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Budget</span>
+                        <span className="font-semibold text-slate-900 mt-0.5">{card.budget ? `$${card.budget.toLocaleString()}` : 'N/A'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Date</span>
+                        <span className="font-semibold text-slate-900 mt-0.5">{formatDate(card.eventDate)}</span>
+                      </div>
                     </div>
-                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-slate-900">
-                      Review request
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                    </span>
                   </button>
                 )
               }) : (
                 <EmptyState
-                  title="No large-event opportunities yet"
-                  description="Organizer requests will show up here once they match your services and availability."
+                  title="No large-event opportunities"
+                  description="They will appear here once matching your services."
                 />
               )}
             </div>
-          </div>
-
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-950">Confirmed event snapshot</h2>
-                <p className="text-sm text-slate-500">A quick view of the work you have already won.</p>
-              </div>
-              <Wallet className="h-5 w-5 text-slate-400" />
-            </div>
-            <div className="mt-4">
-              <PlaceholderMedia
-                title={selectedBooking?.large_events?.title || 'Confirmed booking'}
-                subtitle={selectedBooking ? `${selectedBooking.organizer_profiles?.organization_name || 'Organizer'} · ${selectedCategory}` : 'Select a booking to inspect the event in detail.'}
-                tone={selectedBooking?.status === 'confirmed' ? 'emerald' : 'indigo'}
-                icon={<SelectedIcon className="h-5 w-5" />}
-              />
-            </div>
-
-            {selectedBooking ? (
-              <div className="mt-5 space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-xl font-semibold text-slate-950">{selectedBooking.large_events?.title || 'Event'}</h3>
-                    <p className="text-sm text-slate-500">{selectedBooking.organizer_profiles?.organization_name}</p>
-                  </div>
-                  <StatusBadge status={selectedBooking.status} />
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <BookingChip label="Organizer" value={selectedBooking.organizer_profiles?.organization_name || 'N/A'} />
-                  <BookingChip label="Service" value={selectedCategory} />
-                  <BookingChip label="Date" value={selectedBooking.large_events?.event_date ? formatDate(selectedBooking.large_events.event_date) : 'N/A'} />
-                  <BookingChip label="Venue" value={selectedBooking.large_events?.venue || 'N/A'} />
-                  <BookingChip label="Guests" value={selectedBooking.large_events?.expected_guests ? selectedBooking.large_events.expected_guests.toLocaleString() : 'N/A'} />
-                  <BookingChip label="Budget" value={selectedBooking.requested_budget ? `$${Number(selectedBooking.requested_budget).toLocaleString()}` : 'N/A'} />
-                </div>
-
-                {selectedBooking.notes && (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                    <span className="font-semibold text-slate-950">Notes:</span> {selectedBooking.notes}
-                  </div>
-                )}
-
-                {selectedBooking.status === 'pending' && (
-                  <div className="flex flex-wrap gap-3">
-                    <Button onClick={() => onUpdateStatus(selectedBooking.id, 'accepted')} loading={submitting}>
-                      Accept
-                    </Button>
-                    <Button variant="secondary" onClick={() => onUpdateStatus(selectedBooking.id, 'changes_requested')} loading={submitting}>
-                      Request changes
-                    </Button>
-                    <Button variant="danger" onClick={() => setConfirmDecline(selectedBooking.id)} loading={submitting}>
-                      Decline
-                    </Button>
-                  </div>
-                )}
-
-                <div className="rounded-[22px] border border-slate-200 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <h4 className="font-semibold text-slate-950">Contract</h4>
-                    <Button variant="ghost" onClick={() => onLoadContract(selectedBooking.id)}>
-                      {contract ? 'Refresh' : 'View contract'}
-                    </Button>
-                  </div>
-                  {contractLoading ? (
-                    <div className="mt-3 h-20 animate-pulse rounded-2xl bg-slate-100" />
-                  ) : contract ? (
-                    <div className="mt-3 space-y-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-medium text-slate-600">
-                          {contract.contract_number ? `#${contract.contract_number}` : 'Contract'}
-                        </p>
-                        <StatusBadge status={contract.contract_status} size="sm" />
-                      </div>
-                      {contract.terms_summary && <p className="text-sm text-slate-600">{contract.terms_summary}</p>}
-                      <ContractTimeline steps={buildContractTimeline(contract)} />
-                      {contract.contract_status === 'organizer_signed' && (
-                        <Button onClick={() => onSignVendorContract(contract.id)} loading={submitting}>
-                          Sign as vendor
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-sm text-slate-500">No contract yet. It appears after the organizer creates one.</p>
-                  )}
-                </div>
-
-                <div className="rounded-[22px] border border-slate-200 p-4">
-                  <h4 className="font-semibold text-slate-950">Messages</h4>
-                  <div className="mt-3">
-                    <BookingMessageThread messages={bookingMessages} />
-                  </div>
-                </div>
-
-                <div className="rounded-[22px] border border-slate-200 p-4">
-                  <h4 className="font-semibold text-slate-950">Activity</h4>
-                  <div className="mt-3">
-                    <AuditTimeline activities={auditActivities} emptyText="No activity for this booking yet." />
-                  </div>
-                </div>
-
-                <Button variant="ghost" onClick={() => onSelectBooking('')}>
-                  Back to request list
+            {largeEventOpportunities.length > 0 && (
+              <div className="mt-6 text-center">
+                <Button variant="ghost" onClick={() => navigate('/vendor/bookings')} className="text-brand-600">
+                  View all in Bookings <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
-            ) : (
-              <div className="mt-5">
-                <EmptyState
-                  title="Select a request"
-                  description="Choose a booking on the left to see organizer details, contract status, and action buttons."
-                />
-              </div>
             )}
-          </div>
-        </section>
+          </section>
 
-        <section className="rounded-[24px] border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
-          <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Vendor command line</p>
-              <h2 className="mt-2 text-2xl font-semibold">Keep B2B work separate and actionable</h2>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300">
-                Pending organizer requests, confirmed work, and service availability all live in one calm workspace so you can move faster.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full bg-white/10 px-3 py-1">Organizer requests</span>
-                <span className="rounded-full bg-white/10 px-3 py-1">Large event opportunities</span>
-                <span className="rounded-full bg-white/10 px-3 py-1">Confirmed events</span>
-              </div>
-            </div>
-            <PlaceholderMedia
-              title="Booking summary"
-              subtitle={`${bookings.length} total requests · ${revenueSummary.requested ? `$${revenueSummary.requested.toLocaleString()} requested value` : 'No value yet'}`}
-              tone="slate"
-              icon={<Mail className="h-5 w-5" />}
-            />
-          </div>
-        </section>
-
-        <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-950">All bookings</h2>
-              <p className="text-sm text-slate-500">Use the tabs to separate pending requests from confirmed B2B work.</p>
-            </div>
-          </div>
-
-          <div className="mt-4 flex gap-2 overflow-x-auto border-b border-slate-200 pb-px">
-            {B2B_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => onSetTab(tab.key)}
-                className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm font-semibold transition-all ${
-                  activeTab === tab.key
-                    ? 'border-brand-600 text-brand-600'
-                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {loading ? (
-            <div className="mt-4 space-y-3">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="h-24 animate-pulse rounded-[20px] bg-slate-100" />
-              ))}
-            </div>
-          ) : requestCards.length === 0 ? (
-            <div className="mt-4">
-              <EmptyState
-                title="No B2B bookings"
-                description="Organizer booking requests will appear here when procurement starts."
-              />
-            </div>
-          ) : (
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {requestCards.map((card) => (
-                <button
-                  key={card.booking.id}
-                  type="button"
-                  onClick={() => onSelectBooking(card.booking.id)}
-                  className="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50 text-left transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg"
-                >
-                  <PlaceholderMedia
-                    title={card.title}
-                    subtitle={`${card.organizer} · ${card.category}`}
-                    tone={card.booking.status === 'confirmed' ? 'emerald' : 'indigo'}
-                    icon={<CalendarDays className="h-5 w-5" />}
-                    compact
-                  />
-                  <div className="space-y-3 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-base font-semibold text-slate-950">{card.title}</h3>
-                        <p className="mt-1 text-sm text-slate-500">{card.organizer}</p>
-                      </div>
-                      <StatusBadge status={card.booking.status} size="sm" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <BookingChip label="Budget" value={card.budget ? `$${card.budget.toLocaleString()}` : 'N/A'} />
-                      <BookingChip label="Date" value={formatDate(card.eventDate)} />
-                      <BookingChip label="Venue" value={card.venue} />
-                      <BookingChip label="Guests" value={card.guests ? card.guests.toLocaleString() : 'N/A'} />
-                    </div>
-                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-slate-900">
-                      Open request
-                      <ArrowRight className="h-4 w-4" />
-                    </span>
+          <section className="rounded-3xl border border-slate-100 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Upcoming Confirmed</h2>
+            <p className="text-sm text-slate-500 mb-6">Events locked in your schedule.</p>
+            
+            <div className="grid gap-4">
+              {upcomingConfirmed.length > 0 ? upcomingConfirmed.map((card) => (
+                <div key={card.booking.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                    <CalendarDays className="w-5 h-5" />
                   </div>
-                </button>
-              ))}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-slate-900 truncate">{card.title}</h4>
+                    <p className="text-xs font-medium text-slate-500 mt-1">{formatDate(card.eventDate)}</p>
+                  </div>
+                </div>
+              )) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mx-auto mb-3">
+                    <CalendarDays className="w-6 h-6 text-slate-300" />
+                  </div>
+                  <p className="text-sm font-medium text-slate-900">No confirmed events yet</p>
+                </div>
+              )}
             </div>
-          )}
-        </section>
+            <div className="mt-6">
+               <Button variant="secondary" onClick={() => navigate('/vendor/availability')} fullWidth>
+                 Check Availability Calendar
+               </Button>
+            </div>
+          </section>
+        </div>
       </div>
     </DashboardShell>
   )

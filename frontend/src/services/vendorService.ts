@@ -95,5 +95,8 @@ export const vendorService = {
   }) => api.post<VendorService>('/vendor/services', payload),
 
   updateService: (serviceId: string, payload: Partial<VendorService>) =>
-    api.patch<VendorService>(`/vendor/services/${serviceId}`, payload)
+    api.patch<VendorService>(`/vendor/services/${serviceId}`, payload),
+
+  uploadServiceImage: (formData: FormData) =>
+    api.postForm<{ imageUrl: string }>('/vendor/services/upload-image', formData)
 }

@@ -18,8 +18,10 @@ async function request<T>(
 ): Promise<T> {
   const token = getAuthToken()
 
+  const isFormData = options.body instanceof FormData
+
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(!isFormData && { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string>)
   }
 
@@ -46,6 +48,8 @@ export const api = {
   get: <T>(endpoint: string) => request<T>(endpoint),
   post: <T>(endpoint: string, body: unknown) =>
     request<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  postForm: <T>(endpoint: string, body: FormData) =>
+    request<T>(endpoint, { method: 'POST', body }),
   patch: <T>(endpoint: string, body: unknown) =>
     request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: <T>(endpoint: string) =>

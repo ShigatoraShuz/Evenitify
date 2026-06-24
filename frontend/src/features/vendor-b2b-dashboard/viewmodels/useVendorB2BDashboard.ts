@@ -4,11 +4,14 @@ import { contractService, type ContractDetail } from '../../../services/contract
 import { auditService, type AuditActivity } from '../../../services/auditService'
 import { availabilityService, type AvailabilityStatus, type VendorAvailabilityPreview } from '../../../services/availabilityService'
 import { communicationService, type BookingMessage } from '../../../services/communicationService'
+import { vendorService, type VendorService } from '../../../services/vendorService'
 import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
+import { useAuthSession } from '../../auth/viewmodels/useAuthSession'
 
 interface VendorB2BDashboardState {
   bookings: BookingRequest[]
+  services: VendorService[]
   selectedBooking: BookingRequest | null
   activeTab: VendorB2BBookingStatus | 'all'
   loading: boolean
@@ -22,9 +25,11 @@ interface VendorB2BDashboardState {
 }
 
 export function useVendorB2BDashboard() {
+  const { user } = useAuthSession()
   const submittingRef = useRef(false)
   const [state, setState] = useState<VendorB2BDashboardState>({
     bookings: [],
+    services: [],
     selectedBooking: null,
     activeTab: 'all',
     loading: false,
@@ -39,16 +44,21 @@ export function useVendorB2BDashboard() {
 
   const loadBookings = useCallback(async (status?: string) => {
     setState((s) => ({ ...s, loading: true, error: null }))
+    if (user && !user.hasVendorProfile && !user.vendorProfile) {
+      setState((s) => ({ ...s, loading: false, error: 'VENDOR_NOT_FOUND' }))
+      return
+    }
     try {
-      const [bookings, availability] = await Promise.all([
+      const [bookings, availability, services] = await Promise.all([
         bookingService.listVendorB2BBookings(status),
-        availabilityService.getMyAvailability()
+        availabilityService.getMyAvailability(),
+        vendorService.listServices()
       ])
-      setState((s) => ({ ...s, bookings, availability, loading: false }))
+      setState((s) => ({ ...s, bookings, availability, services, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
-  }, [])
+  }, [user])
 
   const setTab = useCallback((tab: VendorB2BBookingStatus | 'all') => {
     setState((s) => ({ ...s, activeTab: tab, selectedBooking: null, bookingMessages: [] }))
@@ -128,6 +138,43 @@ export function useVendorB2BDashboard() {
     }
   }, [])
 
+  const createServicePackage = useCallback(async (data: { category: string; serviceName: string; description: string; basePrice: number; availabilityStatus: string }, imageFile?: File) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
+    setState((s) => ({ ...s, submitting: true, error: null }))
+    try {
+      let finalDescription = data.description
+
+      if (imageFile) {
+        const formData = new FormData()
+        formData.append('image', imageFile)
+        const { imageUrl } = await vendorService.uploadServiceImage(formData)
+        finalDescription = JSON.stringify({
+          text: data.description,
+          image: imageUrl
+        })
+      } else {
+        finalDescription = JSON.stringify({ text: data.description })
+      }
+
+      await vendorService.createService({
+        category: data.category,
+        serviceName: data.serviceName,
+        description: finalDescription,
+        basePrice: data.basePrice,
+        availabilityStatus: data.availabilityStatus
+      })
+
+      const services = await vendorService.listServices()
+      setState((s) => ({ ...s, services, submitting: false }))
+    } catch (err) {
+      setState((s) => ({ ...s, submitting: false, error: null })) // Don't set global error – form handles it
+      throw err // Re-throw so the form can show its own error message
+    } finally {
+      submittingRef.current = false
+    }
+  }, [])
+
   const clearError = useCallback(() => {
     setState((s) => ({ ...s, error: null }))
   }, [])
@@ -149,6 +196,7 @@ export function useVendorB2BDashboard() {
     loadContract,
     signVendorContract,
     updateAvailabilityStatus,
+    createServicePackage,
     clearError
   }
 }

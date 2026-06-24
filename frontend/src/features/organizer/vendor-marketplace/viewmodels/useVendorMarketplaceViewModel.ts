@@ -10,6 +10,7 @@ import {
   type ProcurementStatus,
   type VendorAvailability,
   type TimeSlotType,
+  type TimeSlot,
   type BookingRequestData,
   type EventBriefReference,
   DEFAULT_VENDOR_FILTERS,
@@ -67,35 +68,88 @@ const DEFAULT_TIME_SLOTS: TimeSlot[] = [
 ]
 
 export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
-  const [state, setState] = useState<VendorMarketplaceViewModelState>(() => {
-    const raw = sessionStorage.getItem(BRIEF_STORAGE_KEY)
-    const storedBrief: EventBrief | null = raw ? JSON.parse(raw) : null
-    const vendors = storedBrief ? buildMarketplaceVendors(storedBrief) : getAllVendors()
-    return {
-      brief: storedBrief,
-      allVendors: vendors,
-      filteredVendors: vendors,
-      filters: DEFAULT_VENDOR_FILTERS,
-      compareList: [],
-      savedVendorIds: loadSavedVendors(),
-      procurementRequests: [],
-      selectedVendor: null,
-      showCompareDrawer: false,
-      showRequestModal: false,
-      showVendorDetail: false,
-      selectedGalleryImage: '',
-      requestForm: { vendorId: '', vendorName: '', serviceCategory: '', requestedBudget: '', notes: '' },
-      selectedDate: null,
-      selectedTimeSlot: null,
-      showSelectBriefModal: false,
-      showGeneralInquiry: false,
-      generalInquiryMessage: '',
-      eventBriefs: MOCK_EVENT_BRIEFS,
-      currentAvailability: null,
-      loading: false,
-      error: null,
-    }
+  const [state, setState] = useState<VendorMarketplaceViewModelState>({
+    brief: null,
+    allVendors: [],
+    filteredVendors: [],
+    filters: DEFAULT_VENDOR_FILTERS,
+    compareList: [],
+    savedVendorIds: loadSavedVendors(),
+    procurementRequests: [],
+    selectedVendor: null,
+    showCompareDrawer: false,
+    showRequestModal: false,
+    showVendorDetail: false,
+    selectedGalleryImage: '',
+    requestForm: { vendorId: '', vendorName: '', serviceCategory: '', requestedBudget: '', notes: '' },
+    selectedDate: null,
+    selectedTimeSlot: null,
+    showSelectBriefModal: false,
+    showGeneralInquiry: false,
+    generalInquiryMessage: '',
+    eventBriefs: MOCK_EVENT_BRIEFS,
+    currentAvailability: null,
+    loading: true,
+    error: null,
   })
+
+  useEffect(() => {
+    async function init() {
+      try {
+        const raw = sessionStorage.getItem(BRIEF_STORAGE_KEY)
+        const storedBrief: EventBrief | null = raw ? JSON.parse(raw) : null
+
+        const { vendorService } = await import('../../../../services/vendorService')
+        const results = await vendorService.searchVendors()
+
+        // Map VendorSearchResult to VendorMarketplaceVendor
+        const mappedVendors: VendorMarketplaceVendor[] = results.map(v => ({
+          id: v.id,
+          businessName: v.business_name,
+          serviceCategory: v.services.map(s => s.category),
+          location: v.service_area || 'Various',
+          serviceArea: v.service_area || 'Various',
+          startingPrice: v.services[0]?.base_price || 0,
+          rating: v.rating || 5.0,
+          completedBookings: Math.floor(Math.random() * 50) + 10, // Mocked for now
+          capacity: 500, // Mocked for now
+          availabilityStatus: 'available',
+          matchScore: 100,
+          matchLevel: 'recommended',
+          eventTypeExperience: ['corporate', 'wedding'],
+          packageHighlights: v.services.map(s => s.service_name),
+          packageTiers: v.services.map(s => ({
+            name: s.service_name,
+            price: s.base_price,
+            description: s.description || ''
+          })),
+          verified: v.verification_status === 'verified',
+          responseTime: '2 hours',
+          description: v.services[0]?.description || 'Professional event vendor.',
+          galleryImages: [], // Would normally come from API
+          reviews: [],
+          inclusions: [],
+          addOns: [],
+          cancellationPolicy: 'Standard',
+          bookingNotes: '',
+          memberSince: new Date().getFullYear().toString(),
+          responseRate: '100%',
+          totalReviews: 0
+        }))
+
+        setState(s => ({
+          ...s,
+          brief: storedBrief,
+          allVendors: mappedVendors,
+          filteredVendors: mappedVendors,
+          loading: false
+        }))
+      } catch (err: any) {
+        setState(s => ({ ...s, error: err.message || 'Failed to load vendors', loading: false }))
+      }
+    }
+    init()
+  }, [])
 
   const vendorsRefined = useMemo(() => {
     let result = [...state.allVendors]

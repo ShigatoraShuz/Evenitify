@@ -20,34 +20,22 @@ async function register({ email, password, role, displayName }) {
   return { user: authData.user, profile };
 }
 
-function buildRoles(profile, organizerProfile, vendorProfile) {
-  if (profile?.role === 'admin') return ['admin'];
-  const roles = [];
-  if (organizerProfile) roles.push('organizer');
-  if (vendorProfile) roles.push('vendor');
-  if (roles.length === 0 && profile?.role) roles.push(profile.role);
-  return roles;
-}
-
 function buildUserResponse(authUser, profile, organizerProfile, vendorProfile) {
-  const roles = buildRoles(profile, organizerProfile, vendorProfile);
-  const selectedRole = profile?.role || null;
-  const activeRole = roles.includes(selectedRole) ? selectedRole : roles[0] || null;
+  const role = profile?.role || null;
+  const roles = role ? [role] : [];
 
   return {
     id: authUser.id,
     email: authUser.email,
-    role: activeRole,
-    selectedRole,
+    role,
+    selectedRole: role,
     roles,
     display_name: profile?.display_name || null,
     organizerProfile,
     vendorProfile,
     hasOrganizerProfile: !!organizerProfile,
     hasVendorProfile: !!vendorProfile,
-    setupComplete: roles.length > 0 && (roles.includes('admin') || roles.every((role) => (
-      role === 'organizer' ? !!organizerProfile : role === 'vendor' ? !!vendorProfile : false
-    )))
+    setupComplete: role === 'admin' || (role === 'organizer' && !!organizerProfile) || (role === 'vendor' && !!vendorProfile)
   };
 }
 
