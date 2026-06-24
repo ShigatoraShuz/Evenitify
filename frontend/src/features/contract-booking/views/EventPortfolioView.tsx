@@ -192,15 +192,15 @@ export function EventPortfolioView({
         </div>
       )}
 
-      <div className="flex gap-2 mb-6 border-b pb-2 overflow-x-auto">
+      <div className="flex gap-1 mb-6 border-b border-slate-200 pb-px overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => onSetActiveTab(tab.key)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap ${
+            className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-all duration-200 cursor-pointer ${
               activeTab === tab.key
-                ? 'bg-white border border-b-0 border-gray-200 text-brand-600'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'border-brand-600 text-brand-600'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-350'
             }`}
           >
             {tab.label}

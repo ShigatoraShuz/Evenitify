@@ -5,9 +5,19 @@ import { AppRoutes } from './routes'
 import './App.css'
 
 function AppContent() {
-  const { user, loading, profileComplete } = useAuthSession()
+  const { user, loading, profileComplete, activeRole, userRoles, chosenRoles } = useAuthSession()
+  const roleChosen = userRoles.length > 0 || chosenRoles.length > 0
 
-  return <AppRoutes userRole={user?.role || null} profileComplete={profileComplete} loading={loading} />
+  return (
+    <AppRoutes
+      user={user}
+      activeRole={activeRole}
+      userRoles={userRoles}
+      roleChosen={roleChosen}
+      profileComplete={profileComplete}
+      loading={loading}
+    />
+  )
 }
 
 function App() {

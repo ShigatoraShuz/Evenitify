@@ -1,23 +1,40 @@
+import { forwardRef } from 'react'
+
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
+  hint?: string
 }
 
-export function Input({ label, error, id, className = '', ...props }: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ label, error, hint, id, className = '', ...props }, ref) {
   const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <label htmlFor={inputId} className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+          {label}
+        </label>
       )}
       <input
+        ref={ref}
         id={inputId}
-        className={`w-full px-3 py-2 rounded-lg border ${error ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm ${className}`}
+        className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10 ${error ? 'border-red-300 focus:border-red-500 focus:ring-red-500/10' : 'border-slate-200 hover:border-slate-300'} ${className}`}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${inputId}-error` : undefined}
+        aria-describedby={[hint ? `${inputId}-hint` : null, error ? `${inputId}-error` : null].filter(Boolean).join(' ') || undefined}
         {...props}
       />
-      {error && <p id={`${inputId}-error`} className="mt-1 text-sm text-red-600" role="alert">{error}</p>}
+      {hint && !error && (
+        <p id={`${inputId}-hint`} className="mt-1.5 text-xs text-slate-500">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={`${inputId}-error`} className="mt-1.5 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   )
-}
+})
+
+Input.displayName = 'Input'

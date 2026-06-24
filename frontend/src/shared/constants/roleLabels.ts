@@ -5,7 +5,7 @@ export const ROLE_LABELS: Record<string, string> = {
 }
 
 export const ROLE_COLORS: Record<string, string> = {
-  organizer: 'bg-blue-100 text-blue-800',
-  vendor: 'bg-purple-100 text-purple-800',
-  admin: 'bg-rose-100 text-rose-800',
+  organizer: 'border-blue-200 bg-blue-50 text-blue-800',
+  vendor: 'border-violet-200 bg-violet-50 text-violet-800',
+  admin: 'border-rose-200 bg-rose-50 text-rose-800',
 }

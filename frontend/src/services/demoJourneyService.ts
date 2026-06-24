@@ -48,7 +48,12 @@ function buildDemoUser(role: DemoRole): UserProfile {
     id: role === 'admin' ? 'usr-003' : role === 'vendor' ? 'usr-002' : 'usr-001',
     email: journey.email,
     role,
-    display_name: role === 'admin' ? 'System Admin' : role === 'vendor' ? 'Elite Catering Co.' : 'TechCorp Events'
+    selectedRole: role,
+    roles: [role],
+    display_name: role === 'admin' ? 'System Admin' : role === 'vendor' ? 'Elite Catering Co.' : 'TechCorp Events',
+    hasOrganizerProfile: role === 'organizer',
+    hasVendorProfile: role === 'vendor',
+    setupComplete: true
   }
 }
 
@@ -69,6 +74,8 @@ export const demoJourneyService = {
     }))
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user))
     localStorage.setItem('onboarding_complete', 'true')
+    localStorage.setItem('eventify_chosen_roles', JSON.stringify([role]))
+    localStorage.setItem('eventify_active_role', role)
     localStorage.setItem('eventify_demo_role', role)
     localStorage.setItem('eventify_mock_scenario', journey.scenario)
     window.dispatchEvent(new CustomEvent(DEMO_SESSION_EVENT, { detail: { role, user } }))

@@ -3,10 +3,12 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { NotFoundPage } from '../shared/components/NotFoundPage'
 import { UnauthorizedPage } from '../shared/components/UnauthorizedPage'
+import type { UserProfile, UserRole } from '../services/authService'
 
 const LandingView = lazy(() => import('../features/landing/views/LandingView'))
 const LoginView = lazy(() => import('../features/auth/views/LoginViewWrapper'))
 const RegisterView = lazy(() => import('../features/auth/views/RegisterViewWrapper'))
+const ChooseRoleView = lazy(() => import('../features/auth/views/ChooseRoleViewWrapper'))
 const OrganizerDashboardView = lazy(() => import('../features/organizer-dashboard/views/OrganizerDashboardViewWrapper'))
 const VendorProcurementView = lazy(() => import('../features/vendor-procurement/views/VendorProcurementViewWrapper'))
 const VendorB2BDashboardView = lazy(() => import('../features/vendor-b2b-dashboard/views/VendorB2BDashboardViewWrapper'))
@@ -44,21 +46,42 @@ function PageTransition({ children }: { children: React.ReactNode }) {
 }
 
 interface RouteGuardProps {
-  role: string | null
-  requiredRole: string[]
+  authenticated: boolean
+  role: UserRole | null
+  roles: UserRole[]
+  roleChosen: boolean
+  requiredRole: UserRole[]
   profileComplete: boolean
   children: React.ReactNode
 }
 
-function RouteGuard({ role, requiredRole, profileComplete, children }: RouteGuardProps) {
-  if (!role) return <Navigate to="/login" replace />
+function RouteGuard({ authenticated, role, roles, roleChosen, requiredRole, profileComplete, children }: RouteGuardProps) {
+  if (!authenticated) return <Navigate to="/login" replace />
+  if (!roleChosen) return <Navigate to="/choose-role" replace />
+  if (!role) return <Navigate to="/choose-role" replace />
   if (!profileComplete) return <Navigate to="/onboarding" replace />
-  if (!requiredRole.includes(role)) return <UnauthorizedPage />
+  if (!roles.some((userRole) => requiredRole.includes(userRole))) return <UnauthorizedPage />
   return <>{children}</>
 }
 
-export function AppRoutes({ userRole, profileComplete, loading }: { userRole: string | null; profileComplete: boolean; loading: boolean }) {
+export function AppRoutes({
+  user,
+  activeRole,
+  userRoles,
+  roleChosen,
+  profileComplete,
+  loading
+}: {
+  user: UserProfile | null
+  activeRole: UserRole | null
+  userRoles: UserRole[]
+  roleChosen: boolean
+  profileComplete: boolean
+  loading: boolean
+}) {
   const location = useLocation()
+  const userRole = activeRole
+  const publicAuthEntry = new URLSearchParams(location.search).get('entry') === 'landing'
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
@@ -69,104 +92,109 @@ export function AppRoutes({ userRole, profileComplete, loading }: { userRole: st
         } />
         <Route path="/login" element={
           <SuspenseWrapper>
-            <PageTransition>{userRole ? <RoleRedirect role={userRole} profileComplete={profileComplete} /> : <LoginView />}</PageTransition>
+            <PageTransition>{user && !publicAuthEntry ? <RoleRedirect role={userRole} roleChosen={roleChosen} profileComplete={profileComplete} /> : <LoginView />}</PageTransition>
           </SuspenseWrapper>
         } />
         <Route path="/register" element={
           <SuspenseWrapper>
-            <PageTransition>{userRole ? <RoleRedirect role={userRole} profileComplete={profileComplete} /> : <RegisterView />}</PageTransition>
+            <PageTransition>{user && !publicAuthEntry ? <RoleRedirect role={userRole} roleChosen={roleChosen} profileComplete={profileComplete} /> : <RegisterView />}</PageTransition>
+          </SuspenseWrapper>
+        } />
+        <Route path="/choose-role" element={
+          <SuspenseWrapper>
+            <PageTransition>{user ? <ChooseRoleView /> : <Navigate to="/login" replace />}</PageTransition>
           </SuspenseWrapper>
         } />
         <Route path="/onboarding" element={
           <SuspenseWrapper>
-            <PageTransition>{userRole ? <OnboardingView /> : <Navigate to="/login" replace />}</PageTransition>
+            <PageTransition>{user ? (roleChosen ? <OnboardingView /> : <Navigate to="/choose-role" replace />) : <Navigate to="/login" replace />}</PageTransition>
           </SuspenseWrapper>
         } />
         <Route path="/organizer" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><OrganizerDashboardView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/organizer/procurement" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><VendorProcurementView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/organizer/portfolio" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><EventPortfolioView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/organizer/compare" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><VendorComparisonView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/organizer/reports" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><OrganizerReportsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/admin" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['admin']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['admin']} profileComplete={profileComplete}>
               <PageTransition><AdminDashboardView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/admin/reports" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['admin']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['admin']} profileComplete={profileComplete}>
               <PageTransition><AdminReportsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/notifications" element={
           <SuspenseWrapper>
-            <PageTransition>{userRole ? <NotificationsView /> : <Navigate to="/login" replace />}</PageTransition>
+            <PageTransition>{user ? (roleChosen ? <NotificationsView /> : <Navigate to="/choose-role" replace />) : <Navigate to="/login" replace />}</PageTransition>
           </SuspenseWrapper>
         } />
         <Route path="/organizer/profile" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['organizer', 'admin']} profileComplete={profileComplete}>
               <PageTransition><OrganizerProfileView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/vendor/profile" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['vendor']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
               <PageTransition><VendorProfileView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/vendor/reports" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['vendor']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
               <PageTransition><VendorReportsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/admin/settings" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['admin']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['admin']} profileComplete={profileComplete}>
               <PageTransition><AdminSettingsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />
         <Route path="/vendor" element={
           <SuspenseWrapper>
-            <RouteGuard role={userRole} requiredRole={['vendor']} profileComplete={profileComplete}>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
               <PageTransition><VendorB2BDashboardView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
@@ -184,7 +212,8 @@ export function AppRoutes({ userRole, profileComplete, loading }: { userRole: st
   )
 }
 
-function RoleRedirect({ role, profileComplete }: { role: string; profileComplete: boolean }) {
+function RoleRedirect({ role, roleChosen, profileComplete }: { role: UserRole | null; roleChosen: boolean; profileComplete: boolean }) {
+  if (!roleChosen) return <Navigate to="/choose-role" replace />
   if (!profileComplete) return <Navigate to="/onboarding" replace />
   if (role === 'vendor') return <Navigate to="/vendor" replace />
   if (role === 'admin') return <Navigate to="/admin" replace />

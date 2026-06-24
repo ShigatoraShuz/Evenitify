@@ -7,7 +7,8 @@ export default function OnboardingViewWrapper() {
   const vm = useOnboarding()
 
   const handleSubmit = async () => {
-    await vm.submitOnboarding()
+    const completed = await vm.submitOnboarding()
+    if (!completed) return
     if (vm.role === 'admin') navigate('/admin')
     else if (vm.role === 'vendor') navigate('/vendor')
     else navigate('/organizer')
@@ -15,6 +16,7 @@ export default function OnboardingViewWrapper() {
 
   return (
     <OnboardingView
+      key={vm.role ?? 'unset'}
       role={vm.role}
       organizerForm={vm.organizerForm}
       vendorForm={vm.vendorForm}
@@ -24,6 +26,7 @@ export default function OnboardingViewWrapper() {
       onUpdateVendorForm={vm.updateVendorForm}
       onSubmit={handleSubmit}
       onClearError={vm.clearError}
+      onBackToRoleChoice={() => navigate('/choose-role')}
     />
   )
 }

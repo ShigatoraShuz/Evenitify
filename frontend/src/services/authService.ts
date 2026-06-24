@@ -8,21 +8,29 @@ export interface AuthResult {
   user: {
     id: string
     email: string
-    role: string
+    role: string | null
+    roles?: string[]
   }
 }
+
+export type UserRole = 'organizer' | 'vendor' | 'admin'
 
 export interface UserProfile {
   id: string
   email: string
-  role: 'organizer' | 'vendor' | 'admin'
+  role: UserRole | null
+  selectedRole?: UserRole | null
+  roles?: UserRole[]
   display_name: string | null
   organizerProfile?: Record<string, unknown> | null
   vendorProfile?: Record<string, unknown> | null
+  hasOrganizerProfile?: boolean
+  hasVendorProfile?: boolean
+  setupComplete?: boolean
 }
 
 export const authService = {
-  register: (payload: { email: string; password: string; role: string; displayName?: string }) =>
+  register: (payload: { email: string; password: string; role?: string; displayName?: string }) =>
     api.post<AuthResult>('/auth/register', payload),
 
   login: (payload: { email: string; password: string }) =>

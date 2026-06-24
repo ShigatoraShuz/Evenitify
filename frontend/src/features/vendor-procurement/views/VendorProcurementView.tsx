@@ -316,106 +316,116 @@ export function VendorProcurementView({
       )}
 
       {currentStep === 'vendors' && (
-        <div>
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Vendors for {selectedRequirement?.category}
-            </h2>
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" onClick={onNavigateToCompare}>Compare Vendors</Button>
-              <Button onClick={onSearchVendors} loading={loading}>Search Vendors</Button>
+        !selectedRequirement ? (
+          <div className="rounded-xl border border-dashed border-slate-350 bg-slate-50/50 p-8 text-center">
+            <div className="max-w-md mx-auto py-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-2">No Requirement Selected</h3>
+              <p className="text-slate-500 text-sm mb-6">Select a requirement in the first step to search and discover matching verified vendors.</p>
+              <Button onClick={() => onSetStep('requirements')}>Select Requirement</Button>
             </div>
           </div>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Vendors for {selectedRequirement.category}
+              </h2>
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" onClick={onNavigateToCompare}>Compare Vendors</Button>
+                <Button onClick={onSearchVendors} loading={loading}>Search Vendors</Button>
+              </div>
+            </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Input
-              placeholder="Business name"
-              value={filters.businessName}
-              onChange={(e) => onUpdateFilters({ businessName: e.target.value })}
-            />
-            <Input
-              placeholder="Location"
-              value={filters.location}
-              onChange={(e) => onUpdateFilters({ location: e.target.value })}
-            />
-            <Select
-              value={filters.availability}
-              onChange={(e) => onUpdateFilters({ availability: e.target.value })}
-              options={[
-                { value: '', label: 'All Availability' },
-                { value: 'available', label: 'Available' }
-              ]}
-            />
-            <Select
-              value={filters.sortBy}
-              onChange={(e) => onUpdateFilters({ sortBy: e.target.value })}
-              options={[
-                { value: 'rating', label: 'Sort by Rating' },
-                { value: 'name', label: 'Sort by Name' }
-              ]}
-            />
-          </div>
+            <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Input
+                placeholder="Business name"
+                value={filters.businessName}
+                onChange={(e) => onUpdateFilters({ businessName: e.target.value })}
+              />
+              <Input
+                placeholder="Location"
+                value={filters.location}
+                onChange={(e) => onUpdateFilters({ location: e.target.value })}
+              />
+              <Select
+                value={filters.availability}
+                onChange={(e) => onUpdateFilters({ availability: e.target.value })}
+                options={[
+                  { value: '', label: 'All Availability' },
+                  { value: 'available', label: 'Available' }
+                ]}
+              />
+              <Select
+                value={filters.sortBy}
+                onChange={(e) => onUpdateFilters({ sortBy: e.target.value })}
+                options={[
+                  { value: 'rating', label: 'Sort by Rating' },
+                  { value: 'name', label: 'Sort by Name' }
+                ]}
+              />
+            </div>
 
-          {vendors.length === 0 ? (
-            <EmptyState
-              title="No vendors found"
-              description="Click 'Search Vendors' to find matching vendors"
-              action={<Button onClick={onSearchVendors}>Search Vendors</Button>}
-            />
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {vendors.map((vendor) => (
-                <div
-                  key={vendor.id}
-                  className={`bg-white rounded-xl border p-4 cursor-pointer transition-all ${selectedVendor?.id === vendor.id ? 'border-brand-500 ring-2 ring-brand-100' : 'border-gray-200 hover:border-brand-300'}`}
-                  onClick={() => onSelectVendor(vendor)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-gray-900">{vendor.business_name}</h3>
-                    <span className="text-sm text-yellow-600">★ {vendor.rating}</span>
-                  </div>
-                  {recommendationByVendor.get(vendor.id) && (
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>Match score</span>
-                        <span className="font-semibold text-slate-900">{recommendationByVendor.get(vendor.id)?.score}%</span>
-                      </div>
-                      <div className="mt-1 h-2 rounded-full bg-slate-100">
-                        <div className="h-2 rounded-full bg-brand-500" style={{ width: `${recommendationByVendor.get(vendor.id)?.score || 0}%` }} />
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {recommendationByVendor.get(vendor.id)?.insights.map((insight) => (
-                          <span key={insight.label} className={`rounded-full px-2 py-0.5 text-xs ${insight.tone === 'success' ? 'bg-emerald-50 text-emerald-700' : insight.tone === 'warning' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                            {insight.label}
-                          </span>
-                        ))}
-                      </div>
+            {vendors.length === 0 ? (
+              <EmptyState
+                title="No vendors found"
+                description="Click 'Search Vendors' to find matching vendors"
+                action={<Button onClick={onSearchVendors}>Search Vendors</Button>}
+              />
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                {vendors.map((vendor) => (
+                  <div
+                    key={vendor.id}
+                    className={`bg-white rounded-xl border p-4 cursor-pointer transition-all ${selectedVendor?.id === vendor.id ? 'border-brand-500 ring-2 ring-brand-100' : 'border-gray-200 hover:border-brand-300'}`}
+                    onClick={() => onSelectVendor(vendor)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium text-gray-900">{vendor.business_name}</h3>
+                      <span className="text-sm text-yellow-600">★ {vendor.rating}</span>
                     </div>
-                  )}
-                  <p className="text-sm text-gray-500 mb-2">{vendor.service_area}</p>
-                  <div className="mb-2">
-                    <AvailabilityStatusPill
-                      status={
-                        vendor.services?.some((svc) => svc.availability_status === 'unavailable')
-                          ? 'unavailable'
-                          : vendor.services?.some((svc) => svc.availability_status === 'limited')
-                          ? 'limited'
-                          : 'available'
-                      }
-                    />
+                    {recommendationByVendor.get(vendor.id) && (
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-xs text-slate-500">
+                          <span>Match score</span>
+                          <span className="font-semibold text-slate-900">{recommendationByVendor.get(vendor.id)?.score}%</span>
+                        </div>
+                        <div className="mt-1 h-2 rounded-full bg-slate-100">
+                          <div className="h-2 rounded-full bg-brand-500" style={{ width: `${recommendationByVendor.get(vendor.id)?.score || 0}%` }} />
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {recommendationByVendor.get(vendor.id)?.insights.map((insight) => (
+                            <span key={insight.label} className={`rounded-full px-2 py-0.5 text-xs ${insight.tone === 'success' ? 'bg-emerald-50 text-emerald-700' : insight.tone === 'warning' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                              {insight.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-sm text-gray-500 mb-2">{vendor.service_area}</p>
+                    <div className="mb-2">
+                      <AvailabilityStatusPill
+                        status={
+                          vendor.services?.some((svc) => svc.availability_status === 'unavailable')
+                            ? 'unavailable'
+                            : vendor.services?.some((svc) => svc.availability_status === 'limited')
+                            ? 'limited'
+                            : 'available'
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {vendor.services?.map((svc: VendorService) => (
+                        <span key={svc.id} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                          {svc.service_name} (${svc.base_price})
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {vendor.services?.map((svc: VendorService) => (
-                      <span key={svc.id} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                        {svc.service_name} (${svc.base_price})
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
       )}
 
       {currentStep === 'booking' && selectedVendor && (

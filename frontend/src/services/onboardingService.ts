@@ -16,7 +16,12 @@ export interface VendorOnboardingData {
 
 export interface OnboardingStatus {
   completed: boolean
-  role: 'organizer' | 'vendor' | 'admin'
+  role: 'organizer' | 'vendor' | 'admin' | null
+  selectedRole?: 'organizer' | 'vendor' | 'admin' | null
+  roles?: Array<'organizer' | 'vendor' | 'admin'>
+  requiredRoles?: Array<'organizer' | 'vendor' | 'admin'>
+  hasOrganizerProfile?: boolean
+  hasVendorProfile?: boolean
 }
 
 export const onboardingService = {

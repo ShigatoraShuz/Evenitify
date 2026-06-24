@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Input } from './Input'
 import { Select } from './Select'
 import { Button } from './Button'
 import { EmptyState } from './EmptyState'
+import { TABLE_BASE, TABLE_CELL, TABLE_HEAD } from '../constants/cardStyles'
 
 export interface Column<T> {
   key: string
@@ -32,7 +34,7 @@ export function DataTable<T>({
   data,
   keyExtractor,
   searchable,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = 'Search…',
   filterOptions,
   filterValue = '',
   onFilterChange,
@@ -40,23 +42,19 @@ export function DataTable<T>({
   pageSize = 10,
   loading,
   emptyTitle = 'No data found',
-  emptyDescription = 'Try adjusting your search or filters',
+  emptyDescription = 'Try adjusting your search or filters.',
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortKey, setSortKey] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [page, setPage] = useState(0)
 
-  const handleSearch = () => {
-    onSearch?.(searchTerm)
-  }
-
   const sorted = useMemo(() => {
     if (!sortKey) return data
     return [...data].sort((a, b) => {
       const aVal = String((a as Record<string, unknown>)[sortKey] ?? '')
       const bVal = String((b as Record<string, unknown>)[sortKey] ?? '')
-      const cmp = aVal.localeCompare(bVal)
+      const cmp = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' })
       return sortDir === 'asc' ? cmp : -cmp
     })
   }, [data, sortKey, sortDir])
@@ -66,18 +64,22 @@ export function DataTable<T>({
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortKey(key)
-      setSortDir('asc')
+      setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'))
+      return
     }
+    setSortKey(key)
+    setSortDir('asc')
+  }
+
+  const handleSearch = () => {
+    onSearch?.(searchTerm)
   }
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+      <div className="space-y-3 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-12 animate-pulse rounded-2xl bg-slate-100" />
         ))}
       </div>
     )
@@ -86,57 +88,74 @@ export function DataTable<T>({
   return (
     <div>
       {(searchable || filterOptions) && (
-        <div className="flex gap-3 mb-4">
+        <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.3fr)_auto]">
           {searchable && (
             <Input
+              label="Search"
               placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
+              hint="Press search to update the table."
             />
           )}
           {filterOptions && onFilterChange && (
             <Select
+              label="Filter"
               value={filterValue}
               onChange={(e) => onFilterChange(e.target.value)}
               options={filterOptions}
-              className="w-40"
+              placeholder="All"
             />
           )}
-          {searchable && <Button onClick={handleSearch}>Search</Button>}
+          {searchable && (
+            <div className="flex items-end">
+              <Button onClick={handleSearch} fullWidth>
+                Search
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
       {paginated.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDescription} />
       ) : (
-        <div className="bg-white rounded-xl border overflow-x-auto" role="table">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
+        <div className={TABLE_BASE}>
+          <table className="w-full min-w-[760px] border-separate border-spacing-0 text-sm">
+            <thead className="bg-slate-50/80">
               <tr>
                 {columns.map((col) => (
                   <th
                     key={col.key}
                     scope="col"
-                    className={`text-left px-4 py-3 font-medium text-gray-600 ${col.sortable ? 'cursor-pointer hover:text-gray-900 select-none' : ''}`}
+                    className={TABLE_HEAD}
                     aria-sort={col.sortable && sortKey === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-                    onClick={() => col.sortable && handleSort(col.key)}
                   >
-                    <span className="flex items-center gap-1">
-                      {col.label}
-                      {col.sortable && sortKey === col.key && (
-                        <span className="text-xs" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                      )}
-                    </span>
+                    {col.sortable ? (
+                      <button
+                        type="button"
+                        onClick={() => handleSort(col.key)}
+                        className="inline-flex items-center gap-1.5 text-left font-semibold text-slate-500 transition hover:text-slate-950"
+                      >
+                        <span>{col.label}</span>
+                        {sortKey === col.key ? (
+                          sortDir === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
+                        ) : (
+                          <span className="text-[10px] text-slate-300">↕</span>
+                        )}
+                      </button>
+                    ) : (
+                      col.label
+                    )}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-slate-100">
               {paginated.map((row) => (
-                <tr key={keyExtractor(row)} className="hover:bg-gray-50">
+                <tr key={keyExtractor(row)} className="transition-colors hover:bg-slate-50/80">
                   {columns.map((col) => (
-                    <td key={col.key} className="px-4 py-3">
+                    <td key={col.key} className={`${TABLE_CELL} align-top`}>
                       {col.render(row)}
                     </td>
                   ))}
@@ -148,11 +167,17 @@ export function DataTable<T>({
       )}
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
-          <span>Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, sorted.length)} of {sorted.length}</span>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+          <span>
+            Showing {page * pageSize + 1} - {Math.min((page + 1) * pageSize, sorted.length)} of {sorted.length}
+          </span>
           <div className="flex gap-2">
-            <Button variant="secondary" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-            <Button variant="secondary" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>Next</Button>
+            <Button variant="secondary" disabled={page === 0} onClick={() => setPage((current) => current - 1)}>
+              Previous
+            </Button>
+            <Button variant="secondary" disabled={page >= totalPages - 1} onClick={() => setPage((current) => current + 1)}>
+              Next
+            </Button>
           </div>
         </div>
       )}
