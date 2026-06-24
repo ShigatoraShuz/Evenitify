@@ -54,11 +54,68 @@ async function create(input) {
       requirement_id: input.requirementId,
       vendor_id: input.vendorId,
       organizer_id: input.organizerId,
-      booking_type: 'B2B',
+      booking_type: input.bookingType || 'B2B',
       status: 'pending',
       requested_budget: input.requestedBudget || null,
-      notes: input.notes || null
+      notes: input.notes || null,
+      response_deadline: input.responseDeadline || null
     })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Quote methods
+
+async function findQuoteForBooking(bookingId, vendorId) {
+  const { data, error } = await supabase
+    .from('quotes')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .eq('vendor_id', vendorId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+async function findQuoteById(quoteId) {
+  const { data, error } = await supabase
+    .from('quotes')
+    .select('*')
+    .eq('id', quoteId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+async function createQuote(input) {
+  const { data, error } = await supabase
+    .from('quotes')
+    .insert({
+      request_id: input.requestId,
+      vendor_id: input.vendorId,
+      requirement_id: input.requirementId,
+      price: input.price,
+      notes: input.notes || null,
+      status: 'submitted',
+      valid_until: input.validUntil || null
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+async function updateQuoteStatus(quoteId, status) {
+  const { data, error } = await supabase
+    .from('quotes')
+    .update({ status })
+    .eq('id', quoteId)
     .select('*')
     .single();
 
@@ -216,5 +273,9 @@ module.exports = {
   findContractWithBooking,
   getContractStatusHistory,
   insertContractStatusHistory,
-  updateBookingStatus
+  updateBookingStatus,
+  findQuoteForBooking,
+  findQuoteById,
+  createQuote,
+  updateQuoteStatus
 };

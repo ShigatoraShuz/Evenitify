@@ -4,13 +4,14 @@ import { contractService, type ContractDetail } from '../../../services/contract
 import { auditService, type AuditActivity } from '../../../services/auditService'
 import { availabilityService, type AvailabilityStatus, type VendorAvailabilityPreview } from '../../../services/availabilityService'
 import { communicationService, type BookingMessage } from '../../../services/communicationService'
-import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
+import type { VendorB2BBookingStatus, RequestType } from '../models/vendor-b2b-dashboard.model'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 
 interface VendorB2BDashboardState {
   bookings: BookingRequest[]
   selectedBooking: BookingRequest | null
   activeTab: VendorB2BBookingStatus | 'all'
+  activeTypeTab: RequestType
   loading: boolean
   submitting: boolean
   error: string | null
@@ -27,6 +28,7 @@ export function useVendorB2BDashboard() {
     bookings: [],
     selectedBooking: null,
     activeTab: 'all',
+    activeTypeTab: 'all',
     loading: false,
     submitting: false,
     error: null,
@@ -37,11 +39,11 @@ export function useVendorB2BDashboard() {
     bookingMessages: []
   })
 
-  const loadBookings = useCallback(async (status?: string) => {
+  const loadBookings = useCallback(async (status?: string, type?: string) => {
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
       const [bookings, availability] = await Promise.all([
-        bookingService.listVendorB2BBookings(status),
+        bookingService.listVendorB2BBookings(status, type),
         availabilityService.getMyAvailability()
       ])
       setState((s) => ({ ...s, bookings, availability, loading: false }))
@@ -53,8 +55,14 @@ export function useVendorB2BDashboard() {
   const setTab = useCallback((tab: VendorB2BBookingStatus | 'all') => {
     setState((s) => ({ ...s, activeTab: tab, selectedBooking: null, bookingMessages: [] }))
     const statusFilter = tab === 'all' ? undefined : tab
-    loadBookings(statusFilter)
-  }, [loadBookings])
+    loadBookings(statusFilter, state.activeTypeTab === 'all' ? undefined : state.activeTypeTab)
+  }, [loadBookings, state.activeTypeTab])
+
+  const setTypeTab = useCallback((tab: RequestType) => {
+    setState((s) => ({ ...s, activeTypeTab: tab, selectedBooking: null, bookingMessages: [] }))
+    const typeFilter = tab === 'all' ? undefined : tab
+    loadBookings(state.activeTab === 'all' ? undefined : state.activeTab, typeFilter)
+  }, [loadBookings, state.activeTab])
 
   const selectBooking = useCallback(async (bookingId: string) => {
     setState((s) => ({ ...s, loading: true, error: null }))
@@ -81,14 +89,36 @@ export function useVendorB2BDashboard() {
     try {
       await bookingService.updateBookingStatus(bookingId, { status, reason })
       const statusFilter = state.activeTab === 'all' ? undefined : state.activeTab
-      const bookings = await bookingService.listVendorB2BBookings(statusFilter)
+      const typeFilter = state.activeTypeTab === 'all' ? undefined : state.activeTypeTab
+      const bookings = await bookingService.listVendorB2BBookings(statusFilter, typeFilter)
       setState((s) => ({ ...s, bookings, selectedBooking: null, submitting: false }))
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
     } finally {
       submittingRef.current = false
     }
-  }, [state.activeTab])
+  }, [state.activeTab, state.activeTypeTab])
+
+  const submitQuote = useCallback(async (bookingId: string, payload: {
+    price: number
+    notes?: string | null
+    validUntil?: string | null
+  }) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
+    setState((s) => ({ ...s, submitting: true, error: null }))
+    try {
+      await bookingService.submitQuote(bookingId, payload)
+      const statusFilter = state.activeTab === 'all' ? undefined : state.activeTab
+      const typeFilter = state.activeTypeTab === 'all' ? undefined : state.activeTypeTab
+      const bookings = await bookingService.listVendorB2BBookings(statusFilter, typeFilter)
+      setState((s) => ({ ...s, bookings, submitting: false }))
+    } catch (err) {
+      setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
+    }
+  }, [state.activeTab, state.activeTypeTab])
 
   const loadContract = useCallback(async (bookingId: string) => {
     setState((s) => ({ ...s, contractLoading: true, error: null }))
@@ -144,8 +174,10 @@ export function useVendorB2BDashboard() {
     }),
     loadBookings,
     setTab,
+    setTypeTab,
     selectBooking,
     updateStatus,
+    submitQuote,
     loadContract,
     signVendorContract,
     updateAvailabilityStatus,

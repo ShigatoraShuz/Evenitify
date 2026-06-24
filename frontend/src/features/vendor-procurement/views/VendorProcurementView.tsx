@@ -258,7 +258,7 @@ export function VendorProcurementView({
       {currentStep === 'requirements' && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Event Requirements</h2>
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">Event Requirements<span className="rounded bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">RFQ</span></h2>
             <Button onClick={() => setShowReqForm(true)}>+ Add Requirement</Button>
           </div>
 

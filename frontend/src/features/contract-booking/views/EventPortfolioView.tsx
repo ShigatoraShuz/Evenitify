@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Building2, User as UserIcon } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { SummaryCard } from '../../../shared/components/SummaryCard'
@@ -174,6 +175,20 @@ export function EventPortfolioView({
   const totalBudget = Number(event.budget) || 0
   const usedBudget = bookings?.reduce((sum: number, b: BookingWithDetails) => sum + (Number(b.requested_budget) || 0), 0) || 0
   const budgetPct = totalBudget > 0 ? Math.round((usedBudget / totalBudget) * 100) : 0
+
+  const getBookingTypeBadge = (booking: BookingWithDetails) => {
+    const isPersonal = booking.booking_type === 'PERSONAL'
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+        isPersonal
+          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+          : 'bg-blue-50 text-blue-700 border border-blue-200'
+      }`}>
+        {isPersonal ? <UserIcon className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
+        {isPersonal ? 'Personal' : 'Large Event'}
+      </span>
+    )
+  }
 
   return (
     <DashboardShell>
@@ -358,7 +373,10 @@ export function EventPortfolioView({
                         <span className="font-medium text-gray-900">{booking.vendor_profiles?.business_name}</span>
                         <span className="text-sm text-gray-500 ml-2">{booking.event_requirements?.category}</span>
                       </div>
-                      <StatusBadge status={booking.status} />
+                      <div className="flex items-center gap-2">
+                        {getBookingTypeBadge(booking)}
+                        <StatusBadge status={booking.status} />
+                      </div>
                     </div>
 
                     {booking.requested_budget && (

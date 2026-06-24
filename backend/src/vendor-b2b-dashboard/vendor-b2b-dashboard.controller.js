@@ -32,7 +32,7 @@ const updateService = asyncHandler(async (req, res) => {
 });
 
 const listB2BBookings = asyncHandler(async (req, res) => {
-  const bookings = await vendorService.listB2BBookings(req.user, req.query.status);
+  const bookings = await vendorService.listB2BBookings(req.user, req.query.status, req.query.type);
   return sendSuccess(res, bookings);
 });
 
@@ -50,4 +50,13 @@ const updateBookingStatus = asyncHandler(async (req, res) => {
   return sendSuccess(res, booking);
 });
 
-module.exports = { getProfile, updateProfile, listServices, createService, updateService, listB2BBookings, getBookingDetail, updateBookingStatus };
+const submitQuote = asyncHandler(async (req, res) => {
+  const quote = await vendorService.submitQuote(
+    req.user,
+    req.validated.params.bookingId,
+    req.validated.body
+  );
+  return sendCreated(res, quote);
+});
+
+module.exports = { getProfile, updateProfile, listServices, createService, updateService, listB2BBookings, getBookingDetail, updateBookingStatus, submitQuote };

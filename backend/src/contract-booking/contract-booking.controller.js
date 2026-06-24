@@ -44,6 +44,11 @@ const signContractVendor = asyncHandler(async (req, res) => {
   return sendSuccess(res, contract);
 });
 
+const awardQuote = asyncHandler(async (req, res) => {
+  const result = await bookingService.awardQuote(req.user, req.validated.params.bookingId, req.validated.body);
+  return sendSuccess(res, result);
+});
+
 module.exports = {
   createBooking,
   getBooking,
@@ -52,5 +57,6 @@ module.exports = {
   getContractByBooking,
   updateContractStatus,
   signContractOrganizer,
-  signContractVendor
+  signContractVendor,
+  awardQuote
 };

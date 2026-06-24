@@ -40,6 +40,7 @@ export interface BookingWithDetails {
   vendor_id: string
   organizer_id: string
   status: string
+  booking_type: string | null
   requested_budget: number | null
   notes: string | null
   requested_at: string

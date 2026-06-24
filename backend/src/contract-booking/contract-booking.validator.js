@@ -5,6 +5,8 @@ const createBookingSchema = z.object({
     eventId: z.string().uuid('Invalid event ID'),
     requirementId: z.string().uuid('Invalid requirement ID'),
     vendorId: z.string().uuid('Invalid vendor ID'),
+    bookingType: z.enum(['B2B', 'PERSONAL']).optional(),
+    responseDeadline: z.string().datetime().optional().nullable(),
     notes: z.string().max(1000).optional().nullable(),
     requestedBudget: z.number().min(0).optional().nullable()
   }),
@@ -76,6 +78,16 @@ const contractSignSchema = z.object({
   query: z.object({}).optional()
 });
 
+const awardQuoteSchema = z.object({
+  body: z.object({
+    quoteId: z.string().uuid('Invalid quote ID')
+  }),
+  params: z.object({
+    bookingId: z.string().uuid('Invalid booking ID')
+  }),
+  query: z.object({}).optional()
+});
+
 module.exports = {
   createBookingSchema,
   bookingIdSchema,
@@ -84,5 +96,6 @@ module.exports = {
   contractBookingIdSchema,
   contractIdSchema,
   contractStatusSchema,
-  contractSignSchema
+  contractSignSchema,
+  awardQuoteSchema
 };

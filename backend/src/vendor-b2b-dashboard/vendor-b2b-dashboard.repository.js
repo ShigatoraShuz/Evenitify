@@ -161,7 +161,7 @@ async function getVendorWithServices(vendorId) {
   return { ...vendor, services: services || [] };
 }
 
-async function listB2BBookings(vendorId, statusFilter) {
+async function listB2BBookings(vendorId, statusFilter, bookingTypeFilter) {
   let query = supabase
     .from('bookings')
     .select(`
@@ -171,8 +171,11 @@ async function listB2BBookings(vendorId, statusFilter) {
       organizer_profiles!inner(organization_name)
     `)
     .eq('vendor_id', vendorId)
-    .eq('booking_type', 'B2B')
     .order('requested_at', { ascending: false });
+
+  if (bookingTypeFilter && bookingTypeFilter !== 'all') {
+    query = query.eq('booking_type', bookingTypeFilter === 'large_event' ? 'B2B' : 'PERSONAL');
+  }
 
   if (statusFilter) {
     query = query.eq('status', statusFilter);
@@ -182,6 +185,65 @@ async function listB2BBookings(vendorId, statusFilter) {
 
   if (error) throw error;
   return data || [];
+}
+
+// Quote methods
+
+async function findOrCreateProcurementRequest(eventId, organizerId, title) {
+  const { data: existing } = await supabase
+    .from('procurement_requests')
+    .select('id')
+    .eq('event_id', eventId)
+    .eq('organizer_id', organizerId)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) return existing;
+
+  const { data, error } = await supabase
+    .from('procurement_requests')
+    .insert({
+      event_id: eventId,
+      organizer_id: organizerId,
+      title: title || 'Procurement Request',
+      status: 'open'
+    })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+async function createQuote(input) {
+  const { data, error } = await supabase
+    .from('quotes')
+    .insert({
+      request_id: input.requestId,
+      vendor_id: input.vendorId,
+      requirement_id: input.requirementId,
+      price: input.price,
+      notes: input.notes || null,
+      status: 'submitted',
+      valid_until: input.validUntil || null
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+async function findQuoteByVendorAndRequirement(vendorId, requirementId) {
+  const { data, error } = await supabase
+    .from('quotes')
+    .select('*')
+    .eq('vendor_id', vendorId)
+    .eq('requirement_id', requirementId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
 }
 
 async function findBookingById(bookingId) {
@@ -225,5 +287,8 @@ module.exports = {
   getVendorWithServices,
   listB2BBookings,
   findBookingById,
-  updateBookingStatus
+  updateBookingStatus,
+  findOrCreateProcurementRequest,
+  createQuote,
+  findQuoteByVendorAndRequirement
 };

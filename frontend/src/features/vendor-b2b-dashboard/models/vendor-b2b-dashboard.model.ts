@@ -44,3 +44,11 @@ export const B2B_TABS: { key: VendorB2BBookingStatus | 'all'; label: string }[] 
   { key: 'confirmed', label: 'Confirmed' },
   { key: 'completed', label: 'Completed' }
 ]
+
+export type RequestType = 'all' | 'large_event' | 'personal'
+
+export const REQUEST_TYPE_TABS: { key: RequestType; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'large_event', label: 'Large Event' },
+  { key: 'personal', label: 'Personal Event' }
+]

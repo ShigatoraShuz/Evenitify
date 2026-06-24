@@ -1,134 +1,89 @@
-import { useState, useCallback, useRef } from 'react'
-import { eventService, type LargeEvent, type EventPortfolio, type DashboardSummary } from '../../../services/eventService'
-import { vendorService } from '../../../services/vendorService'
-import type { EventStatus } from '../models/organizer-dashboard.model'
+import { useMemo } from 'react'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
-import type { EventSetupPayload } from '../models/event-setup-builder.model'
+import {
+  MOCK_EVENT_PREVIEWS,
+  MOCK_DRAFTS,
+  MOCK_VENDOR_REQUESTS,
+  MOCK_BOOKINGS,
+  MOCK_RECOMMENDED_VENDORS,
+  MOCK_ACTIVITIES,
+  MOCK_NOTIFICATIONS,
+  type DashboardEventPreview,
+  type DashboardDraft,
+  type DashboardVendorRequest,
+  type DashboardBooking,
+  type RecommendedVendorPreview,
+  type DashboardActivity,
+  type DashboardNotification,
+} from '../models/organizer-dashboard.model'
 
-interface OrganizerDashboardState {
-  events: LargeEvent[]
-  selectedEvent: LargeEvent | null
-  portfolio: EventPortfolio | null
-  summary: DashboardSummary | null
-  loading: boolean
-  submitting: boolean
-  portfolioLoading: boolean
-  error: string | null
-}
+const REQUESTS_STORAGE_KEY = 'eventify:vendor-requests'
 
 export function useOrganizerDashboard() {
-  const [state, setState] = useState<OrganizerDashboardState>({
-    events: [],
-    selectedEvent: null,
-    portfolio: null,
-    summary: null,
+  const allVendorRequests = useMemo(() => {
+    const stored = sessionStorage.getItem(REQUESTS_STORAGE_KEY)
+    const persisted: DashboardVendorRequest[] = stored ? JSON.parse(stored) : []
+    return [...MOCK_VENDOR_REQUESTS, ...persisted]
+  }, [])
+
+  const summaryStats = useMemo(() => {
+    const totalEvents = MOCK_EVENT_PREVIEWS.length
+    const draftEvents = MOCK_DRAFTS.length
+    const activeVendorRequests = allVendorRequests.length
+    const pendingResponses = allVendorRequests.filter(
+      (r) => r.status === 'sent' || r.status === 'pending' || r.status === 'viewed' || r.status === 'quoted' || r.status === 'negotiating'
+    ).length
+    const acceptedBookings = MOCK_BOOKINGS.filter((b) => b.status === 'accepted' || b.status === 'confirmed').length
+    const confirmedBookings = MOCK_BOOKINGS.filter((b) => b.status === 'confirmed').length
+
+    return {
+      totalEvents,
+      draftEvents,
+      activeVendorRequests,
+      pendingResponses,
+      acceptedBookings,
+      confirmedBookings,
+    }
+  }, [allVendorRequests])
+
+  const vendorRequestCounts = useMemo(() => {
+    const all = allVendorRequests
+    return {
+      sent: all.filter((r) => r.status === 'sent').length,
+      pending: all.filter((r) => ['pending', 'viewed', 'quoted', 'negotiating'].includes(r.status)).length,
+      accepted: all.filter((r) => r.status === 'accepted').length,
+      rejected: all.filter((r) => r.status === 'rejected').length,
+      confirmed: all.filter((r) => r.status === 'confirmed').length,
+      contract_pending: all.filter((r) => r.status === 'contract_pending').length,
+    }
+  }, [allVendorRequests])
+
+  const events = MOCK_EVENT_PREVIEWS
+  const drafts = MOCK_DRAFTS
+  const vendorRequests = allVendorRequests
+  const bookings = MOCK_BOOKINGS
+  const recommendedVendors = MOCK_RECOMMENDED_VENDORS
+  const activities = MOCK_ACTIVITIES
+  const notifications = MOCK_NOTIFICATIONS
+
+  const meta = buildViewModelStateMeta({
     loading: false,
     submitting: false,
-    portfolioLoading: false,
-    error: null
+    error: null,
+    empty: events.length === 0 && drafts.length === 0,
+    loaded: true,
   })
 
-  const loadEvents = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true, error: null }))
-    try {
-      const [events, summary] = await Promise.all([
-        eventService.listEvents(),
-        eventService.getDashboardSummary()
-      ])
-      setState((s) => ({ ...s, events, summary, loading: false }))
-    } catch (err) {
-      setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
-    }
-  }, [])
-
-  const selectEvent = useCallback(async (eventId: string) => {
-    setState((s) => ({ ...s, portfolioLoading: true, error: null }))
-    try {
-      const portfolio = await eventService.getEventPortfolio(eventId)
-      const events = await eventService.listEvents()
-      const selectedEvent = events.find((e) => e.id === eventId) || null
-      setState((s) => ({ ...s, events, selectedEvent, portfolio, portfolioLoading: false }))
-    } catch (err) {
-      setState((s) => ({ ...s, portfolioLoading: false, error: (err as Error).message }))
-    }
-  }, [])
-
-  const submittingRef = useRef(false)
-
-  const createEvent = useCallback(async (payload: EventSetupPayload) => {
-    if (submittingRef.current) return
-    submittingRef.current = true
-    setState((s) => ({ ...s, submitting: true, error: null }))
-    try {
-      const createdEvent = await eventService.createEvent({
-        title: payload.title,
-        eventDate: payload.eventDate,
-        venue: payload.venue,
-        budget: payload.budget,
-        expectedGuests: payload.guests
-      })
-
-      await Promise.all(
-        payload.selectedServices.map((service) =>
-          vendorService.createRequirement(createdEvent.id, {
-            category: service,
-            quantity: 1,
-            notes: [
-              payload.description,
-              `Theme: ${payload.theme}`,
-              `Mood: ${payload.mood}`,
-              payload.specialRequirements,
-              payload.vendorNotes
-            ].filter(Boolean).join(' · ')
-          })
-        )
-      )
-
-      await loadEvents()
-      setState((s) => ({ ...s, submitting: false }))
-    } catch (err) {
-      setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
-    } finally {
-      submittingRef.current = false
-    }
-  }, [loadEvents])
-
-  const updateEventStatus = useCallback(async (eventId: string, status: EventStatus) => {
-    if (submittingRef.current) return
-    submittingRef.current = true
-    setState((s) => ({ ...s, submitting: true, error: null }))
-    try {
-      await eventService.updateEvent(eventId, { status } as Partial<LargeEvent>)
-      if (state.selectedEvent?.id === eventId) {
-        await selectEvent(eventId)
-      } else {
-        await loadEvents()
-      }
-      setState((s) => ({ ...s, submitting: false }))
-    } catch (err) {
-      setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
-    } finally {
-      submittingRef.current = false
-    }
-  }, [state.selectedEvent, selectEvent, loadEvents])
-
-  const clearError = useCallback(() => {
-    setState((s) => ({ ...s, error: null }))
-  }, [])
-
   return {
-    ...state,
-    ...buildViewModelStateMeta({
-      loading: state.loading,
-      submitting: state.submitting,
-      error: state.error,
-      empty: !state.loading && state.events.length === 0,
-      loaded: !state.loading
-    }),
-    loadEvents,
-    selectEvent,
-    createEvent,
-    updateEventStatus,
-    clearError
+    events,
+    drafts,
+    vendorRequests,
+    bookings,
+    recommendedVendors,
+    activities,
+    notifications,
+    summaryStats,
+    vendorRequestCounts,
+    ...meta,
   }
 }

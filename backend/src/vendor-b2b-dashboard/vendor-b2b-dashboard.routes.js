@@ -9,7 +9,8 @@ const {
   updateServiceSchema,
   serviceIdSchema,
   bookingStatusSchema,
-  bookingIdSchema
+  bookingIdSchema,
+  submitQuoteSchema
 } = require('./vendor-b2b-dashboard.validator');
 
 const router = Router();
@@ -24,5 +25,6 @@ router.patch('/services/:serviceId', authenticate, requireRole('vendor'), valida
 router.get('/bookings', authenticate, requireRole('vendor'), controller.listB2BBookings);
 router.get('/bookings/:bookingId', authenticate, requireRole('vendor'), validate(bookingIdSchema), controller.getBookingDetail);
 router.patch('/bookings/:bookingId/status', authenticate, requireRole('vendor'), validate(bookingStatusSchema), controller.updateBookingStatus);
+router.post('/bookings/:bookingId/quote', authenticate, requireRole('vendor'), validate(submitQuoteSchema), controller.submitQuote);
 
 module.exports = router;

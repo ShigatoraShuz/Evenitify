@@ -37,6 +37,8 @@ export const bookingService = {
     eventId: string
     requirementId: string
     vendorId: string
+    bookingType?: string
+    responseDeadline?: string | null
     notes?: string | null
     requestedBudget?: number | null
   }) => api.post<BookingRequest>('/procurement-requests', payload),
@@ -47,9 +49,12 @@ export const bookingService = {
   getEventBookings: (eventId: string) =>
     api.get<BookingRequest[]>(`/events/${eventId}/bookings`),
 
-  listVendorB2BBookings: (status?: string) => {
-    const qs = status ? `?status=${status}` : ''
-    return api.get<BookingRequest[]>(`/vendor/bookings${qs}`)
+  listVendorB2BBookings: (status?: string, type?: string) => {
+    const params = new URLSearchParams()
+    if (status) params.set('status', status)
+    if (type) params.set('type', type)
+    const qs = params.toString()
+    return api.get<BookingRequest[]>(`/vendor/bookings${qs ? `?${qs}` : ''}`)
   },
 
   getVendorBookingDetail: (bookingId: string) =>
@@ -58,5 +63,15 @@ export const bookingService = {
   updateBookingStatus: (bookingId: string, payload: {
     status: 'accepted' | 'rejected' | 'changes_requested'
     reason?: string | null
-  }) => api.patch<BookingRequest>(`/vendor/bookings/${bookingId}/status`, payload)
+  }) => api.patch<BookingRequest>(`/vendor/bookings/${bookingId}/status`, payload),
+
+  submitQuote: (bookingId: string, payload: {
+    price: number
+    notes?: string | null
+    validUntil?: string | null
+  }) => api.post(`/vendor/bookings/${bookingId}/quote`, payload),
+
+  awardVendor: (bookingId: string, payload: {
+    quoteId: string
+  }) => api.post(`/procurement-requests/${bookingId}/award`, payload)
 }

@@ -66,39 +66,28 @@ async function createBooking(actor, payload) {
     );
   }
 
-  if (payload.requestedBudget !== null && payload.requestedBudget !== undefined) {
-    if (requirement.min_budget && payload.requestedBudget < requirement.min_budget) {
-      return bookingRepository.create({
-        eventId: payload.eventId,
-        requirementId: payload.requirementId,
-        vendorId: payload.vendorId,
-        organizerId: organizer.id,
-        requestedBudget: payload.requestedBudget,
-        notes: payload.notes
-      });
-    }
-
-    if (requirement.max_budget && payload.requestedBudget > requirement.max_budget) {
-      const notes = (payload.notes || '') + ' [Budget exceeds requirement max - justification needed]';
-      return bookingRepository.create({
-        eventId: payload.eventId,
-        requirementId: payload.requirementId,
-        vendorId: payload.vendorId,
-        organizerId: organizer.id,
-        requestedBudget: payload.requestedBudget,
-        notes: notes.trim()
-      });
-    }
-  }
-
-  return bookingRepository.create({
+  const baseInput = {
     eventId: payload.eventId,
     requirementId: payload.requirementId,
     vendorId: payload.vendorId,
     organizerId: organizer.id,
     requestedBudget: payload.requestedBudget,
-    notes: payload.notes
-  });
+    bookingType: payload.bookingType || 'B2B',
+    responseDeadline: payload.responseDeadline || null
+  };
+
+  if (payload.requestedBudget !== null && payload.requestedBudget !== undefined) {
+    if (requirement.min_budget && payload.requestedBudget < requirement.min_budget) {
+      return bookingRepository.create({ ...baseInput, notes: payload.notes });
+    }
+
+    if (requirement.max_budget && payload.requestedBudget > requirement.max_budget) {
+      const notes = (payload.notes || '') + ' [Budget exceeds requirement max - justification needed]';
+      return bookingRepository.create({ ...baseInput, notes: notes.trim() });
+    }
+  }
+
+  return bookingRepository.create({ ...baseInput, notes: payload.notes });
 }
 
 async function getBooking(actor, bookingId) {
@@ -256,6 +245,66 @@ async function signContractOrganizer(actor, contractId, payload) {
   return updated;
 }
 
+async function awardQuote(actor, bookingId, payload) {
+  if (actor.role !== 'organizer') {
+    throw new AppError('Only organizers can award quotes', 403, 'FORBIDDEN');
+  }
+
+  const { data: organizer } = await supabase
+    .from('organizer_profiles')
+    .select('id')
+    .eq('user_id', actor.id)
+    .single();
+
+  if (!organizer) {
+    throw new AppError('Organizer profile not found', 404, 'ORGANIZER_NOT_FOUND');
+  }
+
+  const booking = await bookingRepository.findById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+  }
+
+  if (booking.organizer_id !== organizer.id) {
+    throw new AppError('Access denied', 403, 'FORBIDDEN');
+  }
+
+  const quote = await bookingRepository.findQuoteById(payload.quoteId);
+  if (!quote) {
+    throw new AppError('Quote not found', 404, 'QUOTE_NOT_FOUND');
+  }
+
+  if (quote.vendor_id !== booking.vendor_id) {
+    throw new AppError('Quote does not match the booking vendor', 400, 'QUOTE_VENDOR_MISMATCH');
+  }
+
+  if (quote.status !== 'submitted') {
+    throw new AppError('Quote is not in a submittable state', 400, 'INVALID_QUOTE_STATUS');
+  }
+
+  await bookingRepository.updateQuoteStatus(quote.id, 'accepted');
+  await bookingRepository.updateBookingStatus(bookingId, 'accepted');
+
+  const { data: vendorProfile } = await supabase
+    .from('vendor_profiles')
+    .select('user_id')
+    .eq('id', booking.vendor_id)
+    .single();
+
+  if (vendorProfile) {
+    await supabase.from('notifications').insert({
+      user_id: vendorProfile.user_id,
+      booking_id: bookingId,
+      title: 'Quote Accepted',
+      message: 'Your quote has been accepted by the organizer.',
+      notification_type: 'quote_accepted',
+      priority: 'high'
+    });
+  }
+
+  return { bookingId, quoteId: quote.id, status: 'accepted' };
+}
+
 async function signContractVendor(actor, contractId, payload) {
   const contract = await bookingRepository.findContractWithBooking(contractId);
   if (!contract) {
@@ -308,5 +357,6 @@ module.exports = {
   getContractByBooking,
   updateContractStatus,
   signContractOrganizer,
-  signContractVendor
+  signContractVendor,
+  awardQuote
 };

@@ -52,13 +52,17 @@ create index if not exists idx_contract_status_history_contract on public.contra
 create index if not exists idx_notifications_type on public.notifications(notification_type);
 
 -- 6. Add updated_at triggers for tables missing them
-create trigger if not exists trg_set_updated_at_booking_status_history
-before update on public.booking_status_history
-for each row execute function public.set_updated_at();
+do $$ begin
+  create trigger trg_set_updated_at_booking_status_history
+    before update on public.booking_status_history for each row execute function public.set_updated_at();
+exception when duplicate_object then null;
+end $$;
 
-create trigger if not exists trg_set_updated_at_notifications
-before update on public.notifications
-for each row execute function public.set_updated_at();
+do $$ begin
+  create trigger trg_set_updated_at_notifications
+    before update on public.notifications for each row execute function public.set_updated_at();
+exception when duplicate_object then null;
+end $$;
 
 alter table public.booking_status_history add column if not exists updated_at timestamptz not null default now();
 alter table public.notifications add column if not exists updated_at timestamptz not null default now();
@@ -284,6 +288,7 @@ after insert or update of contract_status on public.contracts
 for each row execute function public.create_contract_notification();
 
 -- 10. Update views to include new fields
+drop view if exists public.event_portfolio_summary;
 create or replace view public.event_portfolio_summary as
 select
   le.id as event_id,
@@ -323,4 +328,4 @@ select
   (select count(*) from public.bookings where status = 'cancelled') as cancelled_bookings,
   (select count(*) from public.vendor_profiles where verification_status = 'pending') as pending_verifications,
   (select count(*) from public.contracts where contract_status = 'draft') as draft_contracts,
-  (select count(*) from public.contracts where contract_status = 'active') as active_contracts;
+  (select count(*) from public.contracts where contract_status::text = 'active') as active_contracts;

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BadgeCheck, CalendarDays, Clock3, DollarSign, Mail, ShieldCheck, Star, Truck, Users, Wallet, Music4, Camera, LayoutPanelTop } from 'lucide-react'
+import { ArrowRight, BadgeCheck, CalendarDays, Clock3, DollarSign, Mail, ShieldCheck, Star, Truck, Users, Wallet, Music4, Camera, LayoutPanelTop, Building2, User as UserIcon } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { SummaryCard } from '../../../shared/components/SummaryCard'
@@ -8,6 +8,8 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
+import { Modal } from '../../../shared/components/Modal'
+import { Input } from '../../../shared/components/Input'
 import { ContractTimeline, buildContractTimeline } from '../../contract-booking/components/ContractTimeline'
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
@@ -15,18 +17,20 @@ import { DashboardCommandPanel } from '../../../shared/components/DashboardComma
 import { AvailabilityCalendar, AvailabilityQuickUpdate, BlockedDateList } from '../../../shared/components/AvailabilityComponents'
 import { BookingMessageThread } from '../../../shared/components/CommunicationComponents'
 import { PlaceholderMedia } from '../../../shared/components/PlaceholderMedia'
-import { B2B_TABS } from '../models/vendor-b2b-dashboard.model'
+import { B2B_TABS, REQUEST_TYPE_TABS } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
 import type { ContractDetail } from '../../../services/contractService'
 import type { AuditActivity } from '../../../services/auditService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
 import type { AvailabilityStatus, VendorAvailabilityPreview } from '../../../services/availabilityService'
 import type { BookingMessage } from '../../../services/communicationService'
+import type { RequestType } from '../models/vendor-b2b-dashboard.model'
 
 interface VendorB2BDashboardViewProps {
   bookings: BookingRequest[]
   selectedBooking: BookingRequest | null
   activeTab: string
+  activeTypeTab: RequestType
   loading: boolean
   submitting: boolean
   error: string | null
@@ -40,8 +44,10 @@ interface VendorB2BDashboardViewProps {
   onLoadBookings: (status?: string) => Promise<void>
   onRefreshRealtime: () => Promise<void>
   onSetTab: (tab: string) => void
+  onSetTypeTab: (tab: RequestType) => void
   onSelectBooking: (bookingId: string) => Promise<void>
   onUpdateStatus: (bookingId: string, status: 'accepted' | 'rejected' | 'changes_requested', reason?: string) => Promise<void>
+  onSubmitQuote: (bookingId: string, payload: { price: number; notes?: string | null; validUntil?: string | null }) => Promise<void>
   onClearError: () => void
   onLoadContract: (bookingId: string) => Promise<void>
   onSignVendorContract: (contractId: string) => Promise<void>
@@ -85,6 +91,7 @@ export function VendorB2BDashboardView({
   bookings,
   selectedBooking,
   activeTab,
+  activeTypeTab,
   loading,
   submitting,
   error,
@@ -98,8 +105,10 @@ export function VendorB2BDashboardView({
   onLoadBookings,
   onRefreshRealtime,
   onSetTab,
+  onSetTypeTab,
   onSelectBooking,
   onUpdateStatus,
+  onSubmitQuote,
   onClearError,
   onLoadContract,
   onSignVendorContract,
@@ -107,6 +116,9 @@ export function VendorB2BDashboardView({
 }: VendorB2BDashboardViewProps) {
   const navigate = useNavigate()
   const [confirmDecline, setConfirmDecline] = useState<string | null>(null)
+  const [quoteModal, setQuoteModal] = useState<string | null>(null)
+  const [quotePrice, setQuotePrice] = useState('')
+  const [quoteNotes, setQuoteNotes] = useState('')
 
   useEffect(() => {
     void onLoadBookings()
@@ -145,6 +157,41 @@ export function VendorB2BDashboardView({
     }
   }
 
+  const handleSubmitQuote = async () => {
+    const bookingId = quoteModal
+    if (!bookingId || !quotePrice) return
+    await onSubmitQuote(bookingId, {
+      price: parseFloat(quotePrice),
+      notes: quoteNotes || null,
+      validUntil: null
+    })
+    setQuoteModal(null)
+    setQuotePrice('')
+    setQuoteNotes('')
+  }
+
+  const getRequestTypeLabel = (booking: BookingRequest) => {
+    return booking.booking_type === 'PERSONAL' ? 'Personal Event' : 'Large Event'
+  }
+
+  const getRequestTypeIcon = (booking: BookingRequest) => {
+    return booking.booking_type === 'PERSONAL' ? UserIcon : Building2
+  }
+
+  const getRequestTypeBadge = (booking: BookingRequest) => {
+    const isPersonal = booking.booking_type === 'PERSONAL'
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+        isPersonal
+          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+          : 'bg-blue-50 text-blue-700 border border-blue-200'
+      }`}>
+        {isPersonal ? <UserIcon className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
+        {isPersonal ? 'Personal' : 'Large Event'}
+      </span>
+    )
+  }
+
   const selectedCategory = selectedBooking?.event_requirements?.category || selectedBooking?.booking_type || 'Booking'
   const SelectedIcon = bookingIconMap[selectedCategory] ?? CalendarDays
 
@@ -160,6 +207,40 @@ export function VendorB2BDashboardView({
         onConfirm={handleDecline}
         onCancel={() => setConfirmDecline(null)}
       />
+
+      <Modal
+        open={!!quoteModal}
+        title="Submit Quote"
+        onClose={() => { setQuoteModal(null); setQuotePrice(''); setQuoteNotes('') }}
+      >
+        <div className="space-y-4">
+          <Input
+            label="Price ($)"
+            type="number"
+            placeholder="0.00"
+            value={quotePrice}
+            onChange={(e) => setQuotePrice(e.target.value)}
+          />
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Notes (optional)</label>
+            <textarea
+              className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              rows={3}
+              placeholder="Describe your quote..."
+              value={quoteNotes}
+              onChange={(e) => setQuoteNotes(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => { setQuoteModal(null); setQuotePrice(''); setQuoteNotes('') }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitQuote} loading={submitting} disabled={!quotePrice || parseFloat(quotePrice) <= 0}>
+              Submit Quote
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <div className="space-y-6">
         <PageHeader
@@ -355,6 +436,9 @@ export function VendorB2BDashboardView({
                     <Button onClick={() => onUpdateStatus(selectedBooking.id, 'accepted')} loading={submitting}>
                       Accept
                     </Button>
+                    <Button variant="secondary" onClick={() => setQuoteModal(selectedBooking.id)} loading={submitting}>
+                      Submit Quote
+                    </Button>
                     <Button variant="secondary" onClick={() => onUpdateStatus(selectedBooking.id, 'changes_requested')} loading={submitting}>
                       Request changes
                     </Button>
@@ -455,6 +539,23 @@ export function VendorB2BDashboardView({
           </div>
 
           <div className="mt-4 flex gap-2 overflow-x-auto border-b border-slate-200 pb-px">
+            {REQUEST_TYPE_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => onSetTypeTab(tab.key)}
+                className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm font-semibold transition-all ${
+                  activeTypeTab === tab.key
+                    ? 'border-brand-600 text-brand-600'
+                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-2 flex gap-2 overflow-x-auto border-b border-slate-200 pb-px">
             {B2B_TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -502,11 +603,14 @@ export function VendorB2BDashboardView({
                   />
                   <div className="space-y-3 p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-base font-semibold text-slate-950">{card.title}</h3>
-                        <p className="mt-1 text-sm text-slate-500">{card.organizer}</p>
+                      <div className="min-w-0">
+                        <h3 className="text-base font-semibold text-slate-950 truncate">{card.title}</h3>
+                        <p className="mt-1 text-sm text-slate-500 truncate">{card.organizer}</p>
                       </div>
-                      <StatusBadge status={card.booking.status} size="sm" />
+                      <div className="flex items-center gap-2 shrink-0">
+                        {getRequestTypeBadge(card.booking)}
+                        <StatusBadge status={card.booking.status} size="sm" />
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <BookingChip label="Budget" value={card.budget ? `$${card.budget.toLocaleString()}` : 'N/A'} />

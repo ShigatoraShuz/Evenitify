@@ -103,13 +103,13 @@ const VALID_TRANSITIONS = {
   pending: ['accepted', 'rejected', 'changes_requested']
 };
 
-async function listB2BBookings(actor, statusFilter) {
+async function listB2BBookings(actor, statusFilter, bookingTypeFilter) {
   const profile = await vendorRepository.findByUserId(actor.id);
   if (!profile) {
     throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
   }
 
-  return vendorRepository.listB2BBookings(profile.id, statusFilter);
+  return vendorRepository.listB2BBookings(profile.id, statusFilter, bookingTypeFilter);
 }
 
 async function getBookingDetail(actor, bookingId) {
@@ -157,6 +157,48 @@ async function updateBookingStatus(actor, bookingId, payload) {
   return vendorRepository.updateBookingStatus(bookingId, profile.id, payload.status, payload.reason);
 }
 
+async function submitQuote(actor, bookingId, payload) {
+  const profile = await vendorRepository.findByUserId(actor.id);
+  if (!profile) {
+    throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
+  }
+
+  const booking = await vendorRepository.findBookingById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+  }
+
+  if (booking.vendor_id !== profile.id) {
+    throw new AppError('Access denied', 403, 'FORBIDDEN');
+  }
+
+  if (booking.status !== 'pending') {
+    throw new AppError('Can only submit a quote for pending bookings', 400, 'INVALID_BOOKING_STATUS');
+  }
+
+  const existing = await vendorRepository.findQuoteByVendorAndRequirement(profile.id, booking.requirement_id);
+  if (existing) {
+    throw new AppError('A quote already exists for this requirement', 409, 'QUOTE_EXISTS');
+  }
+
+  const procurementRequest = await vendorRepository.findOrCreateProcurementRequest(
+    booking.event_id,
+    booking.organizer_id,
+    `Quote for ${booking.event_requirements?.category || 'service'}`
+  );
+
+  const quote = await vendorRepository.createQuote({
+    requestId: procurementRequest.id,
+    vendorId: profile.id,
+    requirementId: booking.requirement_id,
+    price: payload.price,
+    notes: payload.notes || null,
+    validUntil: payload.validUntil || null
+  });
+
+  return quote;
+}
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -167,5 +209,6 @@ module.exports = {
   getVendorProfile,
   listB2BBookings,
   getBookingDetail,
-  updateBookingStatus
+  updateBookingStatus,
+  submitQuote
 };

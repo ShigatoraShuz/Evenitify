@@ -72,11 +72,24 @@ const bookingIdSchema = z.object({
   query: z.object({}).optional()
 });
 
+const submitQuoteSchema = z.object({
+  body: z.object({
+    price: z.number().min(0, 'Price must be non-negative'),
+    notes: z.string().max(1000).optional().nullable(),
+    validUntil: z.string().datetime().optional().nullable()
+  }),
+  params: z.object({
+    bookingId: z.string().uuid('Invalid booking ID')
+  }),
+  query: z.object({}).optional()
+});
+
 module.exports = {
   profileUpdateSchema,
   createServiceSchema,
   updateServiceSchema,
   serviceIdSchema,
   bookingStatusSchema,
-  bookingIdSchema
+  bookingIdSchema,
+  submitQuoteSchema
 };
