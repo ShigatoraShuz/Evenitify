@@ -23,7 +23,7 @@ export function VendorChatMessage({ message }: Props) {
       <div
         className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
           isOrganizer
-            ? 'bg-navy-700 text-white rounded-br-md'
+            ? 'bg-brand-600 text-white rounded-br-md'
             : 'bg-slate-100 text-slate-800 rounded-bl-md'
         }`}
       >

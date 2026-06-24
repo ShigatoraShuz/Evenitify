@@ -1,40 +1,76 @@
 import { api } from './apiClient'
 
-export interface OrganizerProfileData {
+export interface OrganizerProfile {
+  id: string
   organizationName: string
   organizationType: string
   phone: string
   address: string
+  website: string
+  bio: string
+  logoUrl: string
+  createdAt: string
+  updatedAt: string
 }
 
-export interface VendorProfileData {
+export interface UpdateOrganizerProfilePayload {
+  organizationName?: string
+  organizationType?: string
+  phone?: string
+  address?: string
+  website?: string
+  bio?: string
+  logoUrl?: string
+}
+
+export interface VendorProfile {
+  id: string
   businessName: string
   serviceArea: string
   businessDescription: string
   phone: string
+  website: string
+  address: string
+  createdAt: string
+  updatedAt: string
 }
 
-export interface AdminSettingsData {
+export interface UpdateVendorProfilePayload {
+  businessName?: string
+  serviceArea?: string
+  businessDescription?: string
+  phone?: string
+  website?: string
+  address?: string
+}
+
+export interface AdminProfile {
   displayName: string
   email: string
 }
 
 export const profileService = {
-  getOrganizerProfile: () =>
-    api.get<OrganizerProfileData>('/organizer/profile'),
+  async getOrganizerProfile(): Promise<OrganizerProfile> {
+    return api.get<OrganizerProfile>('/organizer/profile')
+  },
 
-  updateOrganizerProfile: (data: Partial<OrganizerProfileData>) =>
-    api.patch<OrganizerProfileData>('/organizer/profile', data),
+  async updateOrganizerProfile(payload: UpdateOrganizerProfilePayload): Promise<OrganizerProfile> {
+    return api.patch<OrganizerProfile>('/organizer/profile', payload)
+  },
 
-  getVendorProfile: () =>
-    api.get<VendorProfileData>('/vendor/profile'),
+  async getVendorProfile(): Promise<VendorProfile> {
+    return api.get<VendorProfile>('/vendor/profile')
+  },
 
-  updateVendorProfile: (data: Partial<VendorProfileData>) =>
-    api.patch<VendorProfileData>('/vendor/profile', data),
+  async updateVendorProfile(payload: UpdateVendorProfilePayload): Promise<VendorProfile> {
+    return api.patch<VendorProfile>('/vendor/profile', payload)
+  },
 
-  getAdminSettings: () =>
-    api.get<AdminSettingsData>('/admin/settings'),
+  async getAdminSettings(): Promise<AdminProfile> {
+    return api.get<AdminProfile>('/admin/settings')
+  },
 
-  updateAdminSettings: (data: Partial<AdminSettingsData>) =>
-    api.patch<AdminSettingsData>('/admin/settings', data),
+  async updateAdminSettings(payload: Partial<AdminProfile>): Promise<AdminProfile> {
+    return api.patch<AdminProfile>('/admin/settings', payload)
+  },
 }

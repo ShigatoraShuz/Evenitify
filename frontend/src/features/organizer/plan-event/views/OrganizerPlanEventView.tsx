@@ -2,8 +2,7 @@ import { useMemo, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle2, Sparkles, MapPin, CalendarDays, Palette, UtensilsCrossed, Music4, ShieldCheck, Truck, Camera, LayoutPanelTop, Boxes, ClipboardList, Users, FileEdit, Archive } from 'lucide-react'
 import { DashboardShell } from '../../../../shared/components/DashboardShell'
-import { PageHeader } from '../../../../shared/components/PageHeader'
-import { Button } from '../../../../shared/components/Button'
+import { OrganizerPage, OrganizerPageHeader } from '../../../../shared/components/OrganizerUI'
 import { Input } from '../../../../shared/components/Input'
 import { Select } from '../../../../shared/components/Select'
 import { PlaceholderMedia } from '../../../../shared/components/PlaceholderMedia'
@@ -27,6 +26,8 @@ import {
 } from '../models/planEvent.model'
 
 type PlanTab = 'create' | 'drafts' | 'completed'
+
+const VENUE_SUGGESTIONS = ['Grand ballroom', 'Convention center', 'Rooftop venue', 'Private estate', 'Warehouse venue', 'Outdoor festival ground']
 
 const serviceIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'Catering': UtensilsCrossed,
@@ -139,8 +140,6 @@ export function OrganizerPlanEventView({
     onUpdateForm(key, e.target.value as PlanEventFormState[K])
   }, [onUpdateForm])
 
-  const venueSuggestions = ['Grand ballroom', 'Convention center', 'Rooftop venue', 'Private estate', 'Warehouse venue', 'Outdoor festival ground']
-
   const renderStepContent = useMemo(() => {
     if (submitted) {
       return (
@@ -195,7 +194,7 @@ export function OrganizerPlanEventView({
               <div className="space-y-4">
                 <Input label="Venue or location" value={form.venue} onChange={update('venue')} placeholder="Convention center, private estate, rooftop, expo hall..." />
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {venueSuggestions.map((place) => (
+                  {VENUE_SUGGESTIONS.map((place) => (
                     <button
                       key={place}
                       type="button"
@@ -312,10 +311,10 @@ export function OrganizerPlanEventView({
 
   return (
     <DashboardShell>
-      <div className="space-y-6">
-        <PageHeader
+      <OrganizerPage>
+        <OrganizerPageHeader
           title="Plan an Event"
-          subtitle="Build a complete event brief before sending vendor requirements."
+          description="Build a complete event brief through a guided setup before sending vendor requirements."
         />
 
         <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 mb-2">
@@ -328,7 +327,7 @@ export function OrganizerPlanEventView({
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-white text-navy-700 shadow-sm'
+                    ? 'bg-white text-brand-700 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -374,6 +373,7 @@ export function OrganizerPlanEventView({
                     onBack={onGoBack}
                     onNext={onGoNext}
                     onSubmit={onSubmit}
+                    onSaveDraft={onSaveDraft}
                   />
                 )}
 
@@ -398,9 +398,9 @@ export function OrganizerPlanEventView({
         {activeTab === 'drafts' && (
           <section className="rounded-[28px] border border-slate-200/80 bg-white/95 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur md:p-6">
             <DraftEventsTab
-              onContinue={(id) => { setActiveTab('create'); onReset() }}
-              onEdit={(id) => { setActiveTab('create') }}
-              onDelete={(id) => {}}
+              onContinue={() => { setActiveTab('create'); onReset() }}
+              onEdit={() => { setActiveTab('create') }}
+              onDelete={() => {}}
             />
           </section>
         )}
@@ -412,7 +412,7 @@ export function OrganizerPlanEventView({
             />
           </section>
         )}
-      </div>
+      </OrganizerPage>
     </DashboardShell>
   )
 }

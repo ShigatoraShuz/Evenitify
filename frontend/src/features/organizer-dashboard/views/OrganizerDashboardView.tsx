@@ -1,16 +1,51 @@
+import type React from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Plus, ShoppingBag, MessageSquare, CalendarCheck, ArrowRight, Calendar, MapPin, Users, DollarSign,
-  Clock, Star, TrendingUp, AlertCircle, CheckCircle2, XCircle, Send, Eye, FileText,
-  MessageSquare as MessageIcon, ThumbsUp, FileSignature, Activity, ExternalLink,
-  BarChart3, ClipboardList, Sparkles, ChevronRight, Inbox
+  Activity,
+  AlertCircle,
+  ArrowRight,
+  Calendar,
+  CalendarCheck,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  DollarSign,
+  FileSignature,
+  FileText,
+  Inbox,
+  MapPin,
+  MessageSquare,
+  MessageSquare as MessageIcon,
+  Plus,
+  Send,
+  ShoppingBag,
+  Sparkles,
+  Star,
+  ThumbsUp,
+  TrendingUp,
+  Users,
+  XCircle,
 } from 'lucide-react'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
+import { Button } from '../../../shared/components/Button'
+import {
+  EmptyStateCard,
+  MetricCard,
+  OrganizerCard,
+  OrganizerPage,
+  OrganizerPageHeader,
+  SectionHeader,
+} from '../../../shared/components/OrganizerUI'
 import type {
-  DashboardEventPreview, DashboardDraft, DashboardVendorRequest, DashboardBooking,
-  RecommendedVendorPreview, DashboardActivity, DashboardNotification,
+  DashboardActivity,
+  DashboardBooking,
+  DashboardDraft,
+  DashboardEventPreview,
+  DashboardNotification,
+  DashboardVendorRequest,
+  RecommendedVendorPreview,
 } from '../models/organizer-dashboard.model'
-import { STATUS_LABELS_DASHBOARD, STATUS_COLORS_DASHBOARD } from '../models/organizer-dashboard.model'
+import { STATUS_COLORS_DASHBOARD, STATUS_LABELS_DASHBOARD } from '../models/organizer-dashboard.model'
 
 interface SummaryStats {
   totalEvents: number
@@ -53,13 +88,13 @@ const activityIcons: Record<string, React.ComponentType<{ className?: string }>>
 }
 
 const activityColors: Record<string, string> = {
-  request_sent: 'bg-blue-100 text-blue-600',
-  vendor_accepted: 'bg-emerald-100 text-emerald-600',
-  vendor_rejected: 'bg-red-100 text-red-600',
-  new_message: 'bg-purple-100 text-purple-600',
-  draft_updated: 'bg-amber-100 text-amber-600',
-  booking_confirmed: 'bg-green-100 text-green-600',
-  contract_pending: 'bg-violet-100 text-violet-600',
+  request_sent: 'bg-blue-50 text-blue-600 border-blue-100',
+  vendor_accepted: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+  vendor_rejected: 'bg-rose-50 text-rose-600 border-rose-100',
+  new_message: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+  draft_updated: 'bg-amber-50 text-amber-600 border-amber-100',
+  booking_confirmed: 'bg-green-50 text-green-600 border-green-100',
+  contract_pending: 'bg-violet-50 text-violet-600 border-violet-100',
 }
 
 const notificationIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -69,22 +104,12 @@ const notificationIcons: Record<string, React.ComponentType<{ className?: string
   contract_pending: FileSignature,
 }
 
-const notificationColors: Record<string, string> = {
-  response_review: 'bg-amber-100 text-amber-600',
-  confirm_booking: 'bg-emerald-100 text-emerald-600',
-  unfinished_draft: 'bg-blue-100 text-blue-600',
-  contract_pending: 'bg-violet-100 text-violet-600',
-}
-
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function formatRelativeTime(date: string) {
-  const now = Date.now()
-  const then = new Date(date).getTime()
-  const diff = now - then
-  const minutes = Math.floor(diff / 60000)
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 60000))
   if (minutes < 60) return `${minutes}m ago`
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours}h ago`
@@ -94,360 +119,283 @@ function formatRelativeTime(date: string) {
 }
 
 export function OrganizerDashboardView({
-  events, drafts, vendorRequests, bookings, recommendedVendors,
-  activities, notifications, summaryStats, vendorRequestCounts,
+  events,
+  drafts,
+  vendorRequests,
+  bookings,
+  recommendedVendors,
+  activities,
+  notifications,
+  summaryStats,
+  vendorRequestCounts,
 }: Props) {
   const navigate = useNavigate()
-
-  const pendingVendorReqs = vendorRequests.filter(
-    (r) => ['sent', 'pending', 'viewed', 'quoted', 'negotiating'].includes(r.status)
-  )
-
-  const acceptedOrConfirmed = vendorRequests.filter(
-    (r) => r.status === 'accepted' || r.status === 'confirmed'
-  )
+  const pendingVendorReqs = vendorRequests.filter((request) => ['sent', 'pending', 'viewed', 'quoted', 'negotiating'].includes(request.status))
 
   return (
     <DashboardShell>
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-8">
-        <div className="rounded-[28px] border border-slate-200 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-950 p-6 md:p-8 text-white">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-navy-300">Eventify</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight">Welcome back, Organizer</h1>
-              <p className="mt-2 max-w-xl text-sm text-navy-200">
-                Manage your event plans, vendor requests, bookings, and vendor marketplace progress.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => navigate('/organizer/plan-event')}
-                className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] bg-white text-navy-900 hover:bg-slate-100 shadow-sm"
-              >
-                <Plus className="w-4 h-4 mr-1.5" />
+      <OrganizerPage>
+        <OrganizerPageHeader
+          title="Organizer Dashboard"
+          description="Manage event plans, vendor requests, bookings, and marketplace progress from one command center."
+          action={
+            <>
+              <Button onClick={() => navigate('/organizer/plan-event')}>
+                <Plus className="mr-1.5 h-4 w-4" />
                 Plan an Event
-              </button>
-              <button
-                onClick={() => navigate('/organizer/vendor-marketplace')}
-                className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] border border-navy-500 text-navy-100 hover:bg-navy-700"
-              >
-                <ShoppingBag className="w-4 h-4 mr-1.5" />
+              </Button>
+              <Button variant="secondary" onClick={() => navigate('/organizer/vendor-marketplace')}>
+                <ShoppingBag className="mr-1.5 h-4 w-4" />
                 View Marketplace
-              </button>
-              <button
-                onClick={() => navigate('/organizer/vendor-status')}
-                className="inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium text-sm transition-all hover:scale-[1.02] active:scale-[0.98] border border-navy-500 text-navy-100 hover:bg-navy-700"
-              >
-                <MessageSquare className="w-4 h-4 mr-1.5" />
-                Track Status
-              </button>
-            </div>
-          </div>
+              </Button>
+            </>
+          }
+        />
+
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+          <MetricCard label="Total Events" value={summaryStats.totalEvents} icon={Calendar} tone="blue" />
+          <MetricCard label="Draft Events" value={summaryStats.draftEvents} icon={FileText} tone="amber" />
+          <MetricCard label="Active Requests" value={summaryStats.activeVendorRequests} icon={Send} tone="indigo" />
+          <MetricCard label="Pending Responses" value={summaryStats.pendingResponses} icon={Clock} tone="amber" />
+          <MetricCard label="Accepted" value={summaryStats.acceptedBookings} icon={ThumbsUp} tone="emerald" />
+          <MetricCard label="Confirmed" value={summaryStats.confirmedBookings} icon={CheckCircle2} tone="emerald" />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {[
-            { label: 'Total Events', value: summaryStats.totalEvents, icon: Calendar, color: 'text-navy-600', bg: 'bg-navy-50' },
-            { label: 'Draft Events', value: summaryStats.draftEvents, icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50' },
-            { label: 'Active Requests', value: summaryStats.activeVendorRequests, icon: Send, color: 'text-blue-600', bg: 'bg-blue-50' },
-            { label: 'Pending Responses', value: summaryStats.pendingResponses, icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50' },
-            { label: 'Accepted', value: summaryStats.acceptedBookings, icon: ThumbsUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-            { label: 'Confirmed', value: summaryStats.confirmedBookings, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
-          ].map((stat) => {
-            const Icon = stat.icon
-            return (
-              <div key={stat.label} className={`${stat.bg} rounded-xl p-4 border border-slate-200`}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-slate-500">{stat.label}</span>
-                  <Icon className={`w-4 h-4 ${stat.color}`} />
-                </div>
-                <span className="text-2xl font-bold text-slate-900">{stat.value}</span>
-              </div>
-            )
-          })}
-        </div>
-
-        <div>
-          <h2 className="text-base font-semibold text-slate-700 mb-3">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <OrganizerCard>
+          <SectionHeader title="Quick Actions" description="Start the next high-value task without hunting through the app." />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             {[
-              { label: 'Plan a New Event', icon: Plus, to: '/organizer/plan-event', color: 'bg-navy-700 text-white hover:bg-navy-800' },
-              { label: 'Continue Draft', icon: FileText, to: '/organizer/plan-event', color: 'bg-amber-500 text-white hover:bg-amber-600' },
-              { label: 'Browse Marketplace', icon: ShoppingBag, to: '/organizer/vendor-marketplace', color: 'bg-blue-500 text-white hover:bg-blue-600' },
-              { label: 'Track Requests', icon: MessageSquare, to: '/organizer/vendor-status', color: 'bg-purple-500 text-white hover:bg-purple-600' },
-              { label: 'Confirmed Bookings', icon: CalendarCheck, to: '/organizer/vendor-status', color: 'bg-green-500 text-white hover:bg-green-600' },
+              { label: 'Plan a New Event', icon: Plus, to: '/organizer/plan-event', className: 'bg-brand-600 text-white hover:bg-brand-700' },
+              { label: 'Continue Draft', icon: FileText, to: '/organizer/plan-event', className: 'bg-amber-500 text-white hover:bg-amber-600' },
+              { label: 'Browse Marketplace', icon: ShoppingBag, to: '/organizer/vendor-marketplace', className: 'bg-blue-500 text-white hover:bg-blue-600' },
+              { label: 'Track Requests', icon: MessageSquare, to: '/organizer/vendor-status', className: 'bg-indigo-500 text-white hover:bg-indigo-600' },
+              { label: 'Confirmed Bookings', icon: CalendarCheck, to: '/organizer/vendor-status', className: 'bg-emerald-500 text-white hover:bg-emerald-600' },
             ].map((action) => {
               const Icon = action.icon
               return (
-                <button
-                  key={action.label}
-                  onClick={() => navigate(action.to)}
-                  className={`${action.color} rounded-xl p-4 text-left text-sm font-medium transition-all hover:shadow-md`}
-                >
-                  <Icon className="w-5 h-5 mb-2" />
+                <Button key={action.label} onClick={() => navigate(action.to)} className={`${action.className} h-auto justify-start rounded-2xl p-4 text-left text-sm font-semibold`}>
+                  <Icon className="mb-2 h-5 w-5" />
                   {action.label}
-                </button>
+                </Button>
               )
             })}
           </div>
-        </div>
+        </OrganizerCard>
 
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-slate-700">Event Planning Summary</h2>
-            <button onClick={() => navigate('/organizer/plan-event')} className="text-xs font-medium text-navy-600 hover:text-navy-800 flex items-center gap-1">
-              View All <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            {events.map((event) => (
-              <div key={event.id} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="font-semibold text-slate-900 text-sm truncate">{event.name}</h3>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
-                    event.status === 'active' ? 'bg-green-100 text-green-700' :
-                    event.status === 'planning' ? 'bg-amber-100 text-amber-700' :
-                    'bg-slate-100 text-slate-600'
-                  }`}>
-                    {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mb-2">{event.eventType}</p>
-                <div className="h-1.5 bg-slate-100 rounded-full mb-3">
-                  <div className="h-full bg-navy-600 rounded-full" style={{ width: `${event.progress}%` }} />
-                </div>
-                <div className="space-y-1 text-xs text-slate-500 mb-3">
-                  <div className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(event.date)}</div>
-                  <div className="flex items-center gap-1"><MapPin className="w-3 h-3" />{event.location}</div>
-                  <div className="flex items-center gap-1"><Users className="w-3 h-3" />{event.guestCount.toLocaleString()} guests</div>
-                  <div className="flex items-center gap-1"><DollarSign className="w-3 h-3" />${event.budget.toLocaleString()}</div>
-                </div>
-                <button
-                  onClick={() => navigate(event.progress < 100 ? '/organizer/plan-event' : `/organizer/vendor-marketplace?eventId=${event.id}`)}
-                  className="w-full text-xs font-medium text-navy-700 bg-navy-50 rounded-lg py-2 hover:bg-navy-100 transition-colors"
-                >
-                  {event.progress < 100 ? 'Continue' : 'View Event Brief'}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold text-slate-700">Draft Events</h2>
-              <button onClick={() => navigate('/organizer/plan-event')} className="text-xs font-medium text-navy-600 hover:text-navy-800 flex items-center gap-1">
-                View All Drafts <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {drafts.length === 0 && (
-                <p className="text-sm text-slate-400 py-4 text-center">No draft events yet.</p>
-              )}
-              {drafts.map((draft) => (
-                <div key={draft.id} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-semibold text-slate-900 truncate">{draft.name}</h3>
-                      <p className="text-xs text-slate-500">{draft.eventType} · Last edited {formatRelativeTime(draft.lastEdited)}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">Step: {draft.lastCompletedStep}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold text-navy-700">{draft.progress}%</span>
-                      </div>
-                      <div className="w-16 h-1.5 bg-slate-100 rounded-full mt-1 ml-auto">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: `${draft.progress}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate('/organizer/plan-event')}
-                    className="mt-2 text-xs font-medium text-navy-700 bg-navy-50 rounded-lg py-1.5 px-3 hover:bg-navy-100 transition-colors"
-                  >
-                    Continue Editing
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-base font-semibold text-slate-700 mb-3">Vendor Request Status</h2>
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {[
-                { label: 'Pending', count: vendorRequestCounts.pending, color: 'bg-amber-100 text-amber-800' },
-                { label: 'Accepted', count: vendorRequestCounts.accepted, color: 'bg-emerald-100 text-emerald-800' },
-                { label: 'Rejected', count: vendorRequestCounts.rejected, color: 'bg-red-100 text-red-800' },
-                { label: 'Confirmed', count: vendorRequestCounts.confirmed, color: 'bg-green-100 text-green-800' },
-                { label: 'Contract', count: vendorRequestCounts.contract_pending, color: 'bg-violet-100 text-violet-800' },
-              ].map((item) => (
-                <span key={item.label} className={`text-xs font-medium px-2.5 py-1 rounded-full ${item.color}`}>
-                  {item.label}: {item.count}
-                </span>
-              ))}
-            </div>
-            <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
-              {pendingVendorReqs.slice(0, 4).map((req) => {
-                const color = STATUS_COLORS_DASHBOARD[req.status] || 'bg-slate-100 text-slate-600'
-                return (
-                  <div key={req.id} className="bg-white rounded-xl border border-slate-200 p-3 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="text-sm font-semibold text-slate-900 truncate">{req.vendorName}</h3>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${color}`}>
-                        {STATUS_LABELS_DASHBOARD[req.status]}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500">{req.category} · {req.eventName}</p>
-                    <p className="text-xs text-slate-400 mt-1 truncate">{req.lastMessage}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-slate-400">{formatRelativeTime(req.lastUpdated)}</span>
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => navigate(`/organizer/vendor-status`)}
-                          className="text-xs font-medium text-navy-700 bg-navy-50 rounded-md py-1 px-2 hover:bg-navy-100 transition-colors"
-                        >
-                          Open Chat
-                        </button>
-                        <button
-                          onClick={() => navigate(`/organizer/vendor-status`)}
-                          className="text-xs font-medium text-slate-600 bg-slate-100 rounded-md py-1 px-2 hover:bg-slate-200 transition-colors"
-                        >
-                          Details
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-slate-700">Upcoming Bookings</h2>
-            <button onClick={() => navigate('/organizer/vendor-status')} className="text-xs font-medium text-navy-600 hover:text-navy-800 flex items-center gap-1">
-              View All <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-          {bookings.length === 0 ? (
-            <p className="text-sm text-slate-400 py-4 text-center">No upcoming bookings yet.</p>
+        <OrganizerCard>
+          <SectionHeader
+            title="Event Planning Summary"
+            description="Live backend events and planning progress."
+            action={<TextAction label="View All" onClick={() => navigate('/organizer/plan-event')} />}
+          />
+          {events.length === 0 ? (
+            <EmptyStateCard title="No planned events yet" description="Create your first event brief to unlock vendor matching, tracking, bookings, and reports." icon={Calendar} action={<Button onClick={() => navigate('/organizer/plan-event')}>Create Event</Button>} />
           ) : (
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-              {bookings.map((booking) => {
-                const color = STATUS_COLORS_DASHBOARD[booking.status] || 'bg-slate-100 text-slate-600'
-                return (
-                  <div key={booking.id} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="text-sm font-semibold text-slate-900">{booking.eventName}</h3>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${color}`}>
-                        {STATUS_LABELS_DASHBOARD[booking.status]}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-600 font-medium">{booking.vendorName}</p>
-                    <p className="text-xs text-slate-500 mb-2">{booking.category}</p>
-                    <div className="text-xs text-slate-400 space-y-0.5">
-                      <div className="flex items-center gap-1"><Calendar className="w-3 h-3" />{formatDate(booking.date)}</div>
-                      <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{booking.timeSlot}</div>
-                    </div>
+              {events.map((event) => (
+                <OrganizerCard key={event.id} className="p-4" interactive>
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <h3 className="truncate text-sm font-semibold text-slate-950">{event.name}</h3>
+                    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold capitalize text-slate-600">{event.status}</span>
                   </div>
-                )
-              })}
+                  <p className="text-xs text-slate-500">{event.eventType}</p>
+                  <div className="my-3 h-1.5 rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-brand-500" style={{ width: `${event.progress}%` }} />
+                  </div>
+                  <div className="space-y-1 text-xs text-slate-500">
+                    <InfoLine icon={Calendar} text={formatDate(event.date)} />
+                    <InfoLine icon={MapPin} text={event.location} />
+                    <InfoLine icon={Users} text={`${event.guestCount.toLocaleString()} guests`} />
+                    <InfoLine icon={DollarSign} text={`$${event.budget.toLocaleString()}`} />
+                  </div>
+                  <Button variant="secondary" fullWidth className="mt-4" onClick={() => navigate(event.progress < 100 ? '/organizer/plan-event' : `/organizer/vendor-marketplace?eventId=${event.id}`)}>
+                    {event.progress < 100 ? 'Continue' : 'View Event Brief'}
+                  </Button>
+                </OrganizerCard>
+              ))}
             </div>
           )}
-        </div>
+        </OrganizerCard>
 
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold text-slate-700">Recommended Vendors</h2>
-            <button onClick={() => navigate('/organizer/vendor-marketplace')} className="text-xs font-medium text-navy-600 hover:text-navy-800 flex items-center gap-1">
-              View Marketplace <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {recommendedVendors.map((vendor) => (
-              <div key={vendor.id} className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">{vendor.name}</h3>
-                    <p className="text-xs text-slate-500">{vendor.category}</p>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <OrganizerCard>
+            <SectionHeader title="Draft Events" description="Saved work that can be resumed any time." action={<TextAction label="View All Drafts" onClick={() => navigate('/organizer/plan-event')} />} />
+            {drafts.length === 0 ? (
+              <EmptyStateCard title="No draft events yet" description="Start planning an event and save your progress anytime." icon={FileText} action={<Button onClick={() => navigate('/organizer/plan-event')}>Create Event</Button>} />
+            ) : (
+              <div className="space-y-3">
+                {drafts.map((draft) => (
+                  <div key={draft.id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-semibold text-slate-950">{draft.name}</h3>
+                        <p className="text-xs text-slate-500">{draft.eventType} - Last edited {formatRelativeTime(draft.lastEdited)}</p>
+                        <p className="mt-0.5 text-xs text-slate-400">Step: {draft.lastCompletedStep}</p>
+                      </div>
+                      <span className="text-xs font-semibold text-brand-700">{draft.progress}%</span>
+                    </div>
+                    <Button variant="secondary" className="mt-3" onClick={() => navigate('/organizer/plan-event')}>Continue Editing</Button>
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                    <Star className="w-3 h-3" />
-                    {vendor.rating}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-xs text-slate-600 mb-3">
-                  <span className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-emerald-500" />{vendor.matchScore}% match</span>
-                  <span className="font-semibold text-navy-700">From ${vendor.startingPrice.toLocaleString()}</span>
-                </div>
-                <button
-                  onClick={() => navigate(`/organizer/vendor-marketplace`)}
-                  className="w-full text-xs font-medium text-navy-700 bg-navy-50 rounded-lg py-2 hover:bg-navy-100 transition-colors"
-                >
-                  View Vendor
-                </button>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            )}
+          </OrganizerCard>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-          <div>
-            <h2 className="text-base font-semibold text-slate-700 mb-3">Recent Activity</h2>
-            <div className="space-y-2">
-              {activities.length === 0 && (
-                <p className="text-sm text-slate-400 py-4 text-center">No recent activity.</p>
-              )}
-              {activities.slice(0, 5).map((activity) => {
-                const Icon = activityIcons[activity.type] || Activity
-                const color = activityColors[activity.type] || 'bg-slate-100 text-slate-600'
-                return (
-                  <div key={activity.id} className="flex items-start gap-3 bg-white rounded-xl border border-slate-200 p-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
-                      <Icon className="w-4 h-4" />
+          <OrganizerCard>
+            <SectionHeader title="Vendor Request Status" description="Response workflow across sent requests." />
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {[
+                ['Pending', vendorRequestCounts.pending, 'bg-amber-100 text-amber-800'],
+                ['Accepted', vendorRequestCounts.accepted, 'bg-emerald-100 text-emerald-800'],
+                ['Rejected', vendorRequestCounts.rejected, 'bg-rose-100 text-rose-800'],
+                ['Confirmed', vendorRequestCounts.confirmed, 'bg-green-100 text-green-800'],
+                ['Contract', vendorRequestCounts.contract_pending, 'bg-indigo-100 text-indigo-800'],
+              ].map(([label, count, className]) => (
+                <span key={label} className={`rounded-full px-2.5 py-1 text-xs font-semibold ${className}`}>{label}: {count}</span>
+              ))}
+            </div>
+            {pendingVendorReqs.length === 0 ? (
+              <EmptyStateCard title="No active vendor requests" description="Browse the marketplace and send requests once your event brief is ready." icon={MessageSquare} action={<Button variant="secondary" onClick={() => navigate('/organizer/vendor-marketplace')}>Browse Marketplace</Button>} />
+            ) : (
+              <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
+                {pendingVendorReqs.slice(0, 4).map((request) => (
+                  <div key={request.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="mb-1 flex items-start justify-between gap-2">
+                      <h3 className="truncate text-sm font-semibold text-slate-950">{request.vendorName}</h3>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_COLORS_DASHBOARD[request.status] || 'bg-slate-100 text-slate-600'}`}>
+                        {STATUS_LABELS_DASHBOARD[request.status]}
+                      </span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-700">{activity.description}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{formatRelativeTime(activity.timestamp)}</p>
+                    <p className="text-xs text-slate-500">{request.category} - {request.eventName}</p>
+                    <p className="mt-1 truncate text-xs text-slate-400">{request.lastMessage}</p>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <span className="text-xs text-slate-400">{formatRelativeTime(request.lastUpdated)}</span>
+                      <Button variant="secondary" onClick={() => navigate('/organizer/vendor-status')}>Details</Button>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-base font-semibold text-slate-700 mb-3">Needs Attention</h2>
-            <div className="space-y-2">
-              {notifications.length === 0 && (
-                <p className="text-sm text-slate-400 py-4 text-center">Nothing needs attention.</p>
-              )}
-              {notifications.map((notification) => {
-                const Icon = notificationIcons[notification.type] || AlertCircle
-                const color = notificationColors[notification.type] || 'bg-slate-100 text-slate-600'
-                return (
-                  <button
-                    key={notification.id}
-                    onClick={() => navigate(notification.linkTo)}
-                    className="w-full text-left flex items-start gap-3 bg-white rounded-xl border border-slate-200 p-3 hover:shadow-md transition-shadow"
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-700">{notification.description}</p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-slate-300 shrink-0 mt-2" />
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+                ))}
+              </div>
+            )}
+          </OrganizerCard>
         </div>
-      </div>
+
+        <OrganizerCard>
+          <SectionHeader title="Upcoming Bookings" description="Accepted and confirmed vendor schedules." action={<TextAction label="View All" onClick={() => navigate('/organizer/vendor-status')} />} />
+          {bookings.length === 0 ? (
+            <EmptyStateCard title="No upcoming bookings yet" description="Accepted or confirmed vendor bookings will appear here after requests progress." icon={CalendarCheck} />
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              {bookings.map((booking) => (
+                <OrganizerCard key={booking.id} className="p-4" interactive>
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-slate-950">{booking.eventName}</h3>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_COLORS_DASHBOARD[booking.status] || 'bg-slate-100 text-slate-600'}`}>{STATUS_LABELS_DASHBOARD[booking.status]}</span>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-700">{booking.vendorName}</p>
+                  <p className="mb-2 text-xs text-slate-500">{booking.category}</p>
+                  <InfoLine icon={Calendar} text={formatDate(booking.date)} />
+                  <InfoLine icon={Clock} text={booking.timeSlot} />
+                </OrganizerCard>
+              ))}
+            </div>
+          )}
+        </OrganizerCard>
+
+        <OrganizerCard>
+          <SectionHeader title="Recommended Vendors" description="Backend-recommended vendors based on available event context." action={<TextAction label="View Marketplace" onClick={() => navigate('/organizer/vendor-marketplace')} />} />
+          {recommendedVendors.length === 0 ? (
+            <EmptyStateCard title="No recommendations yet" description="Vendor suggestions will appear after event requirements or backend marketplace data are available." icon={Sparkles} action={<Button variant="secondary" onClick={() => navigate('/organizer/vendor-marketplace')}>Browse Marketplace</Button>} />
+          ) : (
+            <div className="grid gap-3 md:grid-cols-3">
+              {recommendedVendors.map((vendor) => (
+                <OrganizerCard key={vendor.id} className="p-4" interactive>
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-950">{vendor.name}</h3>
+                      <p className="text-xs text-slate-500">{vendor.category}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                      <Star className="h-3 w-3" />
+                      {vendor.rating}
+                    </span>
+                  </div>
+                  <div className="mb-3 flex items-center justify-between text-xs text-slate-600">
+                    <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3 text-emerald-500" />{vendor.matchScore}% match</span>
+                    <span className="font-semibold text-brand-700">From ${vendor.startingPrice.toLocaleString()}</span>
+                  </div>
+                  <Button variant="secondary" fullWidth onClick={() => navigate('/organizer/vendor-marketplace')}>View Vendor</Button>
+                </OrganizerCard>
+              ))}
+            </div>
+          )}
+        </OrganizerCard>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <OrganizerCard>
+            <SectionHeader title="Recent Activity" description="Latest backend activity on events and vendor requests." />
+            {activities.length === 0 ? (
+              <EmptyStateCard title="No recent activity" description="Activity will appear after drafts, requests, bookings, or contracts change." icon={Activity} />
+            ) : (
+              <div className="space-y-3">
+                {activities.slice(0, 5).map((item) => {
+                  const Icon = activityIcons[item.type] || Activity
+                  return (
+                    <div key={item.id} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${activityColors[item.type] || 'bg-slate-50 text-slate-600 border-slate-100'}`}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm text-slate-700">{item.description}</p>
+                        <p className="mt-0.5 text-xs text-slate-400">{formatRelativeTime(item.timestamp)}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </OrganizerCard>
+
+          <OrganizerCard>
+            <SectionHeader title="Needs Attention" description="Items that may require a response." />
+            {notifications.length === 0 ? (
+              <EmptyStateCard title="Nothing needs attention" description="You are clear for now. Response reminders and contract tasks will appear here." icon={CheckCircle2} />
+            ) : (
+              <div className="space-y-3">
+                {notifications.map((notification) => {
+                  const Icon = notificationIcons[notification.type] || AlertCircle
+                  return (
+                    <button key={notification.id} onClick={() => navigate(notification.linkTo)} className="flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition-all hover:border-brand-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-200">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-100 bg-amber-50 text-amber-600">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1 text-sm text-slate-700">{notification.description}</span>
+                      <ArrowRight className="mt-2 h-4 w-4 shrink-0 text-slate-300" />
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </OrganizerCard>
+        </div>
+      </OrganizerPage>
     </DashboardShell>
+  )
+}
+
+function TextAction({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-200 rounded-lg">
+      {label}
+      <ChevronRight className="h-3 w-3" />
+    </button>
+  )
+}
+
+function InfoLine({ icon: Icon, text }: { icon: React.ComponentType<{ className?: string }>; text: string }) {
+  return (
+    <div className="flex items-center gap-1 text-xs text-slate-500">
+      <Icon className="h-3 w-3 shrink-0" />
+      <span className="truncate">{text}</span>
+    </div>
   )
 }

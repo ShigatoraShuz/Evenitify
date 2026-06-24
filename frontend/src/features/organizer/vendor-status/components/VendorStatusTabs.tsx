@@ -29,7 +29,7 @@ export function VendorStatusTabs({ activeTab, onTabChange, counts }: Props) {
             onClick={() => onTabChange(tab.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               isActive
-                ? 'bg-navy-700 text-white shadow-sm'
+                ? 'bg-brand-600 text-white shadow-sm'
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             }`}
           >

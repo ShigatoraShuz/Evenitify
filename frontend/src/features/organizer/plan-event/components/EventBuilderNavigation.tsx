@@ -9,6 +9,7 @@ interface EventBuilderNavigationProps {
   onBack: () => void
   onNext: () => void
   onSubmit: () => void
+  onSaveDraft?: () => void
   onContinueToProcurement?: () => void
   onCreateAnother?: () => void
   submitted?: boolean
@@ -21,6 +22,7 @@ export function EventBuilderNavigation({
   onBack,
   onNext,
   onSubmit,
+  onSaveDraft,
   onContinueToProcurement,
   onCreateAnother,
   submitted
@@ -51,6 +53,11 @@ export function EventBuilderNavigation({
           : 'Use the guided steps to build the full event setup before vendor outreach.'}
       </div>
       <div className="flex flex-wrap gap-2">
+        {onSaveDraft && (
+          <Button variant="ghost" onClick={onSaveDraft} disabled={submitting}>
+            Save Draft
+          </Button>
+        )}
         <Button variant="secondary" onClick={onBack} disabled={currentStep === 0 || submitting}>
           <ChevronLeft className="mr-1.5 h-4 w-4" />
           Back

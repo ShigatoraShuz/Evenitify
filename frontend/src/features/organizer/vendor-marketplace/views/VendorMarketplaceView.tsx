@@ -1,8 +1,7 @@
 import { GitCompare, ShoppingBag, X, Calendar, Clock } from 'lucide-react'
 import { DashboardShell } from '../../../../shared/components/DashboardShell'
-import { PageHeader } from '../../../../shared/components/PageHeader'
 import { Button } from '../../../../shared/components/Button'
-import { VendorMarketplaceHeader } from '../components/VendorMarketplaceHeader'
+import { OrganizerPage, OrganizerPageHeader } from '../../../../shared/components/OrganizerUI'
 import { VendorMarketplaceFilters } from '../components/VendorMarketplaceFilters'
 import { VendorGrid } from '../components/VendorGrid'
 import { VendorCompareDrawer } from '../components/VendorCompareDrawer'
@@ -78,11 +77,9 @@ export function VendorMarketplaceView({
   eventFilterActive,
   compareVendors,
   showCompareDrawer,
-  showRequestModal,
   showVendorDetail,
   showSelectBriefModal,
   showGeneralInquiry,
-  requestForm,
   selectedVendor,
   selectedGalleryImage,
   selectedDate,
@@ -90,7 +87,6 @@ export function VendorMarketplaceView({
   generalInquiryMessage,
   eventBriefs,
   currentAvailability,
-  savedVendorIds,
   isInCompare,
   isSaved,
   getRequestStatus,
@@ -104,9 +100,6 @@ export function VendorMarketplaceView({
   onSelectGalleryImage,
   onSelectDate,
   onSelectTimeSlot,
-  onCloseRequestModal,
-  onUpdateRequestForm,
-  onSubmitRequest,
   onSetShowCompareDrawer,
   onClearCompare,
   onClearEventFilter,
@@ -120,10 +113,10 @@ export function VendorMarketplaceView({
 }: VendorMarketplaceViewProps) {
   return (
     <DashboardShell>
-      <div className="space-y-5">
-        <PageHeader
+      <OrganizerPage>
+        <OrganizerPageHeader
           title="Vendor Marketplace"
-          subtitle="Browse vendors, compare services, check availability, and send requests."
+          description="Browse real vendor records, compare services, check availability, and send requests."
           action={
             compareVendors.length > 0 && (
               <Button
@@ -180,7 +173,7 @@ export function VendorMarketplaceView({
           </div>
         )}
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="rounded-[24px] border border-slate-200/80 bg-white/95 p-4 shadow-[0_14px_42px_rgba(15,23,42,0.05)]">
           <VendorMarketplaceFilters
             filters={filters}
             hasActiveFilters={hasActiveFilters}
@@ -207,7 +200,7 @@ export function VendorMarketplaceView({
           onResetFilters={onResetFilters}
           onClearEventFilter={onClearEventFilter}
         />
-      </div>
+      </OrganizerPage>
 
       <VendorDetailModal
         open={showVendorDetail}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Building2, Store, Repeat2 } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { Input } from '../../../shared/components/Input'
@@ -58,14 +58,12 @@ export function OnboardingView({
   onClearError,
   onBackToRoleChoice
 }: OnboardingViewProps) {
-  const [step, setStep] = useState(1)
+  const [stepState, setStepState] = useState({ role, step: 1 })
+  const step = stepState.role === role ? stepState.step : 1
+  const setStep = (nextStep: number) => setStepState({ role, step: nextStep })
   const totalSteps = role === 'admin' ? 1 : 3
   const preview = getRolePreview(role)
   const PreviewIcon = preview.icon
-
-  useEffect(() => {
-    setStep(1)
-  }, [role])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

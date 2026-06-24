@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, BadgeCheck, CalendarDays, Clock3, DollarSign, Mail, ShieldCheck, Star, Truck, Users, Wallet, Music4, Camera, LayoutPanelTop, Building2, User as UserIcon } from 'lucide-react'
+import { ArrowRight, BadgeCheck, CalendarDays, Mail, ShieldCheck, Truck, Wallet, Music4, Camera, LayoutPanelTop, Building2, User as UserIcon } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { SummaryCard } from '../../../shared/components/SummaryCard'
@@ -168,14 +168,6 @@ export function VendorB2BDashboardView({
     setQuoteModal(null)
     setQuotePrice('')
     setQuoteNotes('')
-  }
-
-  const getRequestTypeLabel = (booking: BookingRequest) => {
-    return booking.booking_type === 'PERSONAL' ? 'Personal Event' : 'Large Event'
-  }
-
-  const getRequestTypeIcon = (booking: BookingRequest) => {
-    return booking.booking_type === 'PERSONAL' ? UserIcon : Building2
   }
 
   const getRequestTypeBadge = (booking: BookingRequest) => {

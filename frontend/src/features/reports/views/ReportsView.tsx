@@ -1,6 +1,5 @@
 import { DashboardShell } from '../../../shared/components/DashboardShell'
-import { EmptyState } from '../../../shared/components/EmptyState'
-import { PageHeader } from '../../../shared/components/PageHeader'
+import { EmptyStateCard, OrganizerCard, OrganizerPage, OrganizerPageHeader, SectionHeader } from '../../../shared/components/OrganizerUI'
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { ExportActionBar, ReportMetricGrid, ReportTables } from '../../../shared/components/ReportBlocks'
 import { useRealtimeSnapshot } from '../../../shared/hooks/useRealtimeSnapshot'
@@ -16,12 +15,13 @@ export default function ReportsView({ role }: ReportsViewProps) {
 
   return (
     <DashboardShell>
-      <PageHeader
+      <OrganizerPage>
+      <OrganizerPageHeader
         title={`${role.charAt(0).toUpperCase()}${role.slice(1)} Reports`}
-        subtitle="Frontend MVP reporting with CSV export and print support"
-        action={<ExportActionBar onCsv={vm.exportCsv} onPrint={vm.printReport} onPdf={vm.showPdfPlaceholder} />}
+        description="Review backend-backed event, vendor request, booking, budget, and contract reporting."
+        action={vm.report ? <ExportActionBar onCsv={vm.exportCsv} onPrint={vm.printReport} onPdf={vm.showPdfPlaceholder} /> : undefined}
       />
-      <div className="mb-4">
+      <div>
         <RealtimeIndicator snapshot={realtime.snapshot} refreshing={realtime.refreshing || vm.loading} onRefresh={() => { void realtime.refresh(); void vm.loadReport() }} />
       </div>
 
@@ -42,11 +42,22 @@ export default function ReportsView({ role }: ReportsViewProps) {
       ) : vm.report ? (
         <div className="space-y-6">
           <ReportMetricGrid metrics={vm.report.metrics} />
+          <div className="grid gap-4 lg:grid-cols-3">
+            {['Booking status breakdown', 'Vendor category usage', 'Monthly event activity'].map((title) => (
+              <OrganizerCard key={title}>
+                <SectionHeader title={title} description="Chart renders when backend aggregation data is available." />
+                <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-center text-sm text-slate-500">
+                  No chart data available yet
+                </div>
+              </OrganizerCard>
+            ))}
+          </div>
           <ReportTables report={vm.report} />
         </div>
       ) : (
-        <EmptyState title="No report data" description="Report data will appear after the service responds." />
+        <EmptyStateCard title="No report data" description="Report cards and charts will appear after backend services return real organizer data." />
       )}
+      </OrganizerPage>
     </DashboardShell>
   )
 }

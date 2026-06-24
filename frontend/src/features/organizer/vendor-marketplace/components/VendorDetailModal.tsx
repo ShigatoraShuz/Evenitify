@@ -1,4 +1,4 @@
-import { Star, MapPin, CalendarCheck, Users, ShieldCheck, Clock, BadgeCheck, Heart, GitCompare, X } from 'lucide-react'
+import { Star, MapPin, Users, ShieldCheck, Clock, BadgeCheck, Heart, GitCompare, X } from 'lucide-react'
 import { StatusBadge } from '../../../../shared/components/StatusBadge'
 import { VendorImageGallery } from './VendorImageGallery'
 import { VendorAvailabilityCalendar } from './VendorAvailabilityCalendar'
@@ -146,6 +146,7 @@ export function VendorDetailModal({
           </div>
 
           <div className="flex flex-wrap gap-1.5">
+            {requestStatus && <StatusBadge status={requestStatus} size="sm" />}
             <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${availabilityColor}`}>
               {availabilityLabel}
             </span>

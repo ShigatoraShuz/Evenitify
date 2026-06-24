@@ -48,27 +48,27 @@ export function VendorRequestDetailDrawer({
 
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="flex items-center gap-1.5 text-slate-600">
-              <Building2 className="w-4 h-4 text-navy-400" />
+              <Building2 className="w-4 h-4 text-brand-400" />
               <span className="truncate">{request.eventName}</span>
             </div>
             <div className="flex items-center gap-1.5 text-slate-600">
-              <Calendar className="w-4 h-4 text-navy-400" />
+              <Calendar className="w-4 h-4 text-brand-400" />
               <span>{new Date(request.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             </div>
             <div className="flex items-center gap-1.5 text-slate-600">
-              <MapPin className="w-4 h-4 text-navy-400" />
+              <MapPin className="w-4 h-4 text-brand-400" />
               <span>{request.location}</span>
             </div>
             {request.quotedPrice != null && (
               <div className="flex items-center gap-1.5 text-slate-600">
-                <DollarSign className="w-4 h-4 text-navy-400" />
-                <span className="font-semibold text-navy-700">${request.quotedPrice.toLocaleString()}</span>
+                <DollarSign className="w-4 h-4 text-brand-400" />
+                <span className="font-semibold text-brand-700">${request.quotedPrice.toLocaleString()}</span>
               </div>
             )}
           </div>
 
           {request.packageName && (
-            <p className="text-sm text-navy-600 mt-2">Package: <span className="font-medium">{request.packageName}</span></p>
+            <p className="text-sm text-brand-600 mt-2">Package: <span className="font-medium">{request.packageName}</span></p>
           )}
         </div>
 
@@ -96,7 +96,7 @@ export function VendorRequestDetailDrawer({
               </button>
               <button
                 onClick={() => onStatusUpdate(request.id, 'negotiating')}
-                className="flex-1 px-3 py-2 bg-navy-700 text-white text-sm font-medium rounded-lg hover:bg-navy-800 transition-colors"
+                className="flex-1 px-3 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors"
               >
                 Negotiate
               </button>

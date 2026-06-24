@@ -18,12 +18,7 @@ interface Props {
   onViewMarketplace: (eventId: string) => void
 }
 
-const MOCK_COMPLETED: CompletedEvent[] = [
-  { id: 'evt-1', title: 'Horizon Capital Summit', eventType: 'Corporate event', venue: 'New York, NY', eventDate: '2026-08-15', guests: 750, budget: 75000, servicesRequested: 4, servicesConfirmed: 1, completedAt: '2026-06-24T10:30:00Z' },
-  { id: 'evt-4', title: 'Annual Awards Night', eventType: 'Corporate event', venue: 'Philadelphia, PA', eventDate: '2026-10-05', guests: 1000, budget: 85000, servicesRequested: 3, servicesConfirmed: 1, completedAt: '2026-06-15T14:00:00Z' },
-]
-
-export function CompletedEventBriefsTab({ events = MOCK_COMPLETED, onViewMarketplace }: Props) {
+export function CompletedEventBriefsTab({ events = [], onViewMarketplace }: Props) {
   if (events.length === 0) {
     return (
       <div className="text-center py-16">
@@ -60,7 +55,7 @@ export function CompletedEventBriefsTab({ events = MOCK_COMPLETED, onViewMarketp
 
           <div className="flex items-center gap-4 text-sm text-slate-600 mb-4">
             <span className="flex items-center gap-1">
-              <span className="text-navy-600 font-semibold">{event.servicesRequested}</span> services requested
+              <span className="text-brand-600 font-semibold">{event.servicesRequested}</span> services requested
             </span>
             <span className="flex items-center gap-1">
               <span className="text-green-600 font-semibold">{event.servicesConfirmed}</span> confirmed
@@ -69,7 +64,7 @@ export function CompletedEventBriefsTab({ events = MOCK_COMPLETED, onViewMarketp
 
           <button
             onClick={() => onViewMarketplace(event.id)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-navy-700 text-white text-sm font-medium rounded-lg hover:bg-navy-800 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             View Marketplace

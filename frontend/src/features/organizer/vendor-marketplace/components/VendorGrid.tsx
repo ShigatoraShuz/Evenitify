@@ -37,9 +37,9 @@ export function VendorGrid({
           <div className="rounded-full bg-slate-100 p-5 mb-4">
             <ShoppingBag className="h-10 w-10 text-slate-400" />
           </div>
-          <h3 className="text-xl font-semibold text-slate-900">Browse All Vendors</h3>
+          <h3 className="text-xl font-semibold text-slate-900">No vendors available yet</h3>
           <p className="mt-2 max-w-md text-sm text-slate-500">
-            Discover and explore vendors across all service categories. Use filters to narrow down your search.
+            Vendor records will appear here after backend marketplace data is available. No mock vendors are shown in production.
           </p>
         </div>
       )
@@ -51,18 +51,18 @@ export function VendorGrid({
         </div>
         <h3 className="text-lg font-semibold text-slate-900">No vendors match all filters</h3>
         <p className="mt-2 max-w-sm text-sm text-slate-500">
-          Try relaxing some filters or clear the event filter to see all available vendors.
+          Try resetting filters or browse all categories to see available backend vendor records.
         </p>
         <div className="mt-5 flex items-center gap-3">
           {hasActiveFilters && (
             <Button variant="secondary" onClick={onResetFilters} className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
-              Relax filters
+              Reset Filters
             </Button>
           )}
           {eventFilterActive && (
             <Button variant="primary" onClick={onClearEventFilter}>
-              Browse all vendors
+              Browse All Categories
             </Button>
           )}
         </div>

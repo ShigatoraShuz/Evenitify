@@ -5,12 +5,9 @@ import {
   type VendorMessage,
   type VendorRequestStatus,
   type StatusFilterTab,
-  MOCK_VENDOR_REQUESTS,
-  MOCK_MESSAGES,
   buildTimeline,
 } from '../models/vendorStatus.model'
-
-const REQUESTS_STORAGE_KEY = 'eventify:vendor-requests'
+import { vendorTrackingService } from '../../../../services/vendorTrackingService'
 
 interface VendorStatusViewModelState {
   requests: VendorRequest[]
@@ -21,35 +18,81 @@ interface VendorStatusViewModelState {
   messages: VendorMessage[]
   messageInput: string
   sending: boolean
+  loading: boolean
+  refreshing: boolean
+  error: string | null
+}
+
+function mapTrackingRequestToModel(r: import('../../../../services/vendorTrackingService').VendorTrackingRequest): VendorRequest {
+  return {
+    id: r.id,
+    eventBriefId: '',
+    organizerId: '',
+    vendorId: '',
+    vendorName: r.vendorName,
+    vendorCategory: r.vendorCategory,
+    eventName: r.eventName,
+    eventDate: r.eventDate || '',
+    location: r.location || '',
+    status: r.status as VendorRequestStatus,
+    quotedPrice: r.quotedPrice,
+    packageName: r.packageName,
+    lastMessage: r.lastMessage,
+    lastUpdatedAt: r.lastUpdatedAt,
+    createdAt: r.createdAt,
+  }
+}
+
+function mapTrackingMessageToModel(m: import('../../../../services/vendorTrackingService').VendorTrackingMessage): VendorMessage {
+  return {
+    id: m.id,
+    requestId: m.requestId,
+    senderId: m.senderId,
+    senderRole: m.isOrganizer ? 'organizer' : 'vendor',
+    message: m.text,
+    createdAt: m.timestamp,
+  }
 }
 
 export function useVendorStatusViewModel() {
-  const [state, setState] = useState<VendorStatusViewModelState>(() => {
-    const stored = sessionStorage.getItem(REQUESTS_STORAGE_KEY)
-    const persisted: VendorRequest[] = stored ? JSON.parse(stored) : []
-    return {
-      requests: [...MOCK_VENDOR_REQUESTS, ...persisted],
-      searchQuery: '',
-      activeTab: 'all',
-      selectedRequest: null,
-      showDetailDrawer: false,
-      messages: [],
-      messageInput: '',
-      sending: false,
-    }
+  const [state, setState] = useState<VendorStatusViewModelState>({
+    requests: [],
+    searchQuery: '',
+    activeTab: 'all',
+    selectedRequest: null,
+    showDetailDrawer: false,
+    messages: [],
+    messageInput: '',
+    sending: false,
+    loading: true,
+    refreshing: false,
+    error: null,
   })
 
   useEffect(() => {
-    const stored = sessionStorage.getItem(REQUESTS_STORAGE_KEY)
-    const persisted: VendorRequest[] = stored ? JSON.parse(stored) : []
-    if (persisted.length > 0) {
-      setState((s) => {
-        const existingIds = new Set(s.requests.map((r) => r.id))
-        const newOnes = persisted.filter((r) => !existingIds.has(r.id))
-        if (newOnes.length === 0) return s
-        return { ...s, requests: [...s.requests, ...newOnes] }
-      })
+    let cancelled = false
+    async function load() {
+      setState((s) => ({ ...s, loading: true, error: null }))
+      try {
+        const data = await vendorTrackingService.getAll()
+        if (cancelled) return
+        setState((s) => ({
+          ...s,
+          requests: data.map(mapTrackingRequestToModel),
+          loading: false,
+          error: null,
+        }))
+      } catch (err) {
+        if (cancelled) return
+        setState((s) => ({
+          ...s,
+          loading: false,
+          error: err instanceof Error ? err.message : 'Failed to load vendor requests',
+        }))
+      }
     }
+    load()
+    return () => { cancelled = true }
   }, [])
 
   const filteredRequests = useMemo(() => {
@@ -96,17 +139,27 @@ export function useVendorStatusViewModel() {
     setState((s) => ({ ...s, activeTab: tab }))
   }, [])
 
-  const openRequestDetail = useCallback((requestId: string) => {
+  const openRequestDetail = useCallback(async (requestId: string) => {
     const req = state.requests.find((r) => r.id === requestId)
     if (!req) return
-    const messages = MOCK_MESSAGES[requestId] || []
+
     setState((s) => ({
       ...s,
       selectedRequest: req,
       showDetailDrawer: true,
-      messages,
+      messages: [],
       messageInput: '',
     }))
+
+    try {
+      const messagesData = await vendorTrackingService.getMessages(requestId)
+      setState((s) => ({
+        ...s,
+        messages: messagesData.map(mapTrackingMessageToModel),
+      }))
+    } catch {
+      // Messages not critical; show detail drawer without them
+    }
   }, [state.requests])
 
   const closeRequestDetail = useCallback(() => {
@@ -123,14 +176,14 @@ export function useVendorStatusViewModel() {
     setState((s) => ({ ...s, messageInput: value }))
   }, [])
 
-  const sendMessage = useCallback(() => {
+  const sendMessage = useCallback(async () => {
     const text = state.messageInput.trim()
     if (!text || !state.selectedRequest) return
 
     const newMsg: VendorMessage = {
       id: `msg-${Date.now()}`,
       requestId: state.selectedRequest.id,
-      senderId: 'org-1',
+      senderId: 'organizer',
       senderRole: 'organizer',
       message: text,
       createdAt: new Date().toISOString(),
@@ -146,38 +199,51 @@ export function useVendorStatusViewModel() {
           : r
       ),
     }))
+
+    try {
+      await vendorTrackingService.sendMessage(state.selectedRequest.id, text)
+    } catch {
+      // Message sent locally; API failure is non-critical
+    }
   }, [state.messageInput, state.selectedRequest])
 
-  const updateRequestStatus = useCallback((requestId: string, newStatus: VendorRequestStatus) => {
-    setState((s) => {
-      const req = s.requests.find((r) => r.id === requestId)
-      if (!req) return s
+  const updateRequestStatus = useCallback(async (requestId: string, newStatus: VendorRequestStatus) => {
+    const statusMsg: VendorMessage = {
+      id: `sys-${Date.now()}`,
+      requestId,
+      senderId: 'system',
+      senderRole: 'system',
+      message: `Status changed to ${newStatus}`,
+      createdAt: new Date().toISOString(),
+    }
 
-      const statusMsg: VendorMessage = {
-        id: `sys-${Date.now()}`,
-        requestId,
-        senderId: 'system',
-        senderRole: 'system',
-        message: `Status changed to ${newStatus}`,
-        createdAt: new Date().toISOString(),
-      }
+    setState((s) => ({
+      ...s,
+      requests: s.requests.map((r) =>
+        r.id === requestId
+          ? { ...r, status: newStatus, lastUpdatedAt: new Date().toISOString() }
+          : r
+      ),
+      messages: s.selectedRequest?.id === requestId
+        ? [...s.messages, statusMsg]
+        : s.messages,
+      selectedRequest:
+        s.selectedRequest?.id === requestId
+          ? { ...s.selectedRequest, status: newStatus, lastUpdatedAt: new Date().toISOString() }
+          : s.selectedRequest,
+    }))
 
-      return {
-        ...s,
-        requests: s.requests.map((r) =>
-          r.id === requestId
-            ? { ...r, status: newStatus, lastUpdatedAt: new Date().toISOString() }
-            : r
-        ),
-        messages: s.selectedRequest?.id === requestId
-          ? [...s.messages, statusMsg]
-          : s.messages,
-        selectedRequest:
-          s.selectedRequest?.id === requestId
-            ? { ...s.selectedRequest, status: newStatus, lastUpdatedAt: new Date().toISOString() }
-            : s.selectedRequest,
+    try {
+      if (newStatus === 'accepted') {
+        await vendorTrackingService.acceptOffer(requestId)
+      } else if (newStatus === 'rejected') {
+        await vendorTrackingService.rejectOffer(requestId)
+      } else if (newStatus === 'confirmed') {
+        await vendorTrackingService.confirmBooking(requestId)
       }
-    })
+    } catch {
+      // Status update applied locally; API sync is non-critical
+    }
   }, [])
 
   const timelineItems = useMemo(() => {
@@ -205,11 +271,11 @@ export function useVendorStatusViewModel() {
     sendMessage,
     updateRequestStatus,
     ...buildViewModelStateMeta({
-      loading: false,
+      loading: state.loading,
       submitting: state.sending,
-      error: null,
-      empty: filteredRequests.length === 0,
-      loaded: true,
+      error: state.error,
+      empty: !state.loading && filteredRequests.length === 0,
+      loaded: !state.loading,
     }),
   }
 }

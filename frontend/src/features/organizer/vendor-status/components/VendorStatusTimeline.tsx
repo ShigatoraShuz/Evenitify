@@ -34,12 +34,12 @@ export function VendorStatusTimeline({ items }: Props) {
                 <div className="absolute left-[15px] top-[30px] bottom-0 w-0.5 bg-slate-200" />
               )}
               <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                isActive ? 'bg-navy-100 text-navy-700' : 'bg-slate-100 text-slate-400'
+                isActive ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-400'
               }`}>
                 <Icon className="w-4 h-4" />
               </div>
               <div className="flex-1 pt-1">
-                <p className={`text-sm font-medium ${isActive ? 'text-navy-700' : 'text-slate-600'}`}>
+                <p className={`text-sm font-medium ${isActive ? 'text-brand-700' : 'text-slate-600'}`}>
                   {item.label}
                 </p>
                 <p className="text-xs text-slate-400">{item.description}</p>

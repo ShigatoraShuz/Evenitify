@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log to monitoring service in production
+    console.error('Unhandled UI error', error, errorInfo)
   }
 
   handleReset = () => {

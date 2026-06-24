@@ -12,7 +12,7 @@ export function VendorRequestCard({ request, onClick }: Props) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-white rounded-xl border border-slate-200 p-4 hover:shadow-lg hover:border-navy-200 transition-all group"
+      className="group w-full rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-brand-200"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -22,7 +22,7 @@ export function VendorRequestCard({ request, onClick }: Props) {
             <span className="text-sm text-slate-500">{request.vendorCategory}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-navy-600 mb-2">
+          <div className="flex items-center gap-2 text-sm text-brand-600 mb-2">
             <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">{request.eventName}</span>
           </div>
@@ -37,7 +37,7 @@ export function VendorRequestCard({ request, onClick }: Props) {
               {request.location}
             </span>
             {request.quotedPrice != null && (
-              <span className="font-semibold text-navy-700">${request.quotedPrice.toLocaleString()}</span>
+              <span className="font-semibold text-brand-700">${request.quotedPrice.toLocaleString()}</span>
             )}
           </div>
 
@@ -48,7 +48,7 @@ export function VendorRequestCard({ request, onClick }: Props) {
           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColor}`}>
             {STATUS_LABELS[request.status]}
           </span>
-          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-navy-400 transition-colors" />
+          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-400 transition-colors" />
         </div>
       </div>
     </button>

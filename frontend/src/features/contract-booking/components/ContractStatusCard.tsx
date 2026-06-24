@@ -56,19 +56,19 @@ export function ContractStatusCard({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <div className="h-5 bg-gray-100 rounded w-1/3 mb-3 animate-pulse" />
-        <div className="h-4 bg-gray-100 rounded w-2/3 mb-2 animate-pulse" />
-        <div className="h-4 bg-gray-100 rounded w-1/2 animate-pulse" />
+      <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="h-5 bg-slate-100 rounded w-1/3 mb-3 animate-pulse" />
+        <div className="h-4 bg-slate-100 rounded w-2/3 mb-2 animate-pulse" />
+        <div className="h-4 bg-slate-100 rounded w-1/2 animate-pulse" />
       </div>
     )
   }
 
   if (!contract) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h4 className="font-medium text-gray-900 mb-2">Contract</h4>
-        <p className="text-sm text-gray-500 mb-4">No contract yet. Create a contract once the booking is accepted.</p>
+      <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <h4 className="font-medium text-slate-900 mb-2">Contract</h4>
+        <p className="text-sm text-slate-500 mb-4">No contract yet. Create a contract once the booking is accepted.</p>
         <Button onClick={onCreateContract} disabled={!onCreateContract}>
           Create Contract
         </Button>
@@ -82,9 +82,9 @@ export function ContractStatusCard({
   const cancelReason = getDisabledReason('cancel', contract, userRole)
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
+    <div className="bg-white rounded-xl border border-slate-200 p-5">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="font-medium text-gray-900">
+        <h4 className="font-medium text-slate-900">
           Contract {contract.contract_number ? `#${contract.contract_number}` : ''}
         </h4>
         <StatusBadge status={contract.contract_status} size="sm" />
@@ -94,10 +94,10 @@ export function ContractStatusCard({
         <div className="mb-3">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-sm text-left text-gray-600 hover:text-gray-900 w-full"
+            className="text-sm text-left text-slate-600 hover:text-slate-900 w-full"
           >
             <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-700">Terms Summary</span>
+              <span className="font-medium text-slate-700">Terms Summary</span>
               <span className="text-brand-600 text-xs">{expanded ? 'Collapse' : 'Expand'}</span>
             </div>
             <p className={`mt-1 ${expanded ? '' : 'line-clamp-2'}`}>{contract.terms_summary}</p>
@@ -106,12 +106,12 @@ export function ContractStatusCard({
       )}
 
       {contract.organizer_signed_at && (
-        <p className="text-xs text-gray-500 mb-1">
+        <p className="text-xs text-slate-500 mb-1">
           Organizer signed: {new Date(contract.organizer_signed_at).toLocaleDateString()}
         </p>
       )}
       {contract.vendor_signed_at && (
-        <p className="text-xs text-gray-500 mb-3">
+        <p className="text-xs text-slate-500 mb-3">
           Vendor signed: {new Date(contract.vendor_signed_at).toLocaleDateString()}
         </p>
       )}
@@ -125,7 +125,7 @@ export function ContractStatusCard({
             Send Contract
           </Button>
           {sendReason && (
-            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
               {sendReason}
             </div>
           )}
@@ -139,7 +139,7 @@ export function ContractStatusCard({
             Sign as Organizer
           </Button>
           {signOrgReason && (
-            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
               {signOrgReason}
             </div>
           )}
@@ -153,7 +153,7 @@ export function ContractStatusCard({
             Sign as Vendor
           </Button>
           {signVendorReason && (
-            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
               {signVendorReason}
             </div>
           )}
@@ -168,7 +168,7 @@ export function ContractStatusCard({
             Cancel
           </Button>
           {cancelReason && (
-            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+            <div className="absolute bottom-full left-0 mb-2 w-56 p-2 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
               {cancelReason}
             </div>
           )}

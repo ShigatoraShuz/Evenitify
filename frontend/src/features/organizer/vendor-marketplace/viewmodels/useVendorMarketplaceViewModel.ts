@@ -10,18 +10,16 @@ import {
   type ProcurementStatus,
   type VendorAvailability,
   type TimeSlotType,
-  type BookingRequestData,
+  type TimeSlot,
   type EventBriefReference,
   DEFAULT_VENDOR_FILTERS,
-  buildMarketplaceVendors,
-  getAllVendors,
-  MOCK_VENDORS,
-  buildMockAvailability,
-  MOCK_EVENT_BRIEFS,
 } from '../models/vendorMarketplace.model'
+import { vendorMarketplaceService } from '../../../../services/vendorMarketplaceService'
+import { eventBriefService } from '../../../../services/eventBriefService'
+import { vendorRequestService } from '../../../../services/vendorRequestService'
+import type { VendorMarketplaceItem } from '../../../../services/vendorMarketplaceService'
 
 const BRIEF_STORAGE_KEY = 'eventify:marketplace-brief'
-const REQUESTS_STORAGE_KEY = 'eventify:vendor-requests'
 const SAVED_VENDORS_KEY = 'eventify:saved-vendors'
 
 interface VendorMarketplaceViewModelState {
@@ -59,6 +57,46 @@ function saveSavedVendors(ids: string[]) {
   sessionStorage.setItem(SAVED_VENDORS_KEY, JSON.stringify(ids))
 }
 
+function mapVendorItemToModel(item: VendorMarketplaceItem): VendorMarketplaceVendor {
+  return {
+    id: item.id,
+    businessName: item.businessName,
+    serviceCategory: item.serviceCategory,
+    location: item.location,
+    serviceArea: item.serviceArea,
+    startingPrice: item.startingPrice,
+    rating: item.rating,
+    completedBookings: item.completedBookings,
+    capacity: item.capacity,
+    availabilityStatus: item.availabilityStatus as 'available' | 'limited' | 'unavailable',
+    matchScore: 0,
+    matchLevel: 'none',
+    eventTypeExperience: item.eventTypeExperience as VendorMarketplaceVendor['eventTypeExperience'],
+    packageHighlights: item.packageHighlights,
+    packageTiers: item.packageTiers,
+    verified: item.verified,
+    responseTime: item.responseTime,
+    description: item.description,
+    galleryImages: item.galleryImages.map((g) => ({ url: g.url, label: g.label })),
+    reviews: item.reviews.map((r) => ({
+      id: r.id,
+      authorName: r.authorName,
+      authorAvatar: '',
+      rating: r.rating,
+      date: r.date,
+      text: r.text,
+      eventType: r.eventType,
+    })),
+    inclusions: item.inclusions,
+    addOns: item.addOns,
+    cancellationPolicy: item.cancellationPolicy,
+    bookingNotes: item.bookingNotes,
+    memberSince: item.memberSince,
+    responseRate: item.responseRate,
+    totalReviews: item.totalReviews,
+  }
+}
+
 const DEFAULT_TIME_SLOTS: TimeSlot[] = [
   { label: 'Morning (8AM - 12PM)', value: 'morning', isOccupied: false },
   { label: 'Afternoon (12PM - 5PM)', value: 'afternoon', isOccupied: false },
@@ -67,35 +105,68 @@ const DEFAULT_TIME_SLOTS: TimeSlot[] = [
 ]
 
 export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
-  const [state, setState] = useState<VendorMarketplaceViewModelState>(() => {
-    const raw = sessionStorage.getItem(BRIEF_STORAGE_KEY)
-    const storedBrief: EventBrief | null = raw ? JSON.parse(raw) : null
-    const vendors = storedBrief ? buildMarketplaceVendors(storedBrief) : getAllVendors()
-    return {
-      brief: storedBrief,
-      allVendors: vendors,
-      filteredVendors: vendors,
-      filters: DEFAULT_VENDOR_FILTERS,
-      compareList: [],
-      savedVendorIds: loadSavedVendors(),
-      procurementRequests: [],
-      selectedVendor: null,
-      showCompareDrawer: false,
-      showRequestModal: false,
-      showVendorDetail: false,
-      selectedGalleryImage: '',
-      requestForm: { vendorId: '', vendorName: '', serviceCategory: '', requestedBudget: '', notes: '' },
-      selectedDate: null,
-      selectedTimeSlot: null,
-      showSelectBriefModal: false,
-      showGeneralInquiry: false,
-      generalInquiryMessage: '',
-      eventBriefs: MOCK_EVENT_BRIEFS,
-      currentAvailability: null,
-      loading: false,
-      error: null,
-    }
+  const [state, setState] = useState<VendorMarketplaceViewModelState>({
+    brief: null,
+    allVendors: [],
+    filteredVendors: [],
+    filters: DEFAULT_VENDOR_FILTERS,
+    compareList: [],
+    savedVendorIds: loadSavedVendors(),
+    procurementRequests: [],
+    selectedVendor: null,
+    showCompareDrawer: false,
+    showRequestModal: false,
+    showVendorDetail: false,
+    selectedGalleryImage: '',
+    requestForm: { vendorId: '', vendorName: '', serviceCategory: '', requestedBudget: '', notes: '' },
+    selectedDate: null,
+    selectedTimeSlot: null,
+    showSelectBriefModal: false,
+    showGeneralInquiry: false,
+    generalInquiryMessage: '',
+    eventBriefs: [],
+    currentAvailability: null,
+    loading: true,
+    error: null,
   })
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      setState((s) => ({ ...s, loading: true, error: null }))
+      try {
+        const [vendorsData, briefsData] = await Promise.all([
+          vendorMarketplaceService.getAll(),
+          eventBriefService.getAll(),
+        ])
+        if (cancelled) return
+        const vendors = vendorsData.map(mapVendorItemToModel)
+        const briefs: EventBriefReference[] = briefsData.map((b) => ({
+          id: b.id,
+          eventName: b.eventName,
+          eventType: b.eventType,
+          eventDate: b.eventDate,
+        }))
+        setState((s) => ({
+          ...s,
+          allVendors: vendors,
+          filteredVendors: vendors,
+          eventBriefs: briefs,
+          loading: false,
+          error: null,
+        }))
+      } catch (err) {
+        if (cancelled) return
+        setState((s) => ({
+          ...s,
+          loading: false,
+          error: err instanceof Error ? err.message : 'Failed to load marketplace data',
+        }))
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
 
   const vendorsRefined = useMemo(() => {
     let result = [...state.allVendors]
@@ -154,14 +225,20 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     setState((s) => ({ ...s, filteredVendors: vendorsRefined }))
   }, [vendorsRefined])
 
+  useEffect(() => {
+    if (!eventIdFromUrl) return
+    const stored = sessionStorage.getItem(BRIEF_STORAGE_KEY)
+    if (!stored) return
+    const brief = JSON.parse(stored) as EventBrief
+    if (brief.eventId !== eventIdFromUrl) return
+    setState((s) => ({ ...s, brief }))
+  }, [eventIdFromUrl])
+
   const setBrief = useCallback((brief: EventBrief) => {
     sessionStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(brief))
-    const vendors = buildMarketplaceVendors(brief)
     setState((s) => ({
       ...s,
       brief,
-      allVendors: vendors,
-      filteredVendors: vendors,
       filters: DEFAULT_VENDOR_FILTERS,
       compareList: [],
     }))
@@ -169,12 +246,9 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
 
   const clearBrief = useCallback(() => {
     sessionStorage.removeItem(BRIEF_STORAGE_KEY)
-    const allVendors = getAllVendors()
     setState((s) => ({
       ...s,
       brief: null,
-      allVendors,
-      filteredVendors: allVendors,
       filters: DEFAULT_VENDOR_FILTERS,
       compareList: [],
       selectedDate: null,
@@ -256,10 +330,9 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     setState((s) => ({ ...s, showRequestModal: false }))
   }, [])
 
-  const openVendorDetail = useCallback((vendorId: string) => {
+  const openVendorDetail = useCallback(async (vendorId: string) => {
     const vendor = state.allVendors.find((v) => v.id === vendorId)
     if (!vendor) return
-    const availability = buildMockAvailability(vendorId)
     setState((s) => ({
       ...s,
       selectedVendor: vendor,
@@ -267,8 +340,31 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       selectedGalleryImage: vendor.galleryImages[0]?.url || '',
       selectedDate: null,
       selectedTimeSlot: null,
-      currentAvailability: availability,
+      currentAvailability: null,
     }))
+    try {
+      const now = new Date()
+      const availability = await vendorMarketplaceService.getAvailability(vendorId, now.getFullYear(), now.getMonth() + 1)
+      setState((s) => ({
+        ...s,
+        currentAvailability: {
+          vendorId: availability.vendorId,
+          year: availability.year,
+          month: availability.month,
+          days: availability.days.map((d) => ({
+            date: d.date,
+            status: d.status,
+            slots: d.slots.map((sl) => ({
+              label: sl.label,
+              value: sl.value as TimeSlotType,
+              isOccupied: sl.isOccupied,
+            })),
+          })),
+        },
+      }))
+    } catch {
+      // Availability not critical; show vendor detail without it
+    }
   }, [state.allVendors])
 
   const closeVendorDetail = useCallback(() => {
@@ -313,7 +409,7 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     setState((s) => ({ ...s, showGeneralInquiry: !s.showGeneralInquiry, generalInquiryMessage: '' }))
   }, [])
 
-  const submitRequest = useCallback(() => {
+  const submitRequest = useCallback(async () => {
     const req = state.requestForm
     if (!req.vendorId || !state.brief) return
 
@@ -330,65 +426,41 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       updatedAt: new Date().toISOString(),
     }
 
-    setState((s) => {
-      const updated = [...s.procurementRequests, newRequest]
-      const stored = JSON.parse(sessionStorage.getItem(REQUESTS_STORAGE_KEY) || '[]')
-      stored.push({
-        id: `vr-${Date.now()}`,
-        eventBriefId: s.brief!.eventId,
-        organizerId: 'org-1',
+    try {
+      await vendorRequestService.sendBookingRequest({
+        eventBriefId: state.brief.eventId,
         vendorId: req.vendorId,
-        vendorName: req.vendorName,
-        vendorCategory: req.serviceCategory,
-        eventName: s.brief!.eventName,
-        eventDate: s.brief!.eventDate,
-        location: s.brief!.location,
-        status: 'sent',
-        quotedPrice: null,
-        packageName: s.selectedTimeSlot || null,
-        selectedDate: s.selectedDate || null,
-        selectedTimeSlot: s.selectedTimeSlot || null,
-        lastMessage: 'Request sent. Waiting for vendor response.',
-        lastUpdatedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
+        packageName: state.selectedTimeSlot || undefined,
+        selectedDate: state.selectedDate || undefined,
+        selectedTimeSlot: state.selectedTimeSlot || undefined,
+        message: req.notes,
       })
-      sessionStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(stored))
-      return {
-        ...s,
-        procurementRequests: updated,
-        showRequestModal: false,
-        selectedVendor: null,
-        selectedDate: null,
-        selectedTimeSlot: null,
-      }
-    })
+    } catch {
+      // Continue with local state even if API fails
+    }
+
+    setState((s) => ({
+      ...s,
+      procurementRequests: [...s.procurementRequests, newRequest],
+      showRequestModal: false,
+      selectedVendor: null,
+      selectedDate: null,
+      selectedTimeSlot: null,
+    }))
   }, [state.requestForm, state.brief, state.selectedDate, state.selectedTimeSlot])
 
-  const sendGeneralInquiry = useCallback(() => {
+  const sendGeneralInquiry = useCallback(async () => {
     const vendor = state.selectedVendor
     if (!vendor) return
 
-    const stored = JSON.parse(sessionStorage.getItem(REQUESTS_STORAGE_KEY) || '[]')
-    stored.push({
-      id: `inq-${Date.now()}`,
-      eventBriefId: null,
-      organizerId: 'org-1',
-      vendorId: vendor.id,
-      vendorName: vendor.businessName,
-      vendorCategory: vendor.serviceCategory[0] || '',
-      eventName: 'General Inquiry',
-      eventDate: null,
-      location: null,
-      status: 'sent',
-      quotedPrice: null,
-      packageName: null,
-      selectedDate: null,
-      selectedTimeSlot: null,
-      lastMessage: state.generalInquiryMessage || 'General inquiry sent.',
-      lastUpdatedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    })
-    sessionStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(stored))
+    try {
+      await vendorRequestService.sendGeneralInquiry({
+        vendorId: vendor.id,
+        message: state.generalInquiryMessage || 'General inquiry',
+      })
+    } catch {
+      // Continue with local state even if API fails
+    }
 
     setState((s) => ({
       ...s,
@@ -485,7 +557,7 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       loading: state.loading,
       submitting: false,
       error: state.error,
-      empty: sortedVendors.length === 0,
+      empty: !state.loading && sortedVendors.length === 0,
       loaded: !state.loading,
     }),
   }

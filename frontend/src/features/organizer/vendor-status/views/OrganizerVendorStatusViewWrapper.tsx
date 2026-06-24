@@ -1,5 +1,6 @@
 import { useVendorStatusViewModel } from '../viewmodels/useVendorStatusViewModel'
 import { OrganizerVendorStatusView } from './OrganizerVendorStatusView'
+import type { VendorRequestStatus } from '../models/vendorStatus.model'
 
 export default function OrganizerVendorStatusViewWrapper() {
   const vm = useVendorStatusViewModel()
@@ -22,7 +23,7 @@ export default function OrganizerVendorStatusViewWrapper() {
       onCloseDrawer={vm.closeRequestDetail}
       onMessageInputChange={vm.setMessageInput}
       onSendMessage={vm.sendMessage}
-      onStatusUpdate={(id, status) => vm.updateRequestStatus(id, status as any)}
+      onStatusUpdate={(id, status: VendorRequestStatus) => vm.updateRequestStatus(id, status)}
     />
   )
 }

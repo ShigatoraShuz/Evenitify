@@ -40,12 +40,12 @@ export function VendorChatPanel({ messages, messageInput, onMessageInputChange, 
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             rows={1}
-            className="flex-1 resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent"
+            className="flex-1 resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent"
           />
           <button
             onClick={onSendMessage}
             disabled={!messageInput.trim()}
-            className="flex-shrink-0 w-9 h-9 rounded-lg bg-navy-700 text-white flex items-center justify-center hover:bg-navy-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-shrink-0 w-9 h-9 rounded-lg bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-4 h-4" />
           </button>

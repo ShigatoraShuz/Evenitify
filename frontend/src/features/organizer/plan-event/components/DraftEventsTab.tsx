@@ -19,13 +19,7 @@ interface Props {
   onDelete: (id: string) => void
 }
 
-const MOCK_DRAFTS: DraftEvent[] = [
-  { id: 'draft-1', title: 'Summer Gala 2026', eventType: 'Corporate event', venue: 'Rooftop venue', eventDate: '2026-07-20', guests: '300', budget: '45000', progress: 65, lastSaved: '2026-06-23T16:30:00Z' },
-  { id: 'draft-2', title: 'Tech Conference Q3', eventType: 'Conference', venue: 'Convention center', eventDate: '2026-09-10', guests: '1500', budget: '120000', progress: 30, lastSaved: '2026-06-22T11:00:00Z' },
-  { id: 'draft-3', title: 'Awards Night', eventType: 'Corporate event', venue: 'Grand ballroom', eventDate: '2026-10-05', guests: '1000', budget: '85000', progress: 85, lastSaved: '2026-06-21T09:15:00Z' },
-]
-
-export function DraftEventsTab({ drafts = MOCK_DRAFTS, onContinue, onEdit, onDelete }: Props) {
+export function DraftEventsTab({ drafts = [], onContinue, onEdit, onDelete }: Props) {
   if (drafts.length === 0) {
     return (
       <div className="text-center py-16">
@@ -45,13 +39,13 @@ export function DraftEventsTab({ drafts = MOCK_DRAFTS, onContinue, onEdit, onDel
               <h3 className="font-semibold text-slate-900">{draft.title}</h3>
               <p className="text-sm text-slate-500">{draft.eventType}</p>
             </div>
-            <span className="text-xs font-medium text-navy-600 bg-navy-50 px-2.5 py-1 rounded-full whitespace-nowrap">
+            <span className="text-xs font-medium text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full whitespace-nowrap">
               {draft.progress}% complete
             </span>
           </div>
 
           <div className="h-2 bg-slate-100 rounded-full mb-4 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-navy-500 to-navy-700 rounded-full transition-all" style={{ width: `${draft.progress}%` }} />
+            <div className="h-full bg-gradient-to-r from-brand-500 to-brand-700 rounded-full transition-all" style={{ width: `${draft.progress}%` }} />
           </div>
 
           <div className="flex flex-wrap gap-3 text-xs text-slate-500 mb-4">
@@ -64,7 +58,7 @@ export function DraftEventsTab({ drafts = MOCK_DRAFTS, onContinue, onEdit, onDel
           <div className="flex items-center gap-2">
             <button
               onClick={() => onContinue(draft.id)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-navy-700 text-white text-sm font-medium rounded-lg hover:bg-navy-800 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors"
             >
               <Play className="w-4 h-4" />
               Continue

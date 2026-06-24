@@ -23,19 +23,19 @@ export const ContractTimeline = memo(function ContractTimeline({ steps }: Contra
                   ? 'bg-emerald-500 border-emerald-500'
                   : step.active
                   ? 'bg-brand-500 border-brand-500'
-                  : 'bg-white border-gray-300'
+                  : 'bg-white border-slate-300'
               }`}
             />
             {index < steps.length - 1 && (
-              <div className={`w-0.5 h-8 ${step.completed ? 'bg-emerald-200' : 'bg-gray-200'}`} />
+              <div className={`w-0.5 h-8 ${step.completed ? 'bg-emerald-200' : 'bg-slate-200'}`} />
             )}
           </div>
           <div className="pb-4">
-            <p className={`text-sm font-medium ${step.completed || step.active ? 'text-gray-900' : 'text-gray-400'}`}>
+            <p className={`text-sm font-medium ${step.completed || step.active ? 'text-slate-900' : 'text-slate-400'}`}>
               {step.label}
             </p>
             {step.date && (
-              <p className="text-xs text-gray-500">{new Date(step.date).toLocaleDateString()}</p>
+              <p className="text-xs text-slate-500">{new Date(step.date).toLocaleDateString()}</p>
             )}
           </div>
         </div>

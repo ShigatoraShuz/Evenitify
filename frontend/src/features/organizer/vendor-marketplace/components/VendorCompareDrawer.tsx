@@ -1,4 +1,4 @@
-import { X, Star, CheckCircle, MapPin, DollarSign, Heart } from 'lucide-react'
+import { X, Star, CheckCircle, MapPin, DollarSign } from 'lucide-react'
 import { Button } from '../../../../shared/components/Button'
 import { StatusBadge } from '../../../../shared/components/StatusBadge'
 import type { VendorMarketplaceVendor } from '../models/vendorMarketplace.model'

@@ -1,13 +1,14 @@
-import { type VendorRequest, type StatusFilterTab } from '../models/vendorStatus.model'
+import { type VendorMessage, type VendorRequest, type VendorRequestStatus, type VendorStatusTimelineItem, type StatusFilterTab } from '../models/vendorStatus.model'
 import { VendorStatusSummaryCards } from '../components/VendorStatusSummaryCards'
 import { VendorStatusTabs } from '../components/VendorStatusTabs'
 import { VendorRequestCard } from '../components/VendorRequestCard'
 import { VendorRequestDetailDrawer } from '../components/VendorRequestDetailDrawer'
 import { DashboardShell } from '../../../../shared/components/DashboardShell'
-import { PageHeader } from '../../../../shared/components/PageHeader'
+import { Button } from '../../../../shared/components/Button'
 import { Input } from '../../../../shared/components/Input'
-import { EmptyState } from '../../../../shared/components/EmptyState'
+import { EmptyStateCard, OrganizerCard, OrganizerPage, OrganizerPageHeader } from '../../../../shared/components/OrganizerUI'
 import { Search } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 interface Props {
   requests: VendorRequest[]
@@ -20,12 +21,12 @@ interface Props {
   onRequestClick: (id: string) => void
   onCloseDrawer: () => void
   selectedRequest: VendorRequest | null
-  messages: any[]
+  messages: VendorMessage[]
   messageInput: string
   onMessageInputChange: (v: string) => void
   onSendMessage: () => void
-  onStatusUpdate: (requestId: string, newStatus: string) => void
-  timelineItems: any[]
+  onStatusUpdate: (requestId: string, newStatus: VendorRequestStatus) => void
+  timelineItems: VendorStatusTimelineItem[]
   empty: boolean
 }
 
@@ -48,25 +49,29 @@ export function OrganizerVendorStatusView({
   timelineItems,
   empty,
 }: Props) {
+  const navigate = useNavigate()
+
   return (
     <DashboardShell>
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <PageHeader
-          title="Vendor Requests"
-          subtitle="Track and manage all vendor requests across your events"
+      <OrganizerPage>
+        <OrganizerPageHeader
+          title="Track Vendors"
+          description="Track request status, vendor replies, proposed schedules, and booking confirmations across your events."
         />
 
         <VendorStatusSummaryCards counts={summaryCounts} />
 
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-navy-300" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by vendor, event, or category..."
-            className="pl-10"
-          />
-        </div>
+        <OrganizerCard className="p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 w-5 h-5 -translate-y-1/2 text-brand-400" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search by vendor, event, or category..."
+              className="pl-10"
+            />
+          </div>
+        </OrganizerCard>
 
         <VendorStatusTabs activeTab={activeTab} onTabChange={onTabChange} counts={summaryCounts} />
 
@@ -81,12 +86,13 @@ export function OrganizerVendorStatusView({
         </div>
 
         {empty && (
-          <EmptyState
-            title="No requests found"
-            description="Try adjusting your search or filter criteria"
+          <EmptyStateCard
+            title="No vendor requests yet"
+            description="Send requests from the Vendor Marketplace and track responses, messages, and confirmations here."
+            action={<Button onClick={() => navigate('/organizer/vendor-marketplace')}>Browse Vendor Marketplace</Button>}
           />
         )}
-      </div>
+      </OrganizerPage>
 
       {showDetailDrawer && selectedRequest && (
         <VendorRequestDetailDrawer

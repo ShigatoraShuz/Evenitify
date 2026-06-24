@@ -31,6 +31,9 @@ export default function VendorB2BDashboardViewWrapper() {
       onLoadContract={vm.loadContract}
       onSignVendorContract={vm.signVendorContract}
       onUpdateAvailabilityStatus={vm.updateAvailabilityStatus}
+      activeTypeTab={vm.activeTypeTab}
+      onSetTypeTab={vm.setTypeTab}
+      onSubmitQuote={vm.submitQuote}
     />
   )
 }

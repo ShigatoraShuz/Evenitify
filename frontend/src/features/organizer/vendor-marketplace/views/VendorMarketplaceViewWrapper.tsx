@@ -1,8 +1,8 @@
-import { useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVendorMarketplaceViewModel } from '../viewmodels/useVendorMarketplaceViewModel'
 import { VendorMarketplaceView } from './VendorMarketplaceView'
-import { buildBriefFromForm } from '../models/vendorMarketplace.model'
+import type { VendorMarketplaceVendor } from '../models/vendorMarketplace.model'
 
 const BRIEF_STORAGE_KEY = 'eventify:marketplace-brief'
 
@@ -26,7 +26,7 @@ export default function VendorMarketplaceViewWrapper() {
     navigate('/organizer/vendor-marketplace', { replace: true })
   }, [vm.clearBrief, navigate])
 
-  const handleVendorClick = useCallback((vendor: any) => {
+  const handleVendorClick = useCallback((vendor: VendorMarketplaceVendor) => {
     vm.openVendorDetail(vendor.id)
   }, [vm.openVendorDetail])
 

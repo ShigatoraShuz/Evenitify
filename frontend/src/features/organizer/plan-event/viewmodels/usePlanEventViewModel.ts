@@ -6,7 +6,6 @@ import {
   INITIAL_FORM_STATE,
   EVENT_TYPE_OPTIONS,
   STORAGE_KEY,
-  STEP_LABELS,
   TOTAL_STEPS,
   type EventTypeId,
   type PlanEventFormState
@@ -210,15 +209,10 @@ export function usePlanEventViewModel() {
         currentStep: TOTAL_STEPS - 1
       }))
     } catch (err) {
-      clearDraft()
-      const fallbackId = `evt-${Date.now()}`
       setState((s) => ({
         ...s,
         submitting: false,
-        submitted: true,
-        createdEventId: fallbackId,
-        currentStep: TOTAL_STEPS - 1,
-        error: null
+        error: err instanceof Error ? err.message : 'Failed to submit event. Please try again.',
       }))
     } finally {
       submittingRef.current = false
