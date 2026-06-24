@@ -53,8 +53,8 @@ export function useEventPortfolio() {
       const [documents, auditActivities, planningTimeline, budgetSummary] = await Promise.all([
         documentService.listDocuments(eventId),
         auditService.listActivities(`event:${eventId}`),
-        planningService.getEventPlanningTimeline(portfolio),
-        budgetService.getBudgetSummary(portfolio)
+        planningService.getEventPlanningTimeline(eventId),
+        budgetService.getBudgetSummary(eventId)
       ])
       setState((s) => ({ ...s, portfolio, documents, auditActivities, planningTimeline, budgetSummary, loading: false }))
     } catch (err) {

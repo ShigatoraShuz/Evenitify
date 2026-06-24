@@ -23,9 +23,7 @@ export function getEnvVarNumber(name: string, fallback = 0): number {
 }
 
 export const env = {
-  useMocks: getEnvVarBoolean('USE_MOCKS', true),
-  apiMode: getEnvVar('API_MODE', getEnvVarBoolean('USE_MOCKS', true) ? 'mock' : 'local'),
-  apiBaseUrl: getEnvVar('API_BASE_URL', ''),
+  apiBaseUrl: getEnvVar('API_BASE_URL', '/api'),
   supabaseUrl: getEnvVar('SUPABASE_URL', ''),
   supabaseAnonKey: getEnvVar('SUPABASE_ANON_KEY', ''),
   appName: getEnvVar('APP_NAME', 'Eventify'),

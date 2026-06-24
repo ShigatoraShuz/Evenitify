@@ -1,4 +1,4 @@
-const { supabaseAdmin } = require('../config/supabase');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 const AppError = require('../shared/utils/appError');
 const authRepository = require('./auth.repository');
 
@@ -106,4 +106,29 @@ async function syncProfile(userId, { role }) {
   return getMe(userId);
 }
 
-module.exports = { register, login, getMe, syncProfile };
+async function refreshSession({ refreshToken }) {
+  const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+
+  if (error) {
+    throw new AppError(error.message, 400, 'AUTH_REFRESH_FAILED');
+  }
+
+  const profile = await authRepository.findByUserId(data.user.id);
+  const organizerProfile = await authRepository.findOrganizerProfile(data.user.id);
+  const vendorProfile = await authRepository.findVendorProfile(data.user.id);
+
+  return {
+    session: data.session,
+    user: buildUserResponse(data.user, profile, organizerProfile, vendorProfile)
+  };
+}
+
+async function logout(token) {
+  if (!token) return;
+  const { error } = await supabaseAdmin.auth.admin.signOut(token);
+  if (error) {
+    throw new AppError(error.message, 400, 'AUTH_LOGOUT_FAILED');
+  }
+}
+
+module.exports = { register, login, getMe, syncProfile, refreshSession, logout };

@@ -1,5 +1,4 @@
-import { getMockResponse } from './mock/mockAdapter'
-import { isMockMode, getApiBaseUrl } from '../config/apiConfig'
+import { getApiBaseUrl } from '../config/apiConfig'
 import type { ApiResponse } from './types'
 
 function getAuthToken(): string | null {
@@ -26,18 +25,6 @@ async function request<T>(
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
-  }
-
-  if (isMockMode()) {
-    const mockResult = getMockResponse<T>(
-      options.method || 'GET',
-      endpoint,
-      options.body ? JSON.parse(options.body as string) : undefined
-    )
-    if (mockResult !== undefined) {
-      await new Promise((r) => setTimeout(r, 200))
-      return mockResult
-    }
   }
 
   const apiBase = getApiBaseUrl()

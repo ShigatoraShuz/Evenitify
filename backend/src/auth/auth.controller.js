@@ -35,4 +35,18 @@ const syncProfile = asyncHandler(async (req, res) => {
   return sendSuccess(res, result);
 });
 
-module.exports = { register, login, getMe, syncProfile };
+const refreshSession = asyncHandler(async (req, res) => {
+  const result = await authService.refreshSession({
+    refreshToken: req.body.refreshToken
+  });
+  return sendSuccess(res, result);
+});
+
+const logout = asyncHandler(async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader ? authHeader.split(' ')[1] : null;
+  await authService.logout(token);
+  return sendSuccess(res, { message: 'Logged out successfully' });
+});
+
+module.exports = { register, login, getMe, syncProfile, refreshSession, logout };
