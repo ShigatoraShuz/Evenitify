@@ -91,11 +91,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.08),_transparent_32%),linear-gradient(180deg,_#f8fafc_0%,_#eef2ff_100%)]">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.18),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,_#f8fbff_0%,_#eaf2ff_52%,_#f7f8fc_100%)]">
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-lg">
           Skip to main content
         </a>
-        <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-md">
+        <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-[1920px] items-center justify-between px-4 sm:px-6 lg:px-10">
             <div className="flex items-center gap-3">
               {sidebarItems.length > 0 && (
@@ -110,17 +110,29 @@ export function DashboardShell({ children }: DashboardShellProps) {
                   </svg>
                 </button>
               )}
-              <h1
-                className="cursor-pointer select-none text-xl font-semibold tracking-tight text-slate-950"
+              <button
+                type="button"
+                className="flex items-center gap-2 rounded-xl px-1 py-1 text-left focus:outline-none focus:ring-2 focus:ring-brand-200"
                 onClick={() => {
                   if (userRole === 'admin') navigate('/admin')
                   else if (userRole === 'vendor') navigate('/vendor')
                   else navigate('/organizer')
                 }}
+                aria-label="Go to Eventify organizer dashboard"
               >
-                Eventify
-              </h1>
-              <span className="hidden rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-500 sm:inline">B2B</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-brand-200 bg-white shadow-sm">
+                  <svg viewBox="0 0 32 32" className="h-5 w-5 text-brand-600" aria-hidden="true">
+                    <path
+                      d="M8 21.5C8 13.5 12.5 9 20.5 9H24v3.5h-3.3c-5.5 0-8.7 3.2-8.7 9v1.2c0 3.1 1.8 4.8 4.9 4.8H24V31H15.2C10 31 8 28.8 8 23.7v-2.2Z"
+                      fill="currentColor"
+                    />
+                    <circle cx="23" cy="8" r="3" fill="currentColor" opacity="0.9" />
+                  </svg>
+                </span>
+                <h1 className="select-none text-xl font-semibold tracking-tight text-slate-950">
+                  Eventify
+                </h1>
+              </button>
               {switchableRoles.length > 1 && (
                 <div className="hidden md:flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
                   {switchableRoles.map((role) => (
@@ -244,7 +256,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
                         onClick={() => handleNavigation(item.path)}
                         className={`group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-200 ${
                           isActive(item.path)
-                            ? 'border border-brand-200 bg-brand-50 text-brand-700 shadow-sm shadow-brand-500/10'
+                            ? 'border border-brand-200 bg-gradient-to-r from-brand-50 to-white text-brand-700 shadow-sm shadow-brand-500/10'
                             : 'border border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                         }`}
                       >
@@ -270,7 +282,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
             </>
           )}
 
-          <main id="main-content" className="min-h-[calc(100vh-64px)] min-w-0 flex-1 p-4 md:p-6 lg:p-10 xl:p-12">
+          <main id="main-content" className="relative min-h-[calc(100vh-64px)] min-w-0 flex-1 p-4 md:p-6 lg:p-10 xl:p-12">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.08),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.06),_transparent_28%)]" aria-hidden="true" />
             <CommandPalette
               open={commandPalette.open}
               query={commandPalette.query}
@@ -281,7 +294,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
               onSelect={handleCommandSelect}
             />
             <RoleHelpDrawer open={helpOpen} content={roleHelp} onClose={() => setHelpOpen(false)} />
-            {children}
+            <div className="relative">
+              {children}
+            </div>
           </main>
         </div>
       </div>

@@ -23,7 +23,8 @@ interface OrganizerPageHeaderProps {
 
 export function OrganizerPageHeader({ title, description, action }: OrganizerPageHeaderProps) {
   return (
-    <section className="flex flex-col gap-5 rounded-[28px] border border-slate-200/80 bg-white px-5 py-5 shadow-[0_18px_55px_rgba(15,23,42,0.07)] md:px-6 md:py-6 lg:flex-row lg:items-end lg:justify-between">
+    <section className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(241,248,255,0.94)_46%,rgba(231,244,255,0.9)_100%)] px-5 py-5 shadow-[0_18px_55px_rgba(15,23,42,0.07)] md:px-6 md:py-6 lg:flex-row lg:items-end lg:justify-between">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 via-sky-400 to-cyan-300" aria-hidden="true" />
       <div className="max-w-3xl">
         <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-brand-600">Eventify</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">{title}</h1>
@@ -42,7 +43,7 @@ interface OrganizerCardProps {
 
 export function OrganizerCard({ children, className = '', interactive = false }: OrganizerCardProps) {
   return (
-    <section className={`rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-[0_14px_42px_rgba(15,23,42,0.05)] ${interactive ? 'transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_20px_55px_rgba(15,23,42,0.08)]' : ''} ${className}`}>
+    <section className={`rounded-[24px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(248,250,252,0.98)_100%)] p-5 shadow-[0_14px_42px_rgba(15,23,42,0.05)] ${interactive ? 'transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_20px_55px_rgba(15,23,42,0.08)]' : ''} ${className}`}>
       {children}
     </section>
   )
@@ -56,9 +57,10 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, description, action }: SectionHeaderProps) {
   return (
-    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-4 flex flex-col gap-3 border-b border-slate-200/70 pb-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-600">Eventify section</p>
+        <h2 className="mt-1 text-base font-semibold text-slate-950">{title}</h2>
         {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
@@ -85,7 +87,7 @@ const metricToneClasses = {
 
 export function MetricCard({ label, value, helper, icon: Icon, tone = 'blue' }: MetricCardProps) {
   return (
-    <OrganizerCard className="p-4" interactive>
+    <OrganizerCard className={`p-4 ${tone === 'blue' ? 'bg-[linear-gradient(180deg,rgba(239,246,255,0.95)_0%,rgba(255,255,255,0.98)_100%)]' : ''}`} interactive>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
@@ -125,7 +127,7 @@ interface EmptyStateCardProps {
 
 export function EmptyStateCard({ title, description, action, icon: Icon = Inbox, className = '' }: EmptyStateCardProps) {
   return (
-    <div className={`rounded-[24px] border border-dashed border-slate-300 bg-white p-6 text-center shadow-[0_12px_35px_rgba(15,23,42,0.04)] ${className}`}>
+    <div className={`rounded-[24px] border border-dashed border-brand-200 bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.08),_transparent_60%),linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(245,250,255,0.92)_100%)] p-6 text-center shadow-[0_12px_35px_rgba(15,23,42,0.04)] ${className}`}>
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-brand-100 bg-brand-50 text-brand-600">
         <Icon className="h-5 w-5" />
       </div>
