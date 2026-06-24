@@ -7,7 +7,12 @@ import {
   Menu,
   X,
   ArrowRight,
+  Sparkles,
+  Quote,
 } from 'lucide-react'
+import CircularTestimonials from './CircularTestimonials'
+import AnimatedMarqueeHero from './hero-3'
+import Footer7 from './footer-7'
 
 interface SoftButtonProps {
   children: React.ReactNode
@@ -16,9 +21,9 @@ interface SoftButtonProps {
 }
 
 const bgImages = [
-  'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=2069&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=2070&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2070&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=2070&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=2070&auto=format&fit=crop',
 ]
 
 function BackgroundCarousel() {
@@ -51,20 +56,57 @@ function BackgroundCarousel() {
 }
 
 const navItems = [
-  { label: 'Solutions', href: '#solutions' },
-  { label: 'Vendors', href: '#vendors' },
-  { label: 'Events', href: '#events' },
-  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Platform', href: '#solutions' },
+  { label: 'Marketplace', href: '#vendors' },
+  { label: 'Booking Flow', href: '#events' },
+  { label: 'Workflow', href: '#how-it-works' },
 ]
 
 const statItems = [
-  { value: '120+', label: 'Large Events Managed' },
-  { value: '40+', label: 'Vendor Categories' },
+  { value: '120+', label: 'Large events managed' },
+  { value: '40+', label: 'Vendor categories' },
+  { value: '98%', label: 'Repeat client satisfaction' },
+  { value: '24h', label: 'Average response window' },
 ]
 
-const trustedBrands = ['ExpoHub', 'VenuePro', 'Gatherly']
+const trustedBrands = ['Manila Expo', 'Cebu Gather', 'Pampanga Live']
+
+const testimonials = [
+  {
+    quote:
+      'We replaced scattered spreadsheets with one control room for sourcing, approvals, and vendor messaging. The team finally works from the same plan for Makati events.',
+    name: 'Mara Santos',
+    designation: 'Operations Director, Makati Skyline Events',
+    src: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop',
+  },
+  {
+    quote:
+      'Eventify makes procurement feel designed, not improvised. The vendor comparisons are fast, and the event brief stays readable even under pressure during Cebu resort events.',
+    name: 'Daniel Reyes',
+    designation: 'Head of Events, Cebu Coral Hall',
+    src: 'https://images.unsplash.com/photo-1505236858219-8359eb29e329?q=80&w=1200&auto=format&fit=crop',
+  },
+  {
+    quote:
+      'We can move from request to shortlist without losing context. That kind of clarity changes how confidently our team can run Davao conferences and destination weddings.',
+    name: 'Priya Nair',
+    designation: 'Procurement Lead, Davao Event Studio',
+    src: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=1200&auto=format&fit=crop',
+  },
+]
+
+const heroImages = [
+  'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1200&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=1200&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?q=80&w=1200&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop',
+]
 
 const currentYear = new Date().getFullYear()
+const sectionCard = 'rounded-3xl border border-slate-200 bg-white p-6 shadow-sm'
+const sectionHeading = 'text-sm font-bold uppercase tracking-[0.22em] text-brand-700'
+const sectionTitle = 'text-2xl sm:text-3xl font-extrabold text-slate-950'
+const sectionBody = 'text-sm sm:text-base leading-6 text-slate-700'
 
 function SoftButton({ children, variant = 'primary', onClick }: SoftButtonProps) {
   const base =
@@ -130,10 +172,16 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-brand-200 bg-white shadow-sm">
+              <svg viewBox="0 0 32 32" className="h-6 w-6 text-brand-600" aria-hidden="true">
+                <path
+                  d="M8 21.5C8 13.5 12.5 9 20.5 9H24v3.5h-3.3c-5.5 0-8.7 3.2-8.7 9v1.2c0 3.1 1.8 4.8 4.9 4.8H24V31H15.2C10 31 8 28.8 8 23.7v-2.2Z"
+                  fill="currentColor"
+                />
+                <circle cx="23" cy="8" r="3" fill="currentColor" opacity="0.9" />
+              </svg>
+            </div>
             <span className="text-xl font-bold text-brand-600">Eventify</span>
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-500 border border-brand-200 rounded px-1.5 py-0.5">
-              B2B
-            </span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
@@ -180,26 +228,6 @@ function Navbar() {
   )
 }
 
-function Footer() {
-  return (
-    <footer className="bg-gray-900 text-gray-400 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-white">Eventify</span>
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-400 border border-brand-700 rounded px-1.5 py-0.5">
-              B2B
-            </span>
-          </div>
-          <p className="text-sm">
-            &copy; {currentYear} Eventify. Organizer Vendor Procurement Platform.
-          </p>
-        </div>
-      </div>
-    </footer>
-  )
-}
-
 interface EventifyLandingPageProps {
   onStartPlanning?: () => void
   onBrowseVendors?: () => void
@@ -216,34 +244,148 @@ export default function EventifyLandingPage({
   return (
     <div className="min-h-screen bg-transparent font-sans relative overflow-hidden">
       <BackgroundCarousel />
-      <div className="absolute top-20 left-1/4 w-96 h-96 bg-brand-500/15 rounded-full blur-[100px] pointer-events-none z-0" />
-      <div className="absolute top-40 right-1/4 w-96 h-96 bg-teal-500/15 rounded-full blur-[100px] pointer-events-none z-0" />
+      <div className="absolute top-20 left-1/4 w-96 h-96 bg-brand-500/18 rounded-full blur-[100px] pointer-events-none z-0" />
+      <div className="absolute top-40 right-1/4 w-96 h-96 bg-amber-400/16 rounded-full blur-[100px] pointer-events-none z-0" />
       <Navbar />
 
       <main className="relative z-10">
+        <AnimatedMarqueeHero
+          tagline="Eventify Organizer–Vendor Procurement Platform"
+          title={
+            <>
+              Procure vendors for <span className="text-brand-600">Philippine events</span> with
+              clarity and momentum.
+            </>
+          }
+          description="Eventify is a web-based Organizer–Vendor Procurement Platform that helps event organizers find, request, book, and manage vendors for large-scale events. It connects organizers, vendors, and admins in one workspace so event plans, service requests, schedules, booking statuses, and communication stay organized from planning to confirmation."
+          ctaText="Start Planning"
+          images={heroImages}
+          onCtaClick={onStartPlanning}
+          className="pt-28 pb-10 lg:pt-32 lg:pb-16"
+        />
+
+        <section id="solutions" className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl">
+              <p className={sectionHeading}>Platform</p>
+              <h2 className={`mt-4 ${sectionTitle}`}>One platform for organizers, vendors, and admins.</h2>
+              <p className={`mt-4 ${sectionBody}`}>
+                Eventify keeps the full procurement workflow in one connected system so teams can create event plans,
+                browse vendor services, manage requests, and track progress without moving across separate tools.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="vendors" className="py-16 bg-slate-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-6 md:grid-cols-3">
+              {[
+                {
+                  title: 'Vendor Marketplace',
+                  text: 'Organizers can browse vendor categories, compare services, and request bookings from one marketplace.',
+                },
+                {
+                  title: 'Vendor Dashboard',
+                  text: 'Vendors manage profiles, availability, incoming requests, and event communication in one place.',
+                },
+                {
+                  title: 'Admin Oversight',
+                  text: 'Admins oversee users, bookings, and platform activity with a clear view of the whole system.',
+                },
+              ].map((item) => (
+                <div key={item.title} className={sectionCard}>
+                  <h3 className="text-lg font-bold text-slate-950">{item.title}</h3>
+                  <p className={`mt-3 ${sectionBody}`}>{item.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="events" className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="rounded-3xl bg-gradient-to-br from-brand-700 to-brand-900 p-8 text-white shadow-sm border border-brand-700/20">
+                <h2 className="text-2xl font-extrabold">Event planning and booking status</h2>
+                <p className="mt-3 text-white/85 leading-relaxed">
+                  Organizers can create large event plans, send booking requests, track vendor responses, and manage
+                  event requirements from draft to confirmed booking.
+                </p>
+              </div>
+              <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                <h2 className="text-2xl font-extrabold text-slate-950">Communication and contracts</h2>
+                <p className="mt-3 text-slate-700 leading-relaxed">
+                  Eventify supports communication, booking review, and contract management so every request remains
+                  traceable and easy to follow through the full procurement cycle.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="how-it-works" className="py-16 bg-slate-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-6 md:grid-cols-3">
+              {[
+                {
+                  step: '01',
+                  title: 'Create the event plan',
+                  text: 'Organizers draft requirements, budgets, and service needs for the event.',
+                },
+                {
+                  step: '02',
+                  title: 'Request and compare vendors',
+                  text: 'Browse vendors, send requests, and track responses as they move through the workflow.',
+                },
+                {
+                  step: '03',
+                  title: 'Confirm and manage',
+                  text: 'Approve bookings, manage schedules, and keep communication aligned until the event is done.',
+                },
+              ].map((item) => (
+                <div key={item.step} className={sectionCard}>
+                  <p className="text-sm font-bold tracking-[0.3em] text-brand-700">{item.step}</p>
+                  <h3 className="mt-3 text-lg font-bold text-slate-950">{item.title}</h3>
+                  <p className={`mt-3 ${sectionBody}`}>{item.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="pt-32 pb-20 lg:pt-40 lg:pb-28">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="grid lg:grid-cols-[1.08fr_0.92fr] gap-12 lg:gap-16 items-center">
               <div>
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: 0.02, ...spr }}
+                  className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white/85 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-brand-700 shadow-sm"
+                >
+                  <Sparkles size={14} />
+                  Designed for Philippine event procurement
+                </motion.div>
                 <motion.h1
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0, ...spr }}
-                  className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-[1.1] tracking-tight"
+                  className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-950 leading-[1.1] tracking-tight"
                 >
                   Procure vendors for{' '}
-                  <span className="text-brand-600">large events</span> with
-                  clarity.
+                  <span className="text-brand-600">Philippine events</span> with
+                  clarity and momentum.
                 </motion.h1>
                 <motion.p
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.1, ...spr }}
-                  className="mt-6 text-lg text-gray-500 leading-relaxed max-w-lg"
+                  className="mt-6 text-lg text-slate-700 leading-relaxed max-w-lg"
                 >
-                  Eventify helps organizers plan large-scale events, define
-                  requirements, discover verified vendors, and manage B2B
-                  booking requests in one organized workspace.
+                  Eventify helps organizers plan corporate functions, fiestas,
+                  destination weddings, and venue activations across the
+                  Philippines in one organized workspace.
                 </motion.p>
                 <motion.div
                   initial={{ opacity: 0, y: 30 }}
@@ -269,6 +411,26 @@ export default function EventifyLandingPage({
                     {demoPanel}
                   </motion.div>
                 )}
+
+                <motion.div
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.34, ...spr }}
+                  className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl"
+                >
+                  {[
+                    'Briefs that travel with every vendor review',
+                    'Fast shortlist decisions with fewer handoffs',
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm"
+                    >
+                      <Quote size={16} className="text-brand-600 mb-2" />
+                      <p className={sectionBody}>{item}</p>
+                    </div>
+                  ))}
+                </motion.div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -283,7 +445,7 @@ export default function EventifyLandingPage({
                     Verified Workflow
                   </span>
                   <p className="text-sm text-brand-100/90 leading-relaxed">
-                    Secure vendor requests and organized procurement tracking.
+                  Secure vendor requests and organized procurement tracking for Philippine event teams.
                   </p>
                 </motion.div>
 
@@ -291,11 +453,11 @@ export default function EventifyLandingPage({
                   initial={{ opacity: 0, y: 40, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.42, ...spr }}
-                  className="rounded-2xl p-5 text-white bg-gradient-to-br from-brand-600 to-brand-500 border border-brand-500/20 shadow-md hover:shadow-xl hover:shadow-brand-500/10 hover:-translate-y-0.5 transition-all duration-300 min-h-[180px] flex flex-col items-center justify-center"
+                  className="rounded-3xl p-6 text-white bg-gradient-to-br from-brand-700 to-brand-500 border border-brand-500/20 shadow-sm transition-all duration-300 min-h-[180px] flex flex-col items-center justify-center"
                 >
                   <PlanetOrbitSVG />
                   <p className="text-sm text-brand-50 leading-relaxed text-center mt-3">
-                    Discover vendors across categories in one workspace.
+                    Discover vendors across categories in one workspace for Manila, Cebu, and beyond.
                   </p>
                 </motion.div>
 
@@ -306,17 +468,17 @@ export default function EventifyLandingPage({
                   className="rounded-2xl p-5 bg-white border border-slate-100 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 min-h-[180px] flex flex-col"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                       Budget Overview
                     </span>
-                    <BarChart3 size={18} className="text-brand-500" />
+                    <BarChart3 size={18} className="text-brand-600" />
                   </div>
                   <AnimatedBars />
                   <p className="text-xl font-bold text-gray-900 mt-2">
                     ₱240,000
                   </p>
-                  <p className="text-xs text-gray-450">
-                    Estimated event allocation
+                  <p className="text-xs text-slate-600">
+                    Estimated event allocation for a PH event brief
                   </p>
                 </motion.div>
 
@@ -326,18 +488,18 @@ export default function EventifyLandingPage({
                   transition={{ duration: 0.5, delay: 0.66, ...spr }}
                   className="rounded-2xl p-5 bg-white border border-slate-100 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 min-h-[180px] flex flex-col"
                 >
-                  <ClipboardCheck size={24} className="text-brand-500 mb-3" />
-                  <span className="text-xs font-semibold text-gray-450 uppercase tracking-wider mb-1">
+                  <ClipboardCheck size={24} className="text-brand-600 mb-3" />
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                     Event Requirements
                   </span>
                   <ul className="space-y-2 mt-1">
-                    {['Catering', 'Lights & Sound', 'Venue', 'Staff'].map(
+                    {['Catering', 'Lights & Sound', 'Venue', 'Fiesta Styling'].map(
                       (item) => (
                         <li
                           key={item}
-                          className="flex items-center gap-2 text-sm text-gray-600 font-medium"
+                          className="flex items-center gap-2 text-sm text-slate-700 font-medium"
                         >
-                          <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
                           {item}
                         </li>
                       )
@@ -349,7 +511,54 @@ export default function EventifyLandingPage({
           </div>
         </section>
 
-        <section className="py-16 bg-gray-50">
+        <section className="py-14 sm:py-16 lg:py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] items-center">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-120px' }}
+                transition={{ duration: 0.5, ...spr }}
+              >
+                <p className="text-xs font-semibold tracking-[0.3em] text-brand-500 uppercase">
+                  Social proof
+                </p>
+                <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
+                  Real event teams use Eventify to manage vendor discovery, booking requests, and event operations in one place.
+                </h2>
+                <p className="mt-5 text-base sm:text-lg text-slate-500 leading-relaxed max-w-xl">
+                  The platform keeps organizer workflows, vendor dashboards, booking status tracking, and communication connected so large events stay moving without scattered handoffs.
+                </p>
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+                  {[
+                    'Event plans stay attached to every vendor request',
+                    'Shortlists stay easy to share with stakeholders',
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      className={sectionCard}
+                    >
+                      <Quote size={16} className="text-brand-600 mb-2" />
+                      <p className={sectionBody}>{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 28, scale: 0.98 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: '-120px' }}
+                transition={{ duration: 0.55, ...spr }}
+                className="justify-self-end w-full"
+              >
+                <CircularTestimonials testimonials={testimonials} />
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-16 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {statItems.map((stat, i) => (
@@ -361,19 +570,19 @@ export default function EventifyLandingPage({
                   transition={{ duration: 0.4, delay: i * 0.1, ...spr }}
                   className="text-center"
                 >
-                  <p className="text-3xl md:text-4xl font-extrabold text-brand-600">
+                  <p className="text-3xl md:text-4xl font-extrabold text-slate-950">
                     {stat.value}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">{stat.label}</p>
+                  <p className="text-sm text-slate-700 mt-1">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="py-16">
+        <section className="py-16 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-6">
+            <p className="text-xs font-semibold tracking-widest text-slate-700 uppercase mb-6">
               Trusted by Organizers
             </p>
             <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16">
@@ -384,7 +593,7 @@ export default function EventifyLandingPage({
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1, ...spr }}
-                  className="text-lg md:text-xl font-bold text-gray-300 tracking-wide"
+                  className="text-lg md:text-xl font-bold text-slate-900 tracking-wide"
                 >
                   {brand}
                 </motion.span>
@@ -392,9 +601,46 @@ export default function EventifyLandingPage({
             </div>
           </div>
         </section>
+
       </main>
 
-      <Footer />
+      <Footer7
+        description="Eventify is a web-based Organizer–Vendor Procurement Platform that helps organizers find, request, book, and manage vendors for large-scale events. Organizers, vendors, and admins work in one connected system for event planning, booking status tracking, scheduling, and communication."
+        sections={[
+          {
+            title: 'Product',
+            links: [
+              { name: 'Overview', href: '#solutions' },
+              { name: 'Vendors', href: '#vendors' },
+              { name: 'Events', href: '#events' },
+              { name: 'How It Works', href: '#how-it-works' },
+            ],
+          },
+          {
+            title: 'Company',
+            links: [
+              { name: 'About Eventify', href: '#' },
+              { name: 'Philippines', href: '#' },
+              { name: 'Blog', href: '#' },
+              { name: 'Careers', href: '#' },
+            ],
+          },
+          {
+            title: 'Resources',
+            links: [
+              { name: 'Help Center', href: '#' },
+              { name: 'Vendor Guide', href: '#' },
+              { name: 'Privacy', href: '#' },
+              { name: 'Terms', href: '#' },
+            ],
+          },
+        ]}
+        copyright={`© ${currentYear} Eventify. Philippine event procurement platform.`}
+        legalLinks={[
+          { name: 'Terms and Conditions', href: '#' },
+          { name: 'Privacy Policy', href: '#' },
+        ]}
+      />
     </div>
   )
 }

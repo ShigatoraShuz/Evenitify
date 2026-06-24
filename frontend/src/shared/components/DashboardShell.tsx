@@ -96,7 +96,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           Skip to main content
         </a>
         <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-md">
-          <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto flex h-16 max-w-[1920px] items-center justify-between px-4 sm:px-6 lg:px-10">
             <div className="flex items-center gap-3">
               {sidebarItems.length > 0 && (
                 <button
@@ -221,12 +221,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
           </div>
         </header>
 
-        <div className="relative mx-auto flex max-w-[1600px]">
+        <div className="relative mx-auto flex max-w-[1920px]">
           {sidebarItems.length > 0 && (
             <>
               <aside
                 className={`
-                fixed lg:sticky top-16 lg:top-16 z-30 h-[calc(100vh-64px)] w-[17rem] border-r border-slate-200/70 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl 
+                fixed lg:sticky top-16 lg:top-16 z-30 h-[calc(100vh-64px)] w-[19rem] border-r border-slate-200/70 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl 
                 transition-transform duration-200 ease-in-out
                 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
               `}
@@ -270,7 +270,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
             </>
           )}
 
-          <main id="main-content" className="min-h-[calc(100vh-64px)] min-w-0 flex-1 p-4 md:p-6 lg:p-8">
+          <main id="main-content" className="min-h-[calc(100vh-64px)] min-w-0 flex-1 p-4 md:p-6 lg:p-10 xl:p-12">
             <CommandPalette
               open={commandPalette.open}
               query={commandPalette.query}

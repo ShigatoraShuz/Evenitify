@@ -1,3 +1,17 @@
 #root {
-  min-height: 100vh;
+  width: min(100%, 1920px);
+  min-height: 1080px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1920px) {
+  #root {
+    width: 100%;
+  }
+}
+
+@media (max-height: 1080px) {
+  #root {
+    min-height: 100vh;
+  }
 }

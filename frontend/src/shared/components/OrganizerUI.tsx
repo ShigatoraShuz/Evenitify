@@ -9,7 +9,7 @@ interface OrganizerPageProps {
 
 export function OrganizerPage({ children, className = '' }: OrganizerPageProps) {
   return (
-    <div className={`mx-auto w-full max-w-7xl space-y-6 ${className}`}>
+    <div className={`mx-auto w-full max-w-[1920px] space-y-6 ${className}`}>
       {children}
     </div>
   )
@@ -23,7 +23,7 @@ interface OrganizerPageHeaderProps {
 
 export function OrganizerPageHeader({ title, description, action }: OrganizerPageHeaderProps) {
   return (
-    <section className="flex flex-col gap-5 rounded-[28px] border border-slate-200/80 bg-white/95 px-5 py-5 shadow-[0_18px_55px_rgba(15,23,42,0.07)] backdrop-blur md:px-6 md:py-6 lg:flex-row lg:items-end lg:justify-between">
+    <section className="flex flex-col gap-5 rounded-[28px] border border-slate-200/80 bg-white px-5 py-5 shadow-[0_18px_55px_rgba(15,23,42,0.07)] md:px-6 md:py-6 lg:flex-row lg:items-end lg:justify-between">
       <div className="max-w-3xl">
         <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-brand-600">Eventify</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">{title}</h1>
@@ -42,7 +42,7 @@ interface OrganizerCardProps {
 
 export function OrganizerCard({ children, className = '', interactive = false }: OrganizerCardProps) {
   return (
-    <section className={`rounded-[24px] border border-slate-200/80 bg-white/95 p-5 shadow-[0_14px_42px_rgba(15,23,42,0.05)] ${interactive ? 'transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_20px_55px_rgba(15,23,42,0.08)]' : ''} ${className}`}>
+    <section className={`rounded-[24px] border border-slate-200/80 bg-white p-5 shadow-[0_14px_42px_rgba(15,23,42,0.05)] ${interactive ? 'transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_20px_55px_rgba(15,23,42,0.08)]' : ''} ${className}`}>
       {children}
     </section>
   )
@@ -125,7 +125,7 @@ interface EmptyStateCardProps {
 
 export function EmptyStateCard({ title, description, action, icon: Icon = Inbox, className = '' }: EmptyStateCardProps) {
   return (
-    <div className={`rounded-[24px] border border-dashed border-slate-300 bg-white/80 p-6 text-center shadow-[0_12px_35px_rgba(15,23,42,0.04)] ${className}`}>
+    <div className={`rounded-[24px] border border-dashed border-slate-300 bg-white p-6 text-center shadow-[0_12px_35px_rgba(15,23,42,0.04)] ${className}`}>
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-brand-100 bg-brand-50 text-brand-600">
         <Icon className="h-5 w-5" />
       </div>
