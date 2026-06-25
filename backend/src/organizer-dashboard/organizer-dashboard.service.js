@@ -32,13 +32,14 @@ function toDashboardEvent(event) {
 }
 
 function toDraft(event) {
+  const progress = getDraftProgress(event);
   return {
     id: event.id,
     name: event.title,
     eventType: 'Draft Event',
     lastEdited: event.updated_at || event.created_at,
-    progress: getEventProgress(event.status),
-    lastCompletedStep: getLastCompletedStep(event.status)
+    progress,
+    lastCompletedStep: getDraftStepLabel(progress)
   };
 }
 
@@ -235,17 +236,32 @@ function getEventProgress(status) {
   return progressByStatus[status] ?? 0;
 }
 
-function getLastCompletedStep(status) {
-  const stepByStatus = {
-    draft: 'Event basics saved',
-    planning: 'Requirements prepared',
-    booking: 'Vendor outreach in progress',
-    confirmed: 'Bookings confirmed',
-    completed: 'Event completed',
-    cancelled: 'Event cancelled'
-  };
+function hasMeaningfulText(value) {
+  return typeof value === 'string' && value.trim().length > 0 && value.trim() !== 'TBD';
+}
 
-  return stepByStatus[status] || 'Started';
+function getDraftProgress(event) {
+  if (event.status === 'completed') return 100;
+  if (event.status === 'cancelled') return 0;
+
+  const checkpoints = [
+    hasMeaningfulText(event.title) && !event.title.toLowerCase().endsWith(' planning draft'),
+    hasMeaningfulText(event.venue),
+    Boolean(event.event_date),
+    Number(event.budget || 0) > 0,
+    Number(event.expected_guests || 0) > 1
+  ];
+
+  const filled = checkpoints.filter(Boolean).length;
+  return Math.max(10, Math.min(95, Math.round((filled / checkpoints.length) * 100)));
+}
+
+function getDraftStepLabel(progress) {
+  if (progress >= 90) return 'Ready to review';
+  if (progress >= 70) return 'Requirements prepared';
+  if (progress >= 50) return 'Event details added';
+  if (progress >= 30) return 'Venue selected';
+  return 'Event basics saved';
 }
 
 function mapEventStatus(status) {

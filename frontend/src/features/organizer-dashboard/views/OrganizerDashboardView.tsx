@@ -19,9 +19,7 @@ import {
   Plus,
   Send,
   ShoppingBag,
-  Star,
   ThumbsUp,
-  TrendingUp,
   Users,
   XCircle,
 } from 'lucide-react'
@@ -32,7 +30,6 @@ import {
   MetricCard,
   OrganizerCard,
   OrganizerPage,
-  OrganizerPageHeader,
   SectionHeader,
 } from '../../../shared/components/OrganizerUI'
 import type {
@@ -150,73 +147,83 @@ export function OrganizerDashboardView({
   return (
     <DashboardShell>
       <OrganizerPage>
-        <OrganizerPageHeader
-          title="Welcome back, Organizer"
-          description="Manage your event plans, vendor requests, bookings, and active marketplace status indicators."
-          action={
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => navigate('/organizer/plan-event')}>
-                <Plus className="w-4 h-4 mr-1.5" />
-                Plan an Event
-              </Button>
-              <Button variant="secondary" onClick={() => navigate('/organizer/vendor-marketplace')}>
-                <ShoppingBag className="w-4 h-4 mr-1.5" />
-                View Marketplace
-              </Button>
-              <Button variant="secondary" onClick={() => navigate('/organizer/vendor-status')}>
-                <MessageSquare className="w-4 h-4 mr-1.5" />
-                Track Status
-              </Button>
+        <OrganizerCard className="overflow-hidden p-0">
+          <div className="border-b border-slate-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(241,248,255,0.94)_46%,rgba(231,244,255,0.9)_100%)] px-4 py-4 md:px-5 md:py-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="max-w-3xl">
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-brand-600">Eventify</p>
+                <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-950 md:text-[2.15rem]">
+                  Welcome back, Organizer
+                </h1>
+                <p className="mt-1.5 max-w-2xl text-xs leading-5 text-slate-500 md:text-sm">
+                  Manage your event plans, vendor requests, bookings, and active marketplace status indicators.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 shrink-0">
+                <Button onClick={() => navigate('/organizer/plan-event')}>
+                  <Plus className="w-4 h-4 mr-1.5" />
+                  Plan an Event
+                </Button>
+                <Button variant="secondary" onClick={() => navigate('/organizer/vendor-marketplace')}>
+                  <ShoppingBag className="w-4 h-4 mr-1.5" />
+                  View Marketplace
+                </Button>
+                <Button variant="secondary" onClick={() => navigate('/organizer/vendor-status')}>
+                  <MessageSquare className="w-4 h-4 mr-1.5" />
+                  Track Status
+                </Button>
+              </div>
             </div>
-          }
-        />
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <MetricCard label="Total Events" value={summaryStats.totalEvents} icon={Calendar} tone="indigo" />
-          <MetricCard label="Draft Events" value={summaryStats.draftEvents} icon={FileText} tone="amber" />
-          <MetricCard label="Active Requests" value={summaryStats.activeVendorRequests} icon={Send} tone="blue" />
-          <MetricCard label="Pending Responses" value={summaryStats.pendingResponses} icon={Clock} tone="amber" />
-          <MetricCard label="Accepted" value={summaryStats.acceptedBookings} icon={ThumbsUp} tone="emerald" />
-          <MetricCard label="Confirmed" value={summaryStats.confirmedBookings} icon={CheckCircle2} tone="emerald" />
-        </div>
+            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+              <MetricCard label="Total Events" value={summaryStats.totalEvents} icon={Calendar} tone="indigo" />
+              <MetricCard label="Draft Events" value={summaryStats.draftEvents} icon={FileText} tone="amber" />
+              <MetricCard label="Active Requests" value={summaryStats.activeVendorRequests} icon={Send} tone="blue" />
+              <MetricCard label="Pending Responses" value={summaryStats.pendingResponses} icon={Clock} tone="amber" />
+              <MetricCard label="Accepted" value={summaryStats.acceptedBookings} icon={ThumbsUp} tone="emerald" />
+              <MetricCard label="Confirmed" value={summaryStats.confirmedBookings} icon={CheckCircle2} tone="emerald" />
+            </div>
 
-        <OrganizerCard className="p-5">
-          <SectionHeader
-            title="Quick Actions"
-            description="Common tasks to help you move faster"
-          />
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
-            {[
-              { label: 'Plan a New Event', icon: Plus, to: '/organizer/plan-event', tone: 'primary' as const },
-              { label: 'Continue Draft', icon: FileText, to: '/organizer/plan-event', tone: 'amber' as const },
-              { label: 'Browse Marketplace', icon: ShoppingBag, to: '/organizer/vendor-marketplace', tone: 'blue' as const },
-              { label: 'Track Requests', icon: MessageSquare, to: '/organizer/vendor-status', tone: 'purple' as const },
-              { label: 'Confirmed Bookings', icon: CalendarCheck, to: '/organizer/vendor-status', tone: 'green' as const },
-            ].map((action) => {
-              const Icon = action.icon
-              const tones: Record<string, string> = {
-                primary: 'bg-gradient-to-br from-brand-600 to-brand-700 text-white hover:from-brand-500 hover:to-brand-600 shadow-brand-200/50',
-                amber: 'bg-gradient-to-br from-amber-500 to-amber-600 text-white hover:from-amber-400 hover:to-amber-500 shadow-amber-200/50',
-                blue: 'bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-400 hover:to-blue-500 shadow-blue-200/50',
-                purple: 'bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:from-purple-400 hover:to-purple-500 shadow-purple-200/50',
-                green: 'bg-gradient-to-br from-green-500 to-green-600 text-white hover:from-green-400 hover:to-green-500 shadow-green-200/50',
-              }
-              return (
-                <button
-                  key={action.label}
-                  onClick={() => navigate(action.to)}
-                  className={`${tones[action.tone]} rounded-xl p-4 text-left text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 shadow-md hover:shadow-lg flex flex-col justify-between h-24`}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span>{action.label}</span>
-                </button>
-              )
-            })}
+            <div className="mt-5">
+              <div className="mb-3">
+                <p className="text-sm font-semibold text-slate-950">Quick Actions</p>
+                <p className="mt-0.5 text-xs text-slate-500">Common tasks to help you move faster</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                {[
+                  { label: 'Plan a New Event', icon: Plus, to: '/organizer/plan-event', tone: 'primary' as const },
+                  { label: 'Continue Draft', icon: FileText, to: '/organizer/plan-event', tone: 'amber' as const },
+                  { label: 'Browse Marketplace', icon: ShoppingBag, to: '/organizer/vendor-marketplace', tone: 'blue' as const },
+                  { label: 'Track Requests', icon: MessageSquare, to: '/organizer/vendor-status', tone: 'purple' as const },
+                  { label: 'Confirmed Bookings', icon: CalendarCheck, to: '/organizer/vendor-status', tone: 'green' as const },
+                ].map((action) => {
+                  const Icon = action.icon
+                  const tones: Record<string, string> = {
+                    primary: 'bg-gradient-to-br from-brand-600 to-brand-700 text-white hover:from-brand-500 hover:to-brand-600 shadow-brand-200/50',
+                    amber: 'bg-gradient-to-br from-amber-500 to-amber-600 text-white hover:from-amber-400 hover:to-amber-500 shadow-amber-200/50',
+                    blue: 'bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-400 hover:to-blue-500 shadow-blue-200/50',
+                    purple: 'bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:from-purple-400 hover:to-purple-500 shadow-purple-200/50',
+                    green: 'bg-gradient-to-br from-green-500 to-green-600 text-white hover:from-green-400 hover:to-green-500 shadow-green-200/50',
+                  }
+                  return (
+                    <button
+                      key={action.label}
+                      onClick={() => navigate(action.to)}
+                      className={`${tones[action.tone]} flex h-20 flex-col justify-between rounded-xl p-3 text-left text-xs font-semibold shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg md:h-24 md:p-4 md:text-sm`}
+                    >
+                      <Icon className="h-4 w-4 shrink-0 md:h-5 md:w-5" />
+                      <span>{action.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         </OrganizerCard>
 
         <SectionHeader
           title="Event Planning Summary"
+          eyebrow=""
           action={
             <Button variant="ghost" onClick={() => navigate('/organizer/plan-event')}>
               View All <ChevronRight className="w-3.5 h-3.5" />
@@ -269,6 +276,7 @@ export function OrganizerDashboardView({
           <OrganizerCard className="p-5">
             <SectionHeader
               title="Draft Events"
+              eyebrow=""
               action={
                 <Button variant="ghost" onClick={() => navigate('/organizer/plan-event')}>
                   View All Drafts <ChevronRight className="w-3.5 h-3.5" />
@@ -353,91 +361,9 @@ export function OrganizerDashboardView({
           </OrganizerCard>
         </div>
 
-        <SectionHeader
-          title="Upcoming Bookings"
-          action={
-            <Button variant="ghost" onClick={() => navigate('/organizer/vendor-status')}>
-              View All <ChevronRight className="w-3.5 h-3.5" />
-            </Button>
-          }
-        />
-        {bookings.length === 0 ? (
-          <EmptyStateCard
-            title="No upcoming bookings"
-            description="Bookings will appear here once vendors confirm."
-            action={<Button onClick={() => navigate('/organizer/vendor-status')}>Track Requests</Button>}
-          />
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {bookings.map((booking) => {
-              const statusClass = STATUS_COLORS_DASHBOARD[booking.status] || 'bg-slate-100 text-slate-700'
-              return (
-                <OrganizerCard key={booking.id} className="p-4 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-2.5">
-                      <h3 className="text-sm font-semibold text-slate-900 truncate">{booking.eventName}</h3>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${statusClass}`}>
-                        {STATUS_LABELS_DASHBOARD[booking.status]}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-700 font-medium">{booking.vendorName}</p>
-                    <p className="text-xs text-slate-500 mb-3">{booking.category}</p>
-                  </div>
-                  <div className="text-xs text-slate-500 space-y-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-slate-400" />{formatDate(booking.date)}</div>
-                    <div className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-slate-400" />{booking.timeSlot}</div>
-                  </div>
-                </OrganizerCard>
-              )
-            })}
-          </div>
-        )}
-
-        <SectionHeader
-          title="Recommended Vendors"
-          action={
-            <Button variant="ghost" onClick={() => navigate('/organizer/vendor-marketplace')}>
-              View Marketplace <ChevronRight className="w-3.5 h-3.5" />
-            </Button>
-          }
-        />
-        {recommendedVendors.length === 0 ? (
-          <EmptyStateCard
-            title="No recommended vendors"
-            description="Browse the marketplace to find vendors for your events."
-            action={<Button onClick={() => navigate('/organizer/vendor-marketplace')}>Browse Marketplace</Button>}
-          />
-        ) : (
-          <div className="grid gap-4 md:grid-cols-3">
-            {recommendedVendors.map((vendor) => (
-              <OrganizerCard key={vendor.id} className="p-5 flex flex-col justify-between" interactive>
-                <div>
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="text-sm font-semibold text-slate-900 truncate">{vendor.name}</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">{vendor.category}</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
-                      <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                      {vendor.rating}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-slate-500 mb-4 bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <span className="flex items-center gap-1"><TrendingUp className="w-3.5 h-3.5 text-emerald-500" />{vendor.matchScore}% match</span>
-                    <span className="font-semibold text-slate-900">From ${vendor.startingPrice.toLocaleString()}</span>
-                  </div>
-                </div>
-                <Button variant="secondary" fullWidth onClick={() => navigate(`/organizer/vendor-marketplace`)}>
-                  View Profile
-                </Button>
-              </OrganizerCard>
-            ))}
-          </div>
-        )}
-
         <div className="grid gap-6 lg:grid-cols-2">
           <OrganizerCard className="p-5">
-            <SectionHeader title="Recent Activity" />
+            <SectionHeader title="Recent Activity" eyebrow="" />
             <div className="space-y-3.5">
               {activities.length === 0 ? (
                 <p className="text-sm text-slate-400 py-6 text-center">No recent activity.</p>
@@ -462,7 +388,7 @@ export function OrganizerDashboardView({
           </OrganizerCard>
 
           <OrganizerCard className="p-5">
-            <SectionHeader title="Needs Attention" />
+            <SectionHeader title="Needs Attention" eyebrow="" />
             <div className="space-y-3.5">
               {notifications.length === 0 ? (
                 <p className="text-sm text-slate-400 py-6 text-center">Nothing needs attention.</p>

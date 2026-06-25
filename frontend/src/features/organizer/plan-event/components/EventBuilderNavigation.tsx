@@ -54,21 +54,21 @@ export function EventBuilderNavigation({
       </div>
       <div className="flex flex-wrap gap-2">
         {onSaveDraft && (
-          <Button variant="ghost" onClick={onSaveDraft} disabled={submitting}>
+          <Button type="button" variant="ghost" onClick={onSaveDraft} disabled={submitting}>
             Save Draft
           </Button>
         )}
-        <Button variant="secondary" onClick={onBack} disabled={currentStep === 0 || submitting}>
+        <Button type="button" variant="secondary" onClick={onBack} disabled={currentStep === 0 || submitting}>
           <ChevronLeft className="mr-1.5 h-4 w-4" />
           Back
         </Button>
         {currentStep < TOTAL_STEPS - 1 ? (
-          <Button onClick={onNext} disabled={submitting}>
+          <Button type="button" onClick={onNext} disabled={submitting}>
             Next
             <ChevronRight className="ml-1.5 h-4 w-4" />
           </Button>
         ) : (
-          <Button onClick={onSubmit} loading={submitting}>
+          <Button type="button" onClick={onSubmit} loading={submitting}>
             Create Event Plan
           </Button>
         )}

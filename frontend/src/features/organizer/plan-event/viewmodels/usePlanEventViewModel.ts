@@ -55,6 +55,65 @@ interface CompletedBrief {
   completedAt: string
 }
 
+const DRAFT_SNAPSHOT_STORAGE_KEY = 'eventify:plan-event-draft-snapshots'
+
+interface DraftSnapshotStore {
+  [draftId: string]: SavedDraft
+}
+
+function readDraftSnapshotStore(): DraftSnapshotStore {
+  const saved = sessionStorage.getItem(DRAFT_SNAPSHOT_STORAGE_KEY)
+  if (!saved) return {}
+
+  try {
+    return JSON.parse(saved) as DraftSnapshotStore
+  } catch {
+    return {}
+  }
+}
+
+function writeDraftSnapshotStore(store: DraftSnapshotStore) {
+  sessionStorage.setItem(DRAFT_SNAPSHOT_STORAGE_KEY, JSON.stringify(store))
+}
+
+function saveDraftSnapshot(snapshot: SavedDraft) {
+  const store = readDraftSnapshotStore()
+  store[snapshot.id] = snapshot
+  writeDraftSnapshotStore(store)
+}
+
+function getDraftSnapshot(draftId: string): SavedDraft | null {
+  const store = readDraftSnapshotStore()
+  return store[draftId] ?? null
+}
+
+function removeDraftSnapshot(draftId: string) {
+  const store = readDraftSnapshotStore()
+  if (!store[draftId]) return
+  delete store[draftId]
+  writeDraftSnapshotStore(store)
+}
+
+function hasMeaningfulText(value?: string | null) {
+  return Boolean(value && value.trim() && value.trim() !== 'TBD')
+}
+
+function calculateDraftProgressFromEvent(event: Awaited<ReturnType<typeof eventService.listEvents>>[number]) {
+  if (event.status === 'completed') return 100
+  if (event.status === 'cancelled') return 0
+
+  const checkpoints = [
+    hasMeaningfulText(event.title) && !event.title.toLowerCase().endsWith(' planning draft'),
+    hasMeaningfulText(event.venue),
+    Boolean(event.event_date),
+    Number(event.budget) > 0,
+    Number(event.expected_guests) > 1
+  ]
+
+  const filled = checkpoints.filter(Boolean).length
+  return Math.max(10, Math.min(95, Math.round((filled / checkpoints.length) * 100)))
+}
+
 function createDraftSnapshot(form: PlanEventFormState, currentStep: number): SavedDraft {
   return {
     id: crypto.randomUUID(),
@@ -72,25 +131,29 @@ function createDraftSnapshot(form: PlanEventFormState, currentStep: number): Sav
 }
 
 function mapEventToDraft(event: Awaited<ReturnType<typeof eventService.listEvents>>[number]): SavedDraft {
-  const isDraftLike = event.status === 'draft' || event.status === 'planning'
+  const snapshot = getDraftSnapshot(event.id)
+  const snapshotForm = snapshot?.form
+  const progress = snapshot?.progress ?? calculateDraftProgressFromEvent(event)
+  const currentStep = snapshot?.currentStep ?? 0
   return {
     id: event.id,
-    title: event.title,
+    title: snapshotForm?.title?.trim() || event.title,
     eventType: 'custom',
-    venue: event.venue,
-    eventDate: event.event_date,
-    guests: String(event.expected_guests),
-    budget: String(event.budget),
-    progress: isDraftLike ? 25 : Math.round(100),
+    venue: snapshotForm?.venue?.trim() || event.venue,
+    eventDate: snapshotForm?.eventDate || event.event_date,
+    guests: snapshotForm?.guests || String(event.expected_guests),
+    budget: snapshotForm?.budget || String(event.budget),
+    progress,
     lastSaved: event.updated_at || event.created_at,
-    currentStep: isDraftLike ? 0 : TOTAL_STEPS - 1,
+    currentStep,
     form: {
       ...INITIAL_FORM_STATE,
-      title: event.title,
-      venue: event.venue,
-      eventDate: event.event_date,
-      guests: String(event.expected_guests),
-      budget: String(event.budget),
+      ...(snapshotForm ?? {}),
+      title: snapshotForm?.title || event.title,
+      venue: snapshotForm?.venue || event.venue,
+      eventDate: snapshotForm?.eventDate || event.event_date,
+      guests: snapshotForm?.guests || String(event.expected_guests),
+      budget: snapshotForm?.budget || String(event.budget),
     }
   }
 }
@@ -280,7 +343,11 @@ export function usePlanEventViewModel() {
     }
   }, [])
 
-  const saveDraft = useCallback(() => {
+  const saveDraft = useCallback(async () => {
+    if (submittingRef.current) return
+    submittingRef.current = true
+    setState((s) => ({ ...s, submitting: true, error: null, errors: [] }))
+
     const payload = {
       title: state.form.title.trim() || `${state.form.eventType} planning draft`,
       eventDate: state.form.eventDate || new Date().toISOString().slice(0, 10),
@@ -290,44 +357,65 @@ export function usePlanEventViewModel() {
       status: 'draft' as const
     }
 
-    const request = state.draftEventId
-      ? eventService.updateEvent(state.draftEventId, payload)
-      : eventService.createEvent(payload)
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state.form))
+      const draftSnapshot = createDraftSnapshot(state.form, state.currentStep)
 
-    request
-      .then((created) => {
-        setState((s) => ({
-          ...s,
-          draftEventId: created.id,
-          drafts: [mapEventToDraft(created), ...s.drafts.filter((draft) => draft.id !== created.id)],
-          errors: []
-        }))
-        void refreshEvents()
-        window.dispatchEvent(new CustomEvent('eventify:dashboard-refresh'))
-      })
-      .catch((err) => {
-        setState((s) => ({
-          ...s,
-          error: err instanceof Error ? err.message : 'Failed to save draft.'
-        }))
-      })
-  }, [state.form, state.draftEventId])
+      const created = state.draftEventId
+        ? await eventService.updateEvent(state.draftEventId, payload)
+        : await eventService.createEvent(payload)
+
+      const savedSnapshot: SavedDraft = {
+        ...draftSnapshot,
+        id: created.id,
+        title: created.title,
+        venue: created.venue,
+        eventDate: created.event_date,
+        guests: String(created.expected_guests),
+        budget: String(created.budget),
+        lastSaved: created.updated_at || created.created_at
+      }
+      saveDraftSnapshot(savedSnapshot)
+
+      setState((s) => ({
+        ...s,
+        draftEventId: created.id,
+        drafts: [mapEventToDraft(created), ...s.drafts.filter((draft) => draft.id !== created.id)],
+        errors: [],
+        error: null,
+        submitting: false
+      }))
+      await refreshEvents()
+      window.dispatchEvent(new CustomEvent('eventify:dashboard-refresh'))
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        submitting: false,
+        error: err instanceof Error ? err.message : 'Failed to save draft.'
+      }))
+    } finally {
+      submittingRef.current = false
+    }
+  }, [state.form, state.draftEventId, refreshEvents])
 
   const loadDraft = useCallback((draftId?: string) => {
     if (draftId) {
+      const snapshot = getDraftSnapshot(draftId)
+      const snapshotForm = snapshot?.form
       eventService.getEvent(draftId).then((event) => {
         setState((s) => ({
           ...s,
           form: {
             ...s.form,
-            title: event.title,
-            venue: event.venue,
-            eventDate: event.event_date,
-            budget: String(event.budget),
-            guests: String(event.expected_guests)
+            ...(snapshotForm ?? {}),
+            title: snapshotForm?.title || event.title,
+            venue: snapshotForm?.venue || event.venue,
+            eventDate: snapshotForm?.eventDate || event.event_date,
+            budget: snapshotForm?.budget || String(event.budget),
+            guests: snapshotForm?.guests || String(event.expected_guests)
           },
           draftEventId: event.id,
-          currentStep: 0,
+          currentStep: snapshot?.currentStep ?? 0,
           errors: []
         }))
       }).catch((err) => {
@@ -347,6 +435,7 @@ export function usePlanEventViewModel() {
     if (draftId) {
       try {
         await eventService.deleteEvent(draftId)
+        removeDraftSnapshot(draftId)
         setState((s) => ({
           ...s,
           drafts: s.drafts.filter((draft) => draft.id !== draftId),
@@ -363,6 +452,7 @@ export function usePlanEventViewModel() {
             draftEventId: s.draftEventId === draftId ? null : s.draftEventId,
             error: null
           }))
+          removeDraftSnapshot(draftId)
           void refreshEvents()
           window.dispatchEvent(new CustomEvent('eventify:dashboard-refresh'))
           return

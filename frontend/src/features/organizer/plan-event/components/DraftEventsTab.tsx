@@ -45,7 +45,15 @@ export function DraftEventsTab({ drafts = [], onContinue, onEdit, onDelete }: Pr
           </div>
 
           <div className="h-2 bg-slate-100 rounded-full mb-4 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-brand-500 to-brand-700 rounded-full transition-all" style={{ width: `${draft.progress}%` }} />
+            <div
+              className="h-full bg-gradient-to-r from-brand-500 to-brand-700 rounded-full transition-all"
+              style={{ width: `${Math.max(0, Math.min(100, draft.progress))}%` }}
+              role="progressbar"
+              aria-valuenow={Math.max(0, Math.min(100, draft.progress))}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${draft.title} completion`}
+            />
           </div>
 
           <div className="flex flex-wrap gap-3 text-xs text-slate-500 mb-4">

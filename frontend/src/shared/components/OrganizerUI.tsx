@@ -20,9 +20,10 @@ interface OrganizerPageHeaderProps {
   description?: string
   action?: React.ReactNode
   children?: React.ReactNode
+  eyebrow?: string | null
 }
 
-export function OrganizerPageHeader({ title, description, action, children }: OrganizerPageHeaderProps) {
+export function OrganizerPageHeader({ title, description, action, children, eyebrow = 'Eventify' }: OrganizerPageHeaderProps) {
   return (
     <section className={[
         'relative rounded-[28px] border',
@@ -33,7 +34,7 @@ export function OrganizerPageHeader({ title, description, action, children }: Or
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 via-sky-400 to-cyan-300 rounded-t-[28px]" aria-hidden="true" />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
-          <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-brand-600">Eventify</p>
+          {eyebrow && <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-brand-600">{eyebrow}</p>}
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">{title}</h1>
           {description && <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">{description}</p>}
         </div>
@@ -68,13 +69,14 @@ interface SectionHeaderProps {
   title: string
   description?: string
   action?: React.ReactNode
+  eyebrow?: string | null
 }
 
-export function SectionHeader({ title, description, action }: SectionHeaderProps) {
+export function SectionHeader({ title, description, action, eyebrow = 'Eventify section' }: SectionHeaderProps) {
   return (
     <div className="mb-4 flex flex-col gap-3 border-b border-slate-200/70 pb-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-600">Eventify section</p>
+        {eyebrow && <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-600">{eyebrow}</p>}
         <h2 className="mt-1 text-base font-semibold text-slate-950">{title}</h2>
         {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
       </div>

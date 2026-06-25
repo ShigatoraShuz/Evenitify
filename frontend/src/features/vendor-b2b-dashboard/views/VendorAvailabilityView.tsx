@@ -23,7 +23,7 @@ export function VendorAvailabilityView({
 }: VendorAvailabilityViewProps) {
   return (
     <DashboardShell>
-      <div className="space-y-8 max-w-[1200px] mx-auto">
+      <div className="mx-auto max-w-[1480px] space-y-8">
         <PageHeader
           title="Availability & Schedule"
           subtitle="Manage your working hours and blocked dates to prevent scheduling conflicts."
@@ -36,16 +36,22 @@ export function VendorAvailabilityView({
           </div>
         )}
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] items-start">
-          <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] min-h-[600px] flex flex-col">
-            <h2 className="text-xl font-bold text-slate-900 mb-6">Calendar View</h2>
-            <div className="flex-1">
-              <AvailabilityCalendar preview={availability} />
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,0.95fr)] items-start">
+          <section className="space-y-4">
+            <div className="flex items-end justify-between gap-4 px-1">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-brand-600">Planner</p>
+                <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">Availability Calendar</h2>
+              </div>
+              <p className="max-w-md text-right text-sm text-slate-500">
+                Review the next available blocks, switch between month and year views, and keep blocked dates visible.
+              </p>
             </div>
+            <AvailabilityCalendar preview={availability} editable />
           </section>
 
           <section className="space-y-6">
-            <div className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
+            <div className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white">
                   <ShieldCheck className="w-6 h-6" />
@@ -64,7 +70,7 @@ export function VendorAvailabilityView({
               </div>
             </div>
 
-            <div className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
+            <div className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-slate-900">Blocked Dates</h3>
                 <p className="text-sm text-slate-500">Dates you are unavailable for booking</p>
