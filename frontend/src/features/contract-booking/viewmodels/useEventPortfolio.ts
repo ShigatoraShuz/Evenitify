@@ -89,6 +89,21 @@ export function useEventPortfolio() {
     }
   }, [state.expandedBookingId])
 
+  const sendBookingMessage = useCallback(async (bookingId: string, body: string) => {
+    try {
+      const message = await communicationService.createBookingMessage(bookingId, body)
+      setState((s) => ({
+        ...s,
+        bookingMessages: {
+          ...s.bookingMessages,
+          [bookingId]: [...(s.bookingMessages[bookingId] || []), message]
+        }
+      }))
+    } catch (err) {
+      setState((s) => ({ ...s, error: (err as Error).message }))
+    }
+  }, [])
+
   const createContract = useCallback(async (bookingId: string, termsSummary?: string) => {
     if (submittingRef.current) return
     submittingRef.current = true
@@ -106,8 +121,13 @@ export function useEventPortfolio() {
 
   const uploadDocument = useCallback(async (file: File) => {
     const ownerId = state.portfolio?.event.id || 'system'
-    const document = await documentService.uploadDocument(ownerId, file, 'Contract attachment')
-    setState((s) => ({ ...s, documents: [document, ...s.documents] }))
+    setState((s) => ({ ...s, submitting: true, error: null }))
+    try {
+      const document = await documentService.uploadDocument(ownerId, file, 'Contract attachment')
+      setState((s) => ({ ...s, submitting: false, documents: [document, ...s.documents] }))
+    } catch (err) {
+      setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    }
   }, [state.portfolio?.event.id])
 
   const sendContract = useCallback(async (contractId: string) => {
@@ -199,6 +219,7 @@ export function useEventPortfolio() {
     loadPortfolio,
     setActiveTab,
     expandBooking,
+    sendBookingMessage,
     createContract,
     uploadDocument,
     sendContract,

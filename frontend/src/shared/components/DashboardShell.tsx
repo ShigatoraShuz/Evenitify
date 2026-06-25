@@ -65,7 +65,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const dashboardRoots = ['/organizer', '/vendor', '/admin']
+  const bgGradient = 'bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.18),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,_#f8fbff_0%,_#eaf2ff_52%,_#f7f8fc_100%)]'
+const dashboardRoots = ['/organizer', '/vendor', '/admin']
   const isActive = (path: string) => {
     if (dashboardRoots.includes(path)) return location.pathname === path
     return location.pathname.startsWith(path) && path !== '/'
@@ -84,7 +85,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.18),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,_#f8fbff_0%,_#eaf2ff_52%,_#f7f8fc_100%)]">
+      <div className={[
+        'min-h-screen',
+        bgGradient,
+      ].join(' ')}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-lg">
           Skip to main content
         </a>
@@ -140,14 +144,26 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 <>
                   <button
                     onClick={commandPalette.openPalette}
-                    className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white/80 px-3.5 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-white hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-200 cursor-pointer"
+                    className={[
+                      'inline-flex items-center gap-1.5 rounded-2xl border',
+                      'border-slate-200 bg-white/80 px-3.5 py-2 text-xs',
+                      'font-semibold text-slate-600 transition-all duration-200',
+                      'hover:bg-white hover:text-slate-900 focus:outline-none',
+                      'focus:ring-2 focus:ring-brand-200 cursor-pointer',
+                    ].join(' ')}
                   >
                     <LucideIcons.Search className="w-3.5 h-3.5 text-slate-400" />
                     <span>Search</span>
                   </button>
                   <button
                     onClick={() => setHelpOpen(true)}
-                    className="hidden items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-200 sm:inline-flex cursor-pointer"
+                    className={[
+                      'hidden items-center gap-1.5 rounded-2xl border',
+                      'border-slate-200 bg-white px-3.5 py-2 text-xs',
+                      'font-semibold text-slate-600 transition-all duration-200',
+                      'hover:bg-slate-50 hover:text-slate-900 focus:outline-none',
+                      'focus:ring-2 focus:ring-brand-200 sm:inline-flex cursor-pointer',
+                    ].join(' ')}
                   >
                     <LucideIcons.HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                     <span>Help</span>
@@ -166,7 +182,13 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 <div ref={profileRef} className="relative">
                   <button
                     onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                    className="flex items-center gap-2 rounded-2xl border border-transparent px-2.5 py-1.5 text-sm text-slate-600 hover:border-slate-200 hover:bg-white hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-200 sm:px-3"
+                    className={[
+                      'flex items-center gap-2 rounded-2xl border',
+                      'border-transparent px-2.5 py-1.5 text-sm',
+                      'text-slate-600 hover:border-slate-200 hover:bg-white',
+                      'hover:text-slate-900 focus:outline-none',
+                      'focus:ring-2 focus:ring-brand-200 sm:px-3',
+                    ].join(' ')}
                     aria-label="Account menu"
                     aria-expanded={profileMenuOpen}
                   >

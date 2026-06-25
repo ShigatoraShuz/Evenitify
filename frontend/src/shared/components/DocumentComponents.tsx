@@ -41,7 +41,16 @@ export function UploadDocumentDropzone({ onUpload }: { onUpload: (file: File) =>
       <p className="text-sm font-medium text-slate-700">Upload document</p>
       <p className="mt-1 text-xs text-slate-500">Attach files to this event portfolio.</p>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <input ref={fileRef} type="file" onChange={handleFile} className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-sm file:font-medium file:text-brand-700" />
+        <input
+          ref={fileRef}
+          type="file"
+          onChange={handleFile}
+          className={[
+            'min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm',
+            'file:mr-3 file:rounded file:border-0 file:bg-brand-50',
+            'file:px-3 file:py-1 file:text-sm file:font-medium file:text-brand-700',
+          ].join(' ')}
+        />
         {uploading && <span className="text-sm text-slate-500">Uploading...</span>}
       </div>
     </div>

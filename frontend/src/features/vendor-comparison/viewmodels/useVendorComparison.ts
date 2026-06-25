@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { vendorService } from '../../../services/vendorService'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 import type { CompareVendor, ShortlistEntry } from '../models/vendor-comparison.model'
 import { buildCompareVendors } from '../models/vendor-comparison.model'
 
@@ -82,6 +83,12 @@ export function useVendorComparison() {
     removeFromShortlist,
     isInShortlist,
     updateShortlistNotes,
-    clearError
+    clearError,
+    ...buildViewModelStateMeta({
+      loading: state.loading,
+      error: state.error,
+      empty: !state.loading && state.compareVendors.length === 0,
+      loaded: !state.loading && state.compareVendors.length > 0,
+    }),
   }
 }

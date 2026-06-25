@@ -24,15 +24,14 @@ export interface UpdateOrganizerProfilePayload {
 }
 
 export interface VendorProfile {
-  id: string
   businessName: string
   serviceArea: string
   businessDescription: string
   phone: string
-  website: string
-  address: string
-  createdAt: string
-  updatedAt: string
+  verificationStatus: string
+  isVerified: boolean
+  rating: number
+  services: Array<{ category: string; serviceName: string; basePrice: number; availabilityStatus: string }>
 }
 
 export interface UpdateVendorProfilePayload {
@@ -40,8 +39,6 @@ export interface UpdateVendorProfilePayload {
   serviceArea?: string
   businessDescription?: string
   phone?: string
-  website?: string
-  address?: string
 }
 
 export interface AdminProfile {

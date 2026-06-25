@@ -12,7 +12,13 @@ export function VendorRequestCard({ request, onClick }: Props) {
   return (
     <button
       onClick={onClick}
-      className="group w-full rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-brand-200"
+      className={[
+        'group w-full rounded-[22px] border border-slate-200 bg-white',
+        'p-4 text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)]',
+        'transition-all hover:-translate-y-0.5 hover:border-brand-200',
+        'hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]',
+        'focus:outline-none focus:ring-2 focus:ring-brand-200',
+      ].join(' ')}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">

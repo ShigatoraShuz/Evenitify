@@ -22,12 +22,11 @@ interface Props {
   onCloseDrawer: () => void
   selectedRequest: VendorRequest | null
   messages: VendorMessage[]
-  messageInput: string
-  onMessageInputChange: (v: string) => void
-  onSendMessage: () => void
+  onSendMessage: (body: string) => Promise<void>
   onStatusUpdate: (requestId: string, newStatus: VendorRequestStatus) => void
   timelineItems: VendorStatusTimelineItem[]
   empty: boolean
+  userRole?: string | null
 }
 
 export function OrganizerVendorStatusView({
@@ -42,12 +41,11 @@ export function OrganizerVendorStatusView({
   onCloseDrawer,
   selectedRequest,
   messages,
-  messageInput,
-  onMessageInputChange,
   onSendMessage,
   onStatusUpdate,
   timelineItems,
   empty,
+  userRole,
 }: Props) {
   const navigate = useNavigate()
 
@@ -98,12 +96,11 @@ export function OrganizerVendorStatusView({
         <VendorRequestDetailDrawer
           request={selectedRequest}
           messages={messages}
-          messageInput={messageInput}
-          onMessageInputChange={onMessageInputChange}
           onSendMessage={onSendMessage}
           onClose={onCloseDrawer}
           onStatusUpdate={onStatusUpdate}
           timelineItems={timelineItems}
+          userRole={userRole}
         />
       )}
     </DashboardShell>

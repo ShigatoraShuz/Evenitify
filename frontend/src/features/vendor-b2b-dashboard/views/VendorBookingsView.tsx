@@ -40,6 +40,8 @@ interface VendorBookingsViewProps {
   onClearError: () => void
   onLoadContract: (bookingId: string) => Promise<void>
   onSignVendorContract: (contractId: string) => Promise<void>
+  onSendBookingMessage: (body: string) => Promise<void>
+  userRole?: string | null
 }
 
 interface RequestCard {
@@ -96,6 +98,8 @@ export function VendorBookingsView({
   onClearError,
   onLoadContract,
   onSignVendorContract,
+  onSendBookingMessage,
+  userRole,
 }: VendorBookingsViewProps) {
   const [confirmDecline, setConfirmDecline] = useState<string | null>(null)
   const [negotiateOpen, setNegotiateOpen] = useState(false)
@@ -242,10 +246,12 @@ export function VendorBookingsView({
                 {requestCards.map((card) => {
                   const isSelected = selectedBooking?.id === card.booking.id
                   return (
-                    <button
+                    <div
                       key={card.booking.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => onSelectBooking(card.booking.id)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectBooking(card.booking.id) } }}
                       className={`overflow-hidden rounded-[24px] border text-left transition-all duration-300 ${
                         isSelected 
                           ? 'border-brand-300 bg-brand-50 shadow-md ring-4 ring-brand-500/10' 
@@ -311,7 +317,7 @@ export function VendorBookingsView({
                           </div>
                         )}
                       </div>
-                    </button>
+                    </div>
                   )
                 })}
               </div>
@@ -440,7 +446,7 @@ export function VendorBookingsView({
                 <div className="grid gap-6">
                   <div>
                     <h4 className="font-bold text-slate-900 mb-4">Messages</h4>
-                    <BookingMessageThread messages={bookingMessages} />
+                    <BookingMessageThread messages={bookingMessages} onSendMessage={onSendBookingMessage} userRole={userRole} />
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900 mb-4">Audit Trail</h4>

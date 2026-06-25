@@ -88,10 +88,6 @@ export const vendorMarketplaceService = {
     return api.get<VendorMarketplaceItem[]>(`/vendor-marketplace${qs ? `?${qs}` : ''}`)
   },
 
-  async getById(id: string): Promise<VendorMarketplaceItem> {
-    return api.get<VendorMarketplaceItem>(`/vendor-marketplace/${id}`)
-  },
-
   async getAvailability(vendorId: string, year: number, month: number): Promise<VendorAvailability> {
     return api.get<VendorAvailability>(`/vendor-marketplace/${vendorId}/availability?year=${year}&month=${month}`)
   },

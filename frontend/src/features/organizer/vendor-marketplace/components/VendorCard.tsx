@@ -37,18 +37,31 @@ export function VendorCard({
   const matchColor = vendor.matchScore >= 75 ? 'bg-emerald-500' : vendor.matchScore >= 40 ? 'bg-amber-500' : 'bg-slate-400'
 
   return (
-    <article className="group relative rounded-[24px] border border-slate-200/80 bg-white/95 p-5 shadow-[0_14px_42px_rgba(15,23,42,0.05)] transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_22px_60px_rgba(15,23,42,0.09)]">
+    <article className={[
+        'group relative rounded-[24px] border border-slate-200/80',
+        'bg-white/95 p-5 shadow-[0_14px_42px_rgba(15,23,42,0.05)]',
+        'transition-all hover:-translate-y-0.5 hover:border-brand-200',
+        'hover:shadow-[0_22px_60px_rgba(15,23,42,0.09)]',
+      ].join(' ')}>
       <div className="absolute right-4 top-4 flex items-center gap-1.5">
         <button
           onClick={(event) => { event.stopPropagation(); onToggleSave(vendor.id) }}
-          className={`rounded-xl p-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-200 ${isSaved ? 'bg-rose-50 text-rose-500' : 'text-slate-300 hover:bg-rose-50 hover:text-rose-400'}`}
+          className={
+            'rounded-xl p-1.5 transition-colors focus:outline-none ' +
+            'focus:ring-2 focus:ring-brand-200 ' +
+            (isSaved ? 'bg-rose-50 text-rose-500' : 'text-slate-300 hover:bg-rose-50 hover:text-rose-400')
+          }
           aria-label={isSaved ? 'Remove vendor from saved list' : 'Save vendor'}
         >
           <Heart className={`h-4 w-4 ${isSaved ? 'fill-rose-500' : ''}`} />
         </button>
         <button
           onClick={(event) => { event.stopPropagation(); onToggleCompare(vendor.id) }}
-          className={`rounded-xl p-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-200 ${isInCompare ? 'bg-brand-50 text-brand-600' : 'text-slate-300 hover:bg-brand-50 hover:text-brand-500'}`}
+          className={
+            'rounded-xl p-1.5 transition-colors focus:outline-none ' +
+            'focus:ring-2 focus:ring-brand-200 ' +
+            (isInCompare ? 'bg-brand-50 text-brand-600' : 'text-slate-300 hover:bg-brand-50 hover:text-brand-500')
+          }
           aria-label={isInCompare ? 'Remove vendor from comparison' : 'Add vendor to comparison'}
         >
           <GitCompare className="h-4 w-4" />
@@ -113,18 +126,50 @@ export function VendorCard({
       </button>
 
       <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 sm:grid-cols-4">
-        <button onClick={() => onCardClick(vendor)} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-200">
+        <button
+          onClick={() => onCardClick(vendor)}
+          className={[
+            'inline-flex items-center justify-center gap-1.5 rounded-xl',
+            'bg-brand-600 px-3 py-2 text-xs font-semibold text-white',
+            'transition-colors hover:bg-brand-700 focus:outline-none',
+            'focus:ring-2 focus:ring-brand-200',
+          ].join(' ')}
+        >
           <Eye className="h-3.5 w-3.5" />
           Details
         </button>
-        <button onClick={() => onCardClick(vendor)} className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-brand-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-200">
+        <button
+          onClick={() => onCardClick(vendor)}
+          className={[
+            'inline-flex items-center justify-center gap-1.5 rounded-xl border',
+            'border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600',
+            'transition-colors hover:border-brand-300 hover:bg-slate-50',
+            'focus:outline-none focus:ring-2 focus:ring-brand-200',
+          ].join(' ')}
+        >
           <CalendarCheck className="h-3.5 w-3.5" />
           Schedule
         </button>
-        <button onClick={() => onSendRequest(vendor)} className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-brand-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-200">
+        <button
+          onClick={() => onSendRequest(vendor)}
+          className={[
+            'inline-flex items-center justify-center rounded-xl border',
+            'border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600',
+            'transition-colors hover:border-brand-300 hover:bg-slate-50',
+            'focus:outline-none focus:ring-2 focus:ring-brand-200',
+          ].join(' ')}
+        >
           Request
         </button>
-        <button onClick={() => onToggleCompare(vendor.id)} className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-brand-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-200">
+        <button
+          onClick={() => onToggleCompare(vendor.id)}
+          className={[
+            'inline-flex items-center justify-center rounded-xl border',
+            'border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600',
+            'transition-colors hover:border-brand-300 hover:bg-slate-50',
+            'focus:outline-none focus:ring-2 focus:ring-brand-200',
+          ].join(' ')}
+        >
           {isInCompare ? 'Remove' : 'Compare'}
         </button>
       </div>

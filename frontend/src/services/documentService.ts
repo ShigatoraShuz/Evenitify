@@ -57,7 +57,4 @@ export const documentService = {
     api.get<DocumentMetadata[]>(`/documents?ownerId=${encodeURIComponent(ownerId)}`),
 
   uploadDocument: uploadDocumentFile,
-
-  listByOwner: async (ownerId: string): Promise<DocumentMetadata[]> =>
-    api.get<DocumentMetadata[]>(`/documents?ownerId=${encodeURIComponent(ownerId)}`)
 }

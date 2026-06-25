@@ -149,7 +149,10 @@ export function VendorProcurementView({
       !selectedVendor ? 'Select a vendor before booking.' : '',
       budget !== undefined && budget < 0 ? 'Requested budget cannot be negative.' : '',
       budget !== undefined && selectedRequirement?.min_budget && budget < selectedRequirement.min_budget ? 'Requested budget is below the requirement minimum.' : '',
-      budget !== undefined && selectedRequirement?.max_budget && budget > selectedRequirement.max_budget && !bookingNotes.trim() ? 'Add notes when requested budget exceeds the requirement maximum.' : ''
+      budget !== undefined && selectedRequirement?.max_budget &&
+      budget > selectedRequirement.max_budget && !bookingNotes.trim()
+        ? 'Add notes when requested budget exceeds the requirement maximum.'
+        : ''
     ].filter(Boolean)
     setLocalErrors(nextErrors)
     if (nextErrors.length > 0 || submitting) return
@@ -258,7 +261,10 @@ export function VendorProcurementView({
       {currentStep === 'requirements' && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">Event Requirements<span className="rounded bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">RFQ</span></h2>
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              Event Requirements
+              <span className="rounded bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">RFQ</span>
+            </h2>
             <Button onClick={() => setShowReqForm(true)}>+ Add Requirement</Button>
           </div>
 
@@ -273,7 +279,12 @@ export function VendorProcurementView({
               {requirements.map((req) => (
                 <div
                   key={req.id}
-                  className={`bg-white rounded-xl border p-4 cursor-pointer transition-all ${selectedRequirement?.id === req.id ? 'border-brand-500 ring-2 ring-brand-100' : 'border-gray-200 hover:border-brand-300'}`}
+                  className={[
+                    'bg-white rounded-xl border p-4 cursor-pointer transition-all',
+                    selectedRequirement?.id === req.id
+                      ? 'border-brand-500 ring-2 ring-brand-100'
+                      : 'border-gray-200 hover:border-brand-300',
+                  ].join(' ')}
                   onClick={() => onSelectRequirement(req)}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -376,7 +387,12 @@ export function VendorProcurementView({
                 {vendors.map((vendor) => (
                   <div
                     key={vendor.id}
-                    className={`bg-white rounded-xl border p-4 cursor-pointer transition-all ${selectedVendor?.id === vendor.id ? 'border-brand-500 ring-2 ring-brand-100' : 'border-gray-200 hover:border-brand-300'}`}
+                    className={[
+                      'bg-white rounded-xl border p-4 cursor-pointer transition-all',
+                      selectedVendor?.id === vendor.id
+                        ? 'border-brand-500 ring-2 ring-brand-100'
+                        : 'border-gray-200 hover:border-brand-300',
+                    ].join(' ')}
                     onClick={() => onSelectVendor(vendor)}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -394,7 +410,14 @@ export function VendorProcurementView({
                         </div>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {recommendationByVendor.get(vendor.id)?.insights.map((insight) => (
-                            <span key={insight.label} className={`rounded-full px-2 py-0.5 text-xs ${insight.tone === 'success' ? 'bg-emerald-50 text-emerald-700' : insight.tone === 'warning' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                            <span key={insight.label} className={[
+                              'rounded-full px-2 py-0.5 text-xs',
+                              insight.tone === 'success'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : insight.tone === 'warning'
+                                ? 'bg-amber-50 text-amber-700'
+                                : 'bg-slate-100 text-slate-600',
+                            ].join(' ')}>
                               {insight.label}
                             </span>
                           ))}

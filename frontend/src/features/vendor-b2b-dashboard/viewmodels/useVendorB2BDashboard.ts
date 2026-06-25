@@ -37,7 +37,7 @@ export function useVendorB2BDashboard() {
     selectedBooking: null,
     activeTab: 'all',
     activeTypeTab: 'all',
-    loading: false,
+    loading: true,
     submitting: false,
     error: null,
     contract: null,
@@ -59,8 +59,14 @@ export function useVendorB2BDashboard() {
       try {
       const [bookings, availability, services] = await Promise.all([
         bookingService.listVendorB2BBookings(status, type),
-        availabilityService.getMyAvailability(),
-        vendorService.listServices()
+        availabilityService.getMyAvailability().catch((err) => {
+          addToast('error', `Availability load failed: ${(err as Error).message}`)
+          return null
+        }),
+        vendorService.listServices().catch((err) => {
+          addToast('error', `Services load failed: ${(err as Error).message}`)
+          return []
+        })
       ])
       setState((s) => ({ ...s, bookings, availability, services, loading: false }))
       } catch (err) {
@@ -97,10 +103,15 @@ export function useVendorB2BDashboard() {
         addToast('info', 'Request marked as viewed')
       }
 
+      const isProcurementRequest = selected?.request_vendors != null
+      const messagesPromise = isProcurementRequest
+        ? communicationService.listVendorRequestMessages(bookingId)
+        : communicationService.listBookingMessages(bookingId)
+
       const [booking, auditActivities, bookingMessages] = await Promise.all([
         bookingService.getVendorBookingDetail(bookingId),
         auditService.listActivities(`booking:${bookingId}`),
-        communicationService.listBookingMessages(bookingId)
+        messagesPromise
       ])
 
       const statusFilter = state.activeTab === 'all' ? undefined : state.activeTab
@@ -248,8 +259,23 @@ export function useVendorB2BDashboard() {
     setState((s) => ({ ...s, error: null }))
   }, [])
 
+  const sendBookingMessage = useCallback(async (body: string) => {
+    const booking = state.selectedBooking
+    const bookingId = booking?.id
+    if (!bookingId) return
+    try {
+      const message = booking?.request_vendors
+        ? await communicationService.createVendorRequestMessage(bookingId, body)
+        : await communicationService.createBookingMessage(bookingId, body)
+      setState((s) => ({ ...s, bookingMessages: [...s.bookingMessages, message] }))
+    } catch (err) {
+      setState((s) => ({ ...s, error: (err as Error).message }))
+    }
+  }, [state.selectedBooking])
+
   return {
     ...state,
+    userRole: user?.role || null,
     ...buildViewModelStateMeta({
       loading: state.loading,
       submitting: state.submitting,
@@ -268,6 +294,7 @@ export function useVendorB2BDashboard() {
     signVendorContract,
     updateAvailabilityStatus,
     createServicePackage,
-    clearError
+    clearError,
+    sendBookingMessage
   }
 }

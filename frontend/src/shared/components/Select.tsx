@@ -14,7 +14,12 @@ export function Select({ label, error, options, placeholder, id, className = '',
       )}
       <select
         id={selectId}
-        className={`w-full px-4 py-2.5 rounded-xl border ${error ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:border-brand-500 focus:ring-brand-500/25'} focus:outline-none focus:ring-4 text-sm bg-white shadow-sm transition-all ${className}`}
+        className={[
+          'w-full px-4 py-2.5 rounded-xl border',
+          error ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 focus:border-brand-500 focus:ring-brand-500/25',
+          'focus:outline-none focus:ring-4 text-sm bg-white shadow-sm transition-all',
+          className,
+        ].join(' ')}
         aria-invalid={error ? true : undefined}
         aria-describedby={error && selectId ? `${selectId}-error` : undefined}
         {...props}

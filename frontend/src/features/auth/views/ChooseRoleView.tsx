@@ -3,6 +3,7 @@ import type { UserRole } from '../../../services/authService'
 
 interface ChooseRoleViewProps {
   loading: boolean
+  error?: string | null
   onChoose: (roles: UserRole[]) => Promise<void>
   onBack: () => void
 }
@@ -55,7 +56,7 @@ const OPTIONS: RoleOption[] = [
   }
 ]
 
-export function ChooseRoleView({ loading, onChoose, onBack }: ChooseRoleViewProps) {
+export function ChooseRoleView({ loading, error, onChoose, onBack }: ChooseRoleViewProps) {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
       <div className="w-full max-w-5xl">
@@ -63,6 +64,11 @@ export function ChooseRoleView({ loading, onChoose, onBack }: ChooseRoleViewProp
           <h1 className="text-3xl font-bold text-slate-900">Choose your role</h1>
           <p className="mt-2 text-sm text-slate-500">Select how you want to use Eventify.</p>
         </div>
+        {error && (
+          <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 text-center max-w-3xl mx-auto">
+            {error}
+          </div>
+        )}
         <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
           {OPTIONS.map((option) => {
             const Icon = option.icon

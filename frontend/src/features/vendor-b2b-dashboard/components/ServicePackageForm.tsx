@@ -155,7 +155,11 @@ export function ServicePackageForm({ onSubmit, loading, onCancel }: ServicePacka
         ) : (
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="w-full h-36 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-brand-400 hover:bg-brand-50/50 transition-all text-slate-400"
+            className={[
+              'w-full h-36 border-2 border-dashed border-slate-200',
+              'rounded-2xl flex flex-col items-center justify-center cursor-pointer',
+              'hover:border-brand-400 hover:bg-brand-50/50 transition-all text-slate-400',
+            ].join(' ')}
           >
             <ImageIcon className="w-7 h-7 mb-2" />
             <span className="text-sm font-semibold text-slate-600">Click to upload image</span>
@@ -178,7 +182,11 @@ export function ServicePackageForm({ onSubmit, loading, onCancel }: ServicePacka
             Service Category <span className="text-rose-500">*</span>
           </label>
           <select
-            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-brand-500/20 focus:outline-none focus:ring-4 text-sm bg-white text-slate-900 shadow-sm transition-all appearance-none"
+            className={[
+              'w-full px-4 py-2.5 rounded-xl border border-slate-200',
+              'focus:border-brand-500 focus:ring-brand-500/20 focus:outline-none',
+              'focus:ring-4 text-sm bg-white text-slate-900 shadow-sm transition-all appearance-none',
+            ].join(' ')}
             value={formData.category}
             onChange={(e) => setFormData(s => ({ ...s, category: e.target.value }))}
             required
@@ -203,7 +211,11 @@ export function ServicePackageForm({ onSubmit, loading, onCancel }: ServicePacka
       <div>
         <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
         <textarea
-          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-brand-500/20 focus:outline-none focus:ring-4 text-sm bg-white text-slate-900 shadow-sm transition-all resize-none"
+          className={[
+            'w-full px-4 py-2.5 rounded-xl border border-slate-200',
+            'focus:border-brand-500 focus:ring-brand-500/20 focus:outline-none',
+            'focus:ring-4 text-sm bg-white text-slate-900 shadow-sm transition-all resize-none',
+          ].join(' ')}
           rows={3}
           placeholder="Describe what is included in this service package…"
           value={formData.description}
@@ -224,7 +236,11 @@ export function ServicePackageForm({ onSubmit, loading, onCancel }: ServicePacka
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">Availability Status</label>
           <select
-            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-brand-500/20 focus:outline-none focus:ring-4 text-sm bg-white text-slate-900 shadow-sm transition-all appearance-none"
+            className={[
+              'w-full px-4 py-2.5 rounded-xl border border-slate-200',
+              'focus:border-brand-500 focus:ring-brand-500/20 focus:outline-none',
+              'focus:ring-4 text-sm bg-white text-slate-900 shadow-sm transition-all appearance-none',
+            ].join(' ')}
             value={formData.availabilityStatus}
             onChange={(e) => setFormData(s => ({ ...s, availabilityStatus: e.target.value }))}
           >

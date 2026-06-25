@@ -34,6 +34,8 @@ export interface BookingRequest {
   organizer_profiles?: {
     organization_name: string
   }
+  request_vendors?: Record<string, unknown> | null
+  vendor_services?: Record<string, unknown> | null
 }
 
 export const bookingService = {
@@ -47,12 +49,6 @@ export const bookingService = {
     requestedBudget?: number | null
   }) => api.post<BookingRequest>('/procurement-requests', payload),
 
-  getBooking: (bookingId: string) =>
-    api.get<BookingRequest>(`/procurement-requests/${bookingId}`),
-
-  getEventBookings: (eventId: string) =>
-    api.get<BookingRequest[]>(`/events/${eventId}/bookings`),
-
   listVendorB2BBookings: (status?: string, type?: string) => {
     const params = new URLSearchParams()
     if (status) params.set('status', status)
@@ -65,7 +61,7 @@ export const bookingService = {
     api.get<BookingRequest>(`/vendor/bookings/${bookingId}`),
 
   viewVendorRequest: (bookingId: string) =>
-    api.patch(`/vendor/requests/${bookingId}/view`, {}),
+    api.patch<BookingRequest>(`/vendor/requests/${bookingId}/view`, {}),
 
   acceptVendorRequest: (bookingId: string) =>
     api.patch<BookingRequest>(`/vendor/requests/${bookingId}/accept`, {}),
@@ -76,18 +72,9 @@ export const bookingService = {
   requestChangesVendorRequest: (bookingId: string, reason: string) =>
     api.patch<BookingRequest>(`/vendor/requests/${bookingId}/request-changes`, { reason }),
 
-  updateBookingStatus: (bookingId: string, payload: {
-    status: 'accepted' | 'rejected' | 'changes_requested'
-    reason?: string | null
-  }) => api.patch<BookingRequest>(`/vendor/bookings/${bookingId}/status`, payload),
-
   submitQuote: (bookingId: string, payload: {
     price: number
     notes?: string | null
     validUntil?: string | null
-  }) => api.post(`/vendor/bookings/${bookingId}/quote`, payload),
-
-  awardVendor: (bookingId: string, payload: {
-    quoteId: string
-  }) => api.post(`/procurement-requests/${bookingId}/award`, payload)
+  }) => api.post<BookingRequest>(`/vendor/bookings/${bookingId}/quote`, payload),
 }

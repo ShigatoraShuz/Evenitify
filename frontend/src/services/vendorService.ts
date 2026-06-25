@@ -73,16 +73,8 @@ export const vendorService = {
     notes?: string | null
   }) => api.post<EventRequirement>(`/events/${eventId}/requirements`, payload),
 
-  updateRequirement: (requirementId: string, payload: Partial<EventRequirement>) =>
-    api.patch<EventRequirement>(`/requirements/${requirementId}`, payload),
-
   deleteRequirement: (requirementId: string) =>
     api.delete<void>(`/requirements/${requirementId}`),
-
-  getProfile: () => api.get<VendorProfile>('/vendor/profile'),
-
-  updateProfile: (payload: Partial<VendorProfile>) =>
-    api.patch<VendorProfile>('/vendor/profile', payload),
 
   listServices: () => api.get<VendorService[]>('/vendor/services'),
 
@@ -93,9 +85,6 @@ export const vendorService = {
     basePrice: number
     availabilityStatus?: string
   }) => api.post<VendorService>('/vendor/services', payload),
-
-  updateService: (serviceId: string, payload: Partial<VendorService>) =>
-    api.patch<VendorService>(`/vendor/services/${serviceId}`, payload),
 
   uploadServiceImage: (formData: FormData) =>
     api.postForm<{ imageUrl: string }>('/vendor/services/upload-image', formData)

@@ -106,7 +106,12 @@ export function SelectEventBriefModal({
               value={generalInquiryMessage}
               onChange={(e) => onSetGeneralInquiryMessage(e.target.value)}
               placeholder="Write your message to the vendor..."
-              className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-200 min-h-[100px] resize-none"
+              className={[
+                'w-full rounded-xl border border-slate-200 p-3',
+                'text-sm text-slate-700 placeholder:text-slate-400',
+                'focus:border-brand-400 focus:outline-none',
+                'focus:ring-1 focus:ring-brand-200 min-h-[100px] resize-none',
+              ].join(' ')}
             />
             <div className="flex items-center gap-2">
               <Button variant="secondary" onClick={onToggleGeneralInquiry} className="flex-1">

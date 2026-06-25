@@ -47,4 +47,7 @@ router.get('/vendors/:vendorId/availability', authenticate, controller.getVendor
 router.get('/vendor/availability', authenticate, controller.getMyAvailability);
 router.patch('/vendor/availability/status', authenticate, controller.updateMyAvailabilityStatus);
 
+router.get('/vendor/requests/:requestId/messages', authenticate, controller.listVendorRequestMessages);
+router.post('/vendor/requests/:requestId/messages', authenticate, controller.createVendorRequestMessage);
+
 module.exports = router;

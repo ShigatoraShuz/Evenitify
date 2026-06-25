@@ -124,7 +124,12 @@ export function VendorProfileView({
                 onChange={(e) => onUpdateProfile({ businessDescription: e.target.value })}
                 rows={5}
                 placeholder="Tell organizers about your experience, your team, and what makes your services unique..."
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 text-sm transition-all shadow-sm resize-none bg-white placeholder:text-slate-400 text-slate-900"
+                className={[
+                  'w-full px-4 py-3 rounded-xl border border-slate-200',
+                  'focus:outline-none focus:ring-4 focus:ring-brand-500/20',
+                  'focus:border-brand-500 text-sm transition-all shadow-sm',
+                  'resize-none bg-white placeholder:text-slate-400 text-slate-900',
+                ].join(' ')}
               />
             </div>
           </div>

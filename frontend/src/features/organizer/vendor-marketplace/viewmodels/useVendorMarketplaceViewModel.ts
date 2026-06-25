@@ -184,7 +184,9 @@ function calculateMatchScore(vendor: VendorMarketplaceVendor, brief: EventBrief 
 function normalizeEventType(value: string | null | undefined): EventTypeId {
   const normalized = (value || '').toLowerCase().trim()
   if (normalized === 'product launch') return 'product-launch'
-  if (normalized === 'wedding' || normalized === 'concert' || normalized === 'corporate' || normalized === 'conference' || normalized === 'festival' || normalized === 'birthday' || normalized === 'expo' || normalized === 'private' || normalized === 'custom') {
+  if (normalized === 'wedding' || normalized === 'concert' || normalized === 'corporate' ||
+      normalized === 'conference' || normalized === 'festival' || normalized === 'birthday' ||
+      normalized === 'expo' || normalized === 'private' || normalized === 'custom') {
     return normalized as EventTypeId
   }
   return 'custom'
@@ -622,48 +624,66 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     const requestedBudget = req.requestedBudget ? Number(req.requestedBudget) : null
     const selectedService = state.selectedVendor?.services.find((service) => service.category === req.serviceCategory)
 
-    const createdRequest = await vendorRequestService.sendBookingRequest({
-      eventBriefId: state.brief.eventId,
-      vendorId: req.vendorId,
-      vendorServiceId: selectedService?.id,
-      packageName: state.selectedTimeSlot || req.serviceCategory || undefined,
-      selectedDate: state.selectedDate || undefined,
-      selectedTimeSlot: state.selectedTimeSlot || undefined,
-      budgetMin: requestedBudget,
-      budgetMax: requestedBudget,
-      message: req.notes,
-    })
+    setState((s) => ({ ...s, submitting: true, error: null }))
 
-    sessionStorage.setItem(LAST_VENDOR_REQUEST_KEY, JSON.stringify({
-      requestId: createdRequest.id,
-      vendorName: req.vendorName,
-      eventName: state.brief.eventName,
-    }))
+    try {
+      const createdRequest = await vendorRequestService.sendBookingRequest({
+        eventBriefId: state.brief.eventId,
+        vendorId: req.vendorId,
+        vendorServiceId: selectedService?.id,
+        packageName: state.selectedTimeSlot || req.serviceCategory || undefined,
+        selectedDate: state.selectedDate || undefined,
+        selectedTimeSlot: state.selectedTimeSlot || undefined,
+        budgetMin: requestedBudget,
+        budgetMax: requestedBudget,
+        message: req.notes,
+      })
 
-    await loadMarketplace()
-    setState((s) => ({
-      ...s,
-      showRequestModal: false,
-      selectedVendor: null,
-      selectedDate: null,
-      selectedTimeSlot: null,
-      showRequestSuccessModal: true,
-      requestSuccessVendorName: req.vendorName,
-    }))
-    navigate(`/organizer/vendor-status?tab=pending&requestId=${createdRequest.id}`, { replace: true })
+      sessionStorage.setItem(LAST_VENDOR_REQUEST_KEY, JSON.stringify({
+        requestId: createdRequest.id,
+        vendorName: req.vendorName,
+        eventName: state.brief.eventName,
+      }))
+
+      await loadMarketplace()
+      setState((s) => ({
+        ...s,
+        showRequestModal: false,
+        selectedVendor: null,
+        selectedDate: null,
+        selectedTimeSlot: null,
+        showRequestSuccessModal: true,
+        requestSuccessVendorName: req.vendorName,
+        submitting: false,
+      }))
+      navigate(`/organizer/vendor-status?tab=pending&requestId=${createdRequest.id}`, { replace: true })
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        submitting: false,
+        error: err instanceof Error ? err.message : 'Failed to send booking request.',
+      }))
+    }
   }, [navigate, state.requestForm, state.brief, state.selectedDate, state.selectedTimeSlot, state.selectedVendor, loadMarketplace])
 
   const sendGeneralInquiry = useCallback(async () => {
     const vendor = state.selectedVendor
     if (!vendor) return
 
+    setState((s) => ({ ...s, submitting: true, error: null }))
+
     try {
       await vendorRequestService.sendGeneralInquiry({
         vendorId: vendor.id,
         message: state.generalInquiryMessage || 'General inquiry',
       })
-    } catch {
-      // Continue with local state even if API fails
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        submitting: false,
+        error: err instanceof Error ? err.message : 'Failed to send inquiry.',
+      }))
+      return
     }
 
     setState((s) => ({
@@ -671,6 +691,7 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       showSelectBriefModal: false,
       showGeneralInquiry: false,
       generalInquiryMessage: '',
+      submitting: false,
     }))
   }, [state.selectedVendor, state.generalInquiryMessage])
 

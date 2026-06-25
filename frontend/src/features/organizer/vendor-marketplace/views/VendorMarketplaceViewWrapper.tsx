@@ -4,8 +4,6 @@ import { useVendorMarketplaceViewModel } from '../viewmodels/useVendorMarketplac
 import { VendorMarketplaceView } from './VendorMarketplaceView'
 import type { VendorMarketplaceVendor } from '../models/vendorMarketplace.model'
 
-const BRIEF_STORAGE_KEY = 'eventify:marketplace-brief'
-
 export default function VendorMarketplaceViewWrapper() {
   const navigate = useNavigate()
   const params = new URLSearchParams(window.location.search)
@@ -49,12 +47,7 @@ export default function VendorMarketplaceViewWrapper() {
   }, [vm.openVendorDetail])
 
   const handleSelectExistingEvent = useCallback((eventBriefId: string) => {
-    const stored = sessionStorage.getItem(BRIEF_STORAGE_KEY)
-    if (stored) {
-      navigate(`/organizer/vendor-marketplace?eventId=${eventBriefId}`)
-    } else {
-      navigate(`/organizer/vendor-marketplace?eventId=${eventBriefId}`)
-    }
+    navigate(`/organizer/vendor-marketplace?eventId=${eventBriefId}`)
     vm.closeSelectBriefModal()
   }, [navigate, vm.closeSelectBriefModal])
 

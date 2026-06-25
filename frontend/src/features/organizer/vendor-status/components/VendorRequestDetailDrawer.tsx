@@ -1,17 +1,32 @@
 import { X, Building2, Calendar, MapPin, DollarSign } from 'lucide-react'
 import { type VendorRequest, type VendorMessage, type VendorRequestStatus, type VendorStatusTimelineItem, STATUS_LABELS, STATUS_COLORS_VENDOR } from '../models/vendorStatus.model'
 import { VendorStatusTimeline } from './VendorStatusTimeline'
-import { VendorChatPanel } from './VendorChatPanel'
+import { BookingMessageThread } from '../../../../shared/components/CommunicationComponents'
+import type { BookingMessage } from '../../../../services/communicationService'
 
 interface Props {
   request: VendorRequest
   messages: VendorMessage[]
-  messageInput: string
-  onMessageInputChange: (v: string) => void
-  onSendMessage: () => void
+  onSendMessage: (body: string) => Promise<void>
   onClose: () => void
   onStatusUpdate: (requestId: string, newStatus: VendorRequestStatus) => void
   timelineItems: VendorStatusTimelineItem[]
+  userRole?: string | null
+}
+
+function toBookingMessages(messages: VendorMessage[], vendorName: string): BookingMessage[] {
+  return messages.map((m) => ({
+    id: m.id,
+    bookingId: m.requestId,
+    type: m.senderRole === 'organizer' ? 'organizer_message' as const
+      : m.senderRole === 'vendor' ? 'vendor_message' as const
+      : 'system_update' as const,
+    authorName: m.senderRole === 'organizer' ? 'You'
+      : m.senderRole === 'vendor' ? vendorName
+      : 'System',
+    body: m.message,
+    createdAt: m.createdAt,
+  }))
 }
 
 const liveStatusCopy: Partial<Record<VendorRequestStatus, { label: string; description: string; tone: string }>> = {
@@ -45,12 +60,11 @@ const liveStatusCopy: Partial<Record<VendorRequestStatus, { label: string; descr
 export function VendorRequestDetailDrawer({
   request,
   messages,
-  messageInput,
-  onMessageInputChange,
   onSendMessage,
   onClose,
   onStatusUpdate,
   timelineItems,
+  userRole,
 }: Props) {
   const statusColor = STATUS_COLORS_VENDOR[request.status]
   const currentTimeline = [...timelineItems].reverse().find((item) => item.state === 'current')
@@ -125,11 +139,10 @@ export function VendorRequestDetailDrawer({
           <VendorStatusTimeline items={timelineItems} />
 
           <div className="border-t border-slate-200">
-            <VendorChatPanel
-              messages={messages}
-              messageInput={messageInput}
-              onMessageInputChange={onMessageInputChange}
+            <BookingMessageThread
+              messages={toBookingMessages(messages, request.vendorName)}
               onSendMessage={onSendMessage}
+              userRole={userRole}
             />
           </div>
         </div>

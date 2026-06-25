@@ -42,7 +42,12 @@ function ToastItem({ toast, onRemove }: { toast: ToastData; onRemove: (id: strin
 
   return (
     <div
-      className={`flex items-center gap-2 px-4 py-3 rounded-lg border shadow-lg text-sm min-w-[280px] transition-all duration-300 ${colors[toast.type]} ${exiting ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0'}`}
+      className={[
+        'flex items-center gap-2 px-4 py-3 rounded-lg border shadow-lg',
+        'text-sm min-w-[280px] transition-all duration-300',
+        colors[toast.type],
+        exiting ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0',
+      ].join(' ')}
     >
       <span className="flex-1">{toast.message}</span>
       <button onClick={() => onRemove(toast.id)} className="text-current opacity-50 hover:opacity-100">&times;</button>

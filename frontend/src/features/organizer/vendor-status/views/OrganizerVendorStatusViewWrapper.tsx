@@ -14,14 +14,13 @@ export default function OrganizerVendorStatusViewWrapper() {
       summaryCounts={vm.summaryCounts}
       selectedRequest={vm.selectedRequest}
       messages={vm.messages}
-      messageInput={vm.messageInput}
       timelineItems={vm.timelineItems}
       empty={vm.isEmpty}
+      userRole={vm.userRole}
       onSearchChange={vm.setSearchQuery}
       onTabChange={vm.setActiveTab}
       onRequestClick={vm.openRequestDetail}
       onCloseDrawer={vm.closeRequestDetail}
-      onMessageInputChange={vm.setMessageInput}
       onSendMessage={vm.sendMessage}
       onStatusUpdate={(id, status: VendorRequestStatus) => vm.updateRequestStatus(id, status)}
     />

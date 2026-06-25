@@ -18,11 +18,17 @@ const ActionButton = ({ children }: { children: React.ReactNode }) => (
   <motion.button
     whileHover={{ scale: 1.05 }}
     whileTap={{ scale: 0.95 }}
-    className="mt-8 px-8 py-3 rounded-full bg-brand-600 text-white font-semibold shadow-lg transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-opacity-75"
+    className={[
+      'mt-8 px-8 py-3 rounded-full bg-brand-600 text-white font-semibold',
+      'shadow-lg transition-colors hover:bg-brand-700 focus:outline-none',
+      'focus:ring-2 focus:ring-brand-400 focus:ring-opacity-75',
+    ].join(' ')}
   >
     {children}
   </motion.button>
 );
+
+const heroBgGradient = 'bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.12),transparent_28%),linear-gradient(180deg,#f8fafc_0%,#eef6fb_100%)]'
 
 export const AnimatedMarqueeHero: React.FC<AnimatedMarqueeHeroProps> = ({
   tagline,
@@ -47,8 +53,15 @@ export const AnimatedMarqueeHero: React.FC<AnimatedMarqueeHeroProps> = ({
         className
       )}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.12),transparent_28%),linear-gradient(180deg,#f8fafc_0%,#eef6fb_100%)]" />
-      <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(to_right,rgba(148,163,184,0.09)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.09)_1px,transparent_1px)] [background-size:56px_56px]" />
+      <div className={[
+        'absolute inset-0',
+        heroBgGradient,
+      ].join(' ')} />
+      <div className={[
+        'absolute inset-0 opacity-50',
+        '[background-image:linear-gradient(to_right,rgba(148,163,184,0.09)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.09)_1px,transparent_1px)]',
+        '[background-size:56px_56px]',
+      ].join(' ')} />
 
       <div className="z-10 flex flex-col items-center max-w-5xl">
         <motion.div

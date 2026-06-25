@@ -1,3 +1,5 @@
+import type { VendorSearchResult } from '../../../services/vendorService'
+
 export interface CompareVendor {
   id: string
   businessName: string
@@ -40,4 +42,3 @@ export function buildCompareVendors(results: VendorSearchResult[]): CompareVendo
     }))
   }))
 }
-import type { VendorSearchResult } from '../../../services/vendorService'

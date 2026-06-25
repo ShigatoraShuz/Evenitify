@@ -9,6 +9,7 @@ import {
   buildTimeline,
 } from '../models/vendorStatus.model'
 import { vendorTrackingService } from '../../../../services/vendorTrackingService'
+import { useAuthSession } from '../../../auth/viewmodels/useAuthSession'
 
 interface VendorStatusViewModelState {
   requests: VendorRequest[]
@@ -17,7 +18,6 @@ interface VendorStatusViewModelState {
   selectedRequest: VendorRequest | null
   showDetailDrawer: boolean
   messages: VendorMessage[]
-  messageInput: string
   sending: boolean
   loading: boolean
   refreshing: boolean
@@ -56,6 +56,7 @@ function mapTrackingMessageToModel(m: import('../../../../services/vendorTrackin
 }
 
 export function useVendorStatusViewModel() {
+  const { user } = useAuthSession()
   const { requestIdFromUrl, tabFromUrl } = useMemo(() => {
     const params = new URLSearchParams(window.location.search)
     return {
@@ -71,7 +72,6 @@ export function useVendorStatusViewModel() {
     selectedRequest: null,
     showDetailDrawer: false,
     messages: [],
-    messageInput: '',
     sending: false,
     loading: true,
     refreshing: false,
@@ -192,7 +192,6 @@ export function useVendorStatusViewModel() {
       selectedRequest: req,
       showDetailDrawer: true,
       messages: [],
-      messageInput: '',
     }))
 
     try {
@@ -221,21 +220,15 @@ export function useVendorStatusViewModel() {
       showDetailDrawer: false,
       selectedRequest: null,
       messages: [],
-      messageInput: '',
     }))
   }, [])
 
-  const setMessageInput = useCallback((value: string) => {
-    setState((s) => ({ ...s, messageInput: value }))
-  }, [])
-
-  const sendMessage = useCallback(async () => {
-    const text = state.messageInput.trim()
-    if (!text || !state.selectedRequest) return
+  const sendMessage = useCallback(async (body: string) => {
+    if (!body.trim() || !state.selectedRequest) return
 
     try {
       setState((s) => ({ ...s, sending: true, error: null }))
-      await vendorTrackingService.sendMessage(state.selectedRequest.id, text)
+      await vendorTrackingService.sendMessage(state.selectedRequest.id, body)
       const [requestData, messagesData] = await Promise.all([
         vendorTrackingService.getById(state.selectedRequest.id),
         vendorTrackingService.getMessages(state.selectedRequest.id)
@@ -244,7 +237,6 @@ export function useVendorStatusViewModel() {
       setState((s) => ({
         ...s,
         sending: false,
-        messageInput: '',
         requests: s.requests.map((r) => r.id === normalized.id ? normalized : r),
         selectedRequest: normalized,
         messages: messagesData.map(mapTrackingMessageToModel),
@@ -256,7 +248,7 @@ export function useVendorStatusViewModel() {
         error: err instanceof Error ? err.message : 'Failed to send message',
       }))
     }
-  }, [state.messageInput, state.selectedRequest])
+  }, [state.selectedRequest])
 
   const updateRequestStatus = useCallback(async (requestId: string, newStatus: VendorRequestStatus) => {
     try {
@@ -310,15 +302,14 @@ export function useVendorStatusViewModel() {
     showDetailDrawer: state.showDetailDrawer,
     timelineHistory,
     messages: state.messages,
-    messageInput: state.messageInput,
     sending: state.sending,
+    userRole: user?.role || null,
     summaryCounts,
     timelineItems,
     setSearchQuery,
     setActiveTab,
     openRequestDetail,
     closeRequestDetail,
-    setMessageInput,
     sendMessage,
     updateRequestStatus,
     ...buildViewModelStateMeta({

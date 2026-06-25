@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { profileService } from '../../../services/profileService'
 import type { AdminSettingsForm } from '../models/user-settings.model'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 import { DEFAULT_ADMIN_SETTINGS } from '../models/user-settings.model'
 
 interface AdminSettingsState {
@@ -68,6 +69,12 @@ export function useAdminSettings() {
     hasChanges,
     updateSettings,
     saveSettings,
-    clearError
+    clearError,
+    ...buildViewModelStateMeta({
+      loading: state.loading,
+      submitting: state.submitting,
+      error: state.error,
+      loaded: !state.loading && !!state.settings.displayName,
+    }),
   }
 }

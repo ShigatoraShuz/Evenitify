@@ -330,7 +330,9 @@ export function usePlanEventViewModel() {
           currentStep: 0,
           errors: []
         }))
-      }).catch(() => {})
+      }).catch((err) => {
+        setState((s) => ({ ...s, error: err instanceof Error ? err.message : 'Failed to load draft.' }))
+      })
       return
     }
 

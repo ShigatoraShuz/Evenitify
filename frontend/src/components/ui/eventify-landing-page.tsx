@@ -223,7 +223,9 @@ export default function EventifyLandingPage({
               clarity and momentum.
             </>
           }
-          description="Eventify is a web-based Organizer-Vendor Procurement Platform that helps event organizers find, request, book, and manage vendors for large-scale events. It connects organizers, vendors, and admins in one workspace so event plans, service requests, schedules, booking statuses, and communication stay organized from planning to confirmation."
+          description={
+            'Eventify is a web-based Organizer-Vendor Procurement Platform that helps event organizers find, request, book, and manage vendors for large-scale events. It connects organizers, vendors, and admins in one workspace so event plans, service requests, schedules, booking statuses, and communication stay organized from planning to confirmation.'
+          }
           ctaText="Start Planning"
           images={heroImages}
           onCtaClick={onStartPlanning}
@@ -404,7 +406,14 @@ export default function EventifyLandingPage({
                   initial={{ opacity: 0, y: 40, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.3, ...spr }}
-                  className="rounded-2xl p-5 text-white bg-gradient-to-br from-brand-950 via-brand-900 to-brand-850 border border-brand-850/30 shadow-md hover:shadow-xl hover:shadow-brand-950/10 hover:-translate-y-0.5 transition-all duration-300 min-h-[180px] flex flex-col"
+                  className={[
+                    'rounded-2xl p-5 text-white bg-gradient-to-br',
+                    'from-brand-950 via-brand-900 to-brand-850',
+                    'border border-brand-850/30 shadow-md',
+                    'hover:shadow-xl hover:shadow-brand-950/10',
+                    'hover:-translate-y-0.5 transition-all duration-300',
+                    'min-h-[180px] flex flex-col',
+                  ].join(' ')}
                 >
                   <ShieldCheck size={28} className="mb-3 text-brand-400" />
                   <span className="text-[11px] font-bold uppercase tracking-wider text-brand-300 mb-1">
@@ -419,7 +428,13 @@ export default function EventifyLandingPage({
                   initial={{ opacity: 0, y: 40, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.5, delay: 0.42, ...spr }}
-                  className="rounded-3xl p-6 text-white bg-gradient-to-br from-brand-700 to-brand-500 border border-brand-500/20 shadow-sm transition-all duration-300 min-h-[180px] flex flex-col items-center justify-center"
+                  className={[
+                    'rounded-3xl p-6 text-white bg-gradient-to-br',
+                    'from-brand-700 to-brand-500 border',
+                    'border-brand-500/20 shadow-sm',
+                    'transition-all duration-300 min-h-[180px]',
+                    'flex flex-col items-center justify-center',
+                  ].join(' ')}
                 >
                   <PlanetOrbitSVG />
                   <p className="text-sm text-brand-50 leading-relaxed text-center mt-3">
@@ -563,7 +578,10 @@ export default function EventifyLandingPage({
       </main>
 
       <Footer7
-        description="Eventify is a web-based Organizer-Vendor Procurement Platform that helps organizers find, request, book, and manage vendors for large-scale events. Organizers, vendors, and admins work in one connected system for event planning, booking status tracking, scheduling, and communication."
+        description={
+          'Eventify is a web-based Organizer-Vendor Procurement Platform that helps organizers find, request, book, and manage vendors for large-scale events. ' +
+          'Organizers, vendors, and admins work in one connected system for event planning, booking status tracking, scheduling, and communication.'
+        }
         sections={[
           {
             title: 'Product',

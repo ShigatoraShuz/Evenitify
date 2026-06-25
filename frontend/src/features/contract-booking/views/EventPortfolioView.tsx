@@ -83,6 +83,7 @@ interface EventPortfolioViewProps {
   onSignOrganizer: (contractId: string) => Promise<void>
   onSignVendor: (contractId: string) => Promise<void>
   onUploadDocument: (file: File) => Promise<void>
+  onSendMessage: (bookingId: string, body: string) => Promise<void>
   onClearError: () => void
 }
 
@@ -128,6 +129,7 @@ export function EventPortfolioView({
   onSignOrganizer,
   onSignVendor,
   onUploadDocument,
+  onSendMessage,
   onClearError
 }: EventPortfolioViewProps) {
   const navigate = useNavigate()
@@ -477,7 +479,7 @@ export function EventPortfolioView({
                           </div>
                         )}
                         <div className="mt-4">
-                          <BookingMessageThread messages={bookingMessages[booking.id] || []} />
+                          <BookingMessageThread messages={bookingMessages[booking.id] || []} onSendMessage={(body) => onSendMessage(booking.id, body)} userRole={userRole} />
                         </div>
                       </div>
                     )}

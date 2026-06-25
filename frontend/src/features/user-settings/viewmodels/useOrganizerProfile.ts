@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { profileService } from '../../../services/profileService'
 import type { OrganizerProfileForm } from '../models/user-settings.model'
+import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 import { DEFAULT_ORGANIZER_PROFILE } from '../models/user-settings.model'
 
 interface OrganizerProfileState {
@@ -70,6 +71,12 @@ export function useOrganizerProfile() {
     hasChanges,
     updateProfile,
     saveProfile,
-    clearError
+    clearError,
+    ...buildViewModelStateMeta({
+      loading: state.loading,
+      submitting: state.submitting,
+      error: state.error,
+      loaded: !state.loading && !!state.profile.organizationName,
+    }),
   }
 }

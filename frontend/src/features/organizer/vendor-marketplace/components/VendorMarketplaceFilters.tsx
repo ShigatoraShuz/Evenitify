@@ -67,7 +67,12 @@ export function VendorMarketplaceFilters({
               value={filters.location}
               onChange={(e) => onUpdateFilters({ location: e.target.value })}
               placeholder="Search city or service area..."
-              className="h-10 w-full rounded-2xl border border-slate-200 bg-white pl-9 pr-3 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100 sm:w-72"
+              className={[
+                'h-10 w-full rounded-2xl border border-slate-200 bg-white',
+                'pl-9 pr-3 text-sm font-medium text-slate-700',
+                'placeholder:text-slate-400 focus:border-brand-400',
+                'focus:outline-none focus:ring-2 focus:ring-brand-100 sm:w-72',
+              ].join(' ')}
             />
           </label>
           <select
@@ -79,7 +84,14 @@ export function VendorMarketplaceFilters({
             <option>Sort by backend ranking</option>
           </select>
           {hasActiveFilters && (
-            <button onClick={onResetFilters} className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-brand-600 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-200">
+            <button
+              onClick={onResetFilters}
+              className={[
+                'rounded-2xl border border-slate-200 bg-white',
+                'px-3 py-2 text-xs font-semibold text-brand-600',
+                'hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-200',
+              ].join(' ')}
+            >
               Clear filters
             </button>
           )}
@@ -115,7 +127,11 @@ export function VendorMarketplaceFilters({
           value={filters.budgetMin ?? ''}
           onChange={(e) => onUpdateFilters({ budgetMin: e.target.value ? Number(e.target.value) : null })}
           placeholder="Min $"
-          className="h-7 w-20 rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-200"
+          className={[
+            'h-7 w-20 rounded-full border border-slate-200 bg-white',
+            'px-3 text-xs font-medium text-slate-700 placeholder:text-slate-400',
+            'focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-200',
+          ].join(' ')}
         />
         <span className="self-center text-xs text-slate-400">-</span>
         <input
@@ -123,7 +139,11 @@ export function VendorMarketplaceFilters({
           value={filters.budgetMax ?? ''}
           onChange={(e) => onUpdateFilters({ budgetMax: e.target.value ? Number(e.target.value) : null })}
           placeholder="Max $"
-          className="h-7 w-20 rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-200"
+          className={[
+            'h-7 w-20 rounded-full border border-slate-200 bg-white',
+            'px-3 text-xs font-medium text-slate-700 placeholder:text-slate-400',
+            'focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-200',
+          ].join(' ')}
         />
       </div>
 

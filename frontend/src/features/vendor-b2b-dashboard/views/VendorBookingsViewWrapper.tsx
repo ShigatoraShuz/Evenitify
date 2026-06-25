@@ -29,6 +29,8 @@ export default function VendorBookingsViewWrapper() {
       onClearError={vm.clearError}
       onLoadContract={vm.loadContract}
       onSignVendorContract={vm.signVendorContract}
+      onSendBookingMessage={vm.sendBookingMessage}
+      userRole={vm.userRole}
     />
   )
 }

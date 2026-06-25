@@ -109,7 +109,10 @@ export function OnboardingView({
 
           <div className="rounded-2xl border border-slate-100 bg-slate-50/50 overflow-hidden shadow-sm">
             <div className={`h-28 bg-gradient-to-br ${preview.gradient} relative`}>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.2),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_25%)]" />
+              <div className={[
+                'absolute inset-0',
+                'bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.2),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_25%)]',
+              ].join(' ')} />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 shadow-inner">
                   <PreviewIcon className="h-6 w-6 text-white" />
@@ -237,7 +240,13 @@ export function OnboardingView({
                         required
                         placeholder="Tell organizers about your services..."
                         rows={4}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-brand-500/20 hover:border-slate-300 focus:outline-none focus:ring-4 text-sm bg-white text-slate-900 shadow-sm transition-all placeholder:text-slate-400"
+                        className={[
+                          'w-full px-4 py-2.5 rounded-xl border',
+                          'border-slate-200 focus:border-brand-500',
+                          'focus:ring-brand-500/20 hover:border-slate-300',
+                          'focus:outline-none focus:ring-4 text-sm bg-white',
+                          'text-slate-900 shadow-sm transition-all placeholder:text-slate-400',
+                        ].join(' ')}
                       />
                     </div>
                   </div>

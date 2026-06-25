@@ -44,6 +44,7 @@ export default function EventPortfolioViewWrapper() {
       onSignOrganizer={vm.signContractAsOrganizer}
       onSignVendor={vm.signContractAsVendor}
       onUploadDocument={vm.uploadDocument}
+      onSendMessage={vm.sendBookingMessage}
       onClearError={vm.clearError}
     />
   )

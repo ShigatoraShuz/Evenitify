@@ -803,24 +803,23 @@ const listOrganizerVendorRequests = asyncHandler(async (req, res) => {
 const listOrganizerVendorMessages = asyncHandler(async (req, res) => {
   const request = await assertOrganizerAccess(req, req.params.requestId);
   const { data: messages, error } = await supabase
-    .from('booking_messages')
+    .from('procurement_request_messages')
     .select(`
       id,
-      booking_id,
-      type,
+      request_id,
       body,
       created_at,
       author_user_id,
       user_profiles:author_user_id(display_name, role)
     `)
-    .eq('booking_id', request.id)
+    .eq('request_id', request.id)
     .order('created_at', { ascending: true });
 
   if (error) throw error;
 
   return sendSuccess(res, (messages || []).map((m) => ({
     id: m.id,
-    requestId: m.booking_id,
+    requestId: m.request_id,
     senderId: m.author_user_id,
     senderName: m.user_profiles?.display_name || 'User',
     text: m.body,
@@ -837,17 +836,15 @@ const createOrganizerVendorMessage = asyncHandler(async (req, res) => {
   }
 
   const { data: newMsg, error } = await supabase
-    .from('booking_messages')
+    .from('procurement_request_messages')
     .insert({
-      booking_id: request.id,
+      request_id: request.id,
       author_user_id: req.user.id,
-      type: req.user.role === 'vendor' ? 'vendor_message' : 'organizer_message',
       body: text
     })
     .select(`
       id,
-      booking_id,
-      type,
+      request_id,
       body,
       created_at,
       user_profiles:author_user_id(display_name)
@@ -858,12 +855,113 @@ const createOrganizerVendorMessage = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, {
     id: newMsg.id,
-    requestId: newMsg.booking_id,
+    requestId: newMsg.request_id,
     senderId: req.user.id,
     senderName: newMsg.user_profiles?.display_name || 'User',
     text: newMsg.body,
     timestamp: newMsg.created_at,
     isOrganizer: true
+  });
+});
+
+const getVendorProfileId = async (userId) => {
+  const { data } = await supabase
+    .from('vendor_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+  return data?.id || null;
+};
+
+const listVendorRequestMessages = asyncHandler(async (req, res) => {
+  const vendorId = await getVendorProfileId(req.user.id);
+  if (!vendorId && req.user.role !== 'admin') {
+    throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
+  }
+
+  const { data: rv } = await supabase
+    .from('request_vendors')
+    .select('request_id')
+    .eq('request_id', req.params.requestId)
+    .eq('vendor_id', vendorId)
+    .maybeSingle();
+
+  if (!rv && req.user.role !== 'admin') {
+    throw new AppError('Access denied', 403, 'FORBIDDEN');
+  }
+
+  const { data: messages, error } = await supabase
+    .from('procurement_request_messages')
+    .select(`
+      id,
+      request_id,
+      body,
+      created_at,
+      author_user_id,
+      user_profiles:author_user_id(display_name, role)
+    `)
+    .eq('request_id', req.params.requestId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+
+  return sendSuccess(res, (messages || []).map((m) => ({
+    id: m.id,
+    bookingId: m.request_id,
+    type: m.user_profiles?.role === 'vendor' ? 'vendor_message' : m.user_profiles?.role === 'organizer' ? 'organizer_message' : 'system_update',
+    authorName: m.user_profiles?.display_name || 'User',
+    body: m.body,
+    createdAt: m.created_at
+  })));
+});
+
+const createVendorRequestMessage = asyncHandler(async (req, res) => {
+  const vendorId = await getVendorProfileId(req.user.id);
+  if (!vendorId && req.user.role !== 'admin') {
+    throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
+  }
+
+  const { data: rv } = await supabase
+    .from('request_vendors')
+    .select('request_id')
+    .eq('request_id', req.params.requestId)
+    .eq('vendor_id', vendorId)
+    .maybeSingle();
+
+  if (!rv && req.user.role !== 'admin') {
+    throw new AppError('Access denied', 403, 'FORBIDDEN');
+  }
+
+  const text = String(req.body?.body || '').trim();
+  if (!text) {
+    throw new AppError('Message body is required', 400, 'MESSAGE_REQUIRED');
+  }
+
+  const { data: newMsg, error } = await supabase
+    .from('procurement_request_messages')
+    .insert({
+      request_id: req.params.requestId,
+      author_user_id: req.user.id,
+      body: text
+    })
+    .select(`
+      id,
+      request_id,
+      body,
+      created_at,
+      user_profiles:author_user_id(display_name)
+    `)
+    .single();
+
+  if (error) throw error;
+
+  return sendSuccess(res, {
+    id: newMsg.id,
+    bookingId: newMsg.request_id,
+    type: 'vendor_message',
+    authorName: newMsg.user_profiles?.display_name || 'User',
+    body: newMsg.body,
+    createdAt: newMsg.created_at
   });
 });
 
@@ -1190,6 +1288,8 @@ module.exports = {
   rejectOrganizerVendorRequest: asyncHandler(rejectOrganizerVendorRequest),
   confirmOrganizerVendorRequest: asyncHandler(confirmOrganizerVendorRequest),
   getOrganizerVendorTimeline: asyncHandler(getOrganizerVendorTimeline),
+  listVendorRequestMessages: asyncHandler(listVendorRequestMessages),
+  createVendorRequestMessage: asyncHandler(createVendorRequestMessage),
   getVendorAvailability: asyncHandler(getVendorAvailability),
   getMyAvailability: asyncHandler(getMyAvailability),
   updateMyAvailabilityStatus: asyncHandler(updateMyAvailabilityStatus)

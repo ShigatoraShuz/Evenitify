@@ -33,9 +33,9 @@ export default function LoginViewWrapper() {
       navigate('/choose-role')
     } else if (!setupComplete) {
       navigate('/onboarding')
-    } else if (user.role === 'vendor') {
+    } else if (roles.includes('vendor')) {
       navigate('/vendor')
-    } else if (user.role === 'admin') {
+    } else if (roles.includes('admin')) {
       navigate('/admin')
     } else {
       navigate('/organizer')
