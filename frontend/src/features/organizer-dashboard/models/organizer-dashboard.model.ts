@@ -17,7 +17,7 @@ export interface DashboardDraft {
   name: string
   eventType: string
   lastEdited: string
-  lastCompletedStep: number
+  lastCompletedStep: string
   progress: number
 }
 

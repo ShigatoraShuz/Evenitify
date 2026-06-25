@@ -23,6 +23,14 @@ export interface VendorMarketplaceItem {
   responseRate: string
   description: string
   galleryImages: Array<{ url: string; label: string }>
+  services: Array<{
+    id: string
+    category: string
+    serviceName: string
+    description: string
+    basePrice: number
+    availabilityStatus: string
+  }>
   reviews: Array<{
     id: string
     authorName: string

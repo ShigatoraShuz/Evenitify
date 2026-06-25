@@ -11,6 +11,7 @@ import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { BookingMessageThread } from '../../../shared/components/CommunicationComponents'
 import { PlaceholderMedia } from '../../../shared/components/PlaceholderMedia'
+import { Modal } from '../../../shared/components/Modal'
 import { B2B_TABS } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
 import type { ContractDetail } from '../../../services/contractService'
@@ -97,6 +98,8 @@ export function VendorBookingsView({
   onSignVendorContract,
 }: VendorBookingsViewProps) {
   const [confirmDecline, setConfirmDecline] = useState<string | null>(null)
+  const [negotiateOpen, setNegotiateOpen] = useState(false)
+  const [negotiationReason, setNegotiationReason] = useState('')
 
   const requestCards = useMemo<RequestCard[]>(() => bookings.map((booking) => ({
     title: booking.large_events?.title || 'Organizer request',
@@ -116,8 +119,18 @@ export function VendorBookingsView({
     }
   }
 
+  const handleNegotiate = async () => {
+    if (!selectedBooking) return
+    const reason = negotiationReason.trim()
+    if (!reason) return
+    await onUpdateStatus(selectedBooking.id, 'changes_requested', reason)
+    setNegotiateOpen(false)
+    setNegotiationReason('')
+  }
+
   const selectedCategory = selectedBooking?.event_requirements?.category || selectedBooking?.booking_type || 'Booking'
   const SelectedIcon = bookingIconMap[selectedCategory] ?? CalendarDays
+  const selectedRequirement = selectedBooking?.event_requirements
 
   return (
     <DashboardShell>
@@ -131,6 +144,42 @@ export function VendorBookingsView({
         onConfirm={handleDecline}
         onCancel={() => setConfirmDecline(null)}
       />
+
+      <Modal
+        open={negotiateOpen}
+        onClose={() => {
+          setNegotiateOpen(false)
+          setNegotiationReason('')
+        }}
+        title="Request negotiation"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Add a short message describing what you want to negotiate. This will be sent to the organizer and saved in the request record.
+          </p>
+          <textarea
+            value={negotiationReason}
+            onChange={(e) => setNegotiationReason(e.target.value)}
+            placeholder="Example: Can we reduce the budget slightly or adjust the service scope?"
+            className="min-h-32 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+          />
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="secondary" onClick={() => {
+              setNegotiateOpen(false)
+              setNegotiationReason('')
+            }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void handleNegotiate()}
+              loading={submitting}
+              disabled={!negotiationReason.trim()}
+            >
+              Send Request
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <div className="space-y-8 max-w-[1600px] mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -218,6 +267,49 @@ export function VendorBookingsView({
                           <BookingChip label="Date" value={formatDate(card.eventDate)} />
                           <BookingChip label="Budget" value={card.budget ? `$${card.budget.toLocaleString()}` : 'N/A'} />
                         </div>
+                        {isSelected && (card.booking.status === 'pending' || card.booking.status === 'sent' || card.booking.status === 'viewed') && (
+                          <div className="grid gap-2 sm:grid-cols-3 pt-1">
+                            <Button
+                              type="button"
+                              onClick={(event) => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                void onUpdateStatus(card.booking.id, 'accepted')
+                              }}
+                              loading={submitting}
+                              className="w-full"
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={(event) => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                setNegotiateOpen(true)
+                                setNegotiationReason('')
+                              }}
+                              loading={submitting}
+                              className="w-full"
+                            >
+                              Negotiate
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="danger"
+                              onClick={(event) => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                setConfirmDecline(card.booking.id)
+                              }}
+                              loading={submitting}
+                              className="w-full"
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </button>
                   )
@@ -226,7 +318,7 @@ export function VendorBookingsView({
             )}
           </section>
 
-          <section className="sticky top-24 rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hidden lg:block">
+          <section className="sticky top-24 rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
             {selectedBooking ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center justify-between gap-4">
@@ -249,6 +341,27 @@ export function VendorBookingsView({
                   <BookingChip label="Expected Guests" value={selectedBooking.large_events?.expected_guests ? selectedBooking.large_events.expected_guests.toLocaleString() : 'N/A'} />
                 </div>
 
+                <div className="rounded-[24px] border border-slate-100 bg-slate-50/70 p-5">
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <h4 className="font-bold text-slate-900">Organizer Requirements</h4>
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
+                      {selectedRequirement?.quantity ? `${selectedRequirement.quantity} needed` : 'Requirement'}
+                    </span>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <BookingChip label="Category" value={selectedRequirement?.category || selectedCategory} />
+                    <BookingChip label="Minimum Budget" value={selectedRequirement?.min_budget ? `$${Number(selectedRequirement.min_budget).toLocaleString()}` : 'Not set'} />
+                    <BookingChip label="Maximum Budget" value={selectedRequirement?.max_budget ? `$${Number(selectedRequirement.max_budget).toLocaleString()}` : 'Not set'} />
+                    <BookingChip label="Requirement Status" value={selectedRequirement?.requirement_status || 'open'} />
+                  </div>
+                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Requirement Notes</p>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      {selectedRequirement?.notes || selectedBooking.notes || 'No additional notes provided.'}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 flex justify-between items-center">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-600">Proposed Budget</p>
@@ -258,24 +371,31 @@ export function VendorBookingsView({
                   </div>
                 </div>
 
+                <div className="rounded-[24px] border border-brand-100 bg-brand-50/40 p-5">
+                  <div className="mb-4">
+                    <h4 className="font-bold text-slate-900">Respond to Request</h4>
+                    <p className="text-sm text-slate-500 mt-1">Accept, negotiate, or reject this booking request.</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Button onClick={() => onUpdateStatus(selectedBooking.id, 'accepted')} loading={submitting} className="w-full">
+                      Accept
+                    </Button>
+                    <Button variant="secondary" onClick={() => {
+                      setNegotiateOpen(true)
+                      setNegotiationReason('')
+                    }} loading={submitting} className="w-full">
+                      Negotiate
+                    </Button>
+                    <Button variant="danger" onClick={() => setConfirmDecline(selectedBooking.id)} loading={submitting} className="w-full">
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+
                 {selectedBooking.notes && (
                   <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
                     <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Organizer Notes</p>
                     <p className="text-sm text-slate-700 leading-relaxed">{selectedBooking.notes}</p>
-                  </div>
-                )}
-
-                {selectedBooking.status === 'pending' && (
-                  <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-100">
-                    <Button onClick={() => onUpdateStatus(selectedBooking.id, 'accepted')} loading={submitting} className="flex-1">
-                      Accept Request
-                    </Button>
-                    <Button variant="secondary" onClick={() => onUpdateStatus(selectedBooking.id, 'changes_requested')} loading={submitting} className="flex-1">
-                      Propose Changes
-                    </Button>
-                    <Button variant="danger" onClick={() => setConfirmDecline(selectedBooking.id)} loading={submitting}>
-                      Decline
-                    </Button>
                   </div>
                 )}
 

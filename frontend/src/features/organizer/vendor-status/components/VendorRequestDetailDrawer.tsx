@@ -14,6 +14,34 @@ interface Props {
   timelineItems: VendorStatusTimelineItem[]
 }
 
+const liveStatusCopy: Partial<Record<VendorRequestStatus, { label: string; description: string; tone: string }>> = {
+  viewed: {
+    label: 'Vendor viewed',
+    description: 'The vendor has opened and reviewed the request.',
+    tone: 'bg-purple-50 text-purple-700 border-purple-200'
+  },
+  negotiating: {
+    label: 'Vendor negotiating',
+    description: 'The vendor is actively discussing terms or pricing.',
+    tone: 'bg-orange-50 text-orange-700 border-orange-200'
+  },
+  accepted: {
+    label: 'Vendor accepted',
+    description: 'The vendor accepted the request and it is ready for the next step.',
+    tone: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+  },
+  rejected: {
+    label: 'Vendor rejected',
+    description: 'The vendor declined the request.',
+    tone: 'bg-red-50 text-red-700 border-red-200'
+  },
+  confirmed: {
+    label: 'Booking confirmed',
+    description: 'The booking has been confirmed and is moving forward.',
+    tone: 'bg-green-50 text-green-700 border-green-200'
+  }
+}
+
 export function VendorRequestDetailDrawer({
   request,
   messages,
@@ -25,6 +53,8 @@ export function VendorRequestDetailDrawer({
   timelineItems,
 }: Props) {
   const statusColor = STATUS_COLORS_VENDOR[request.status]
+  const currentTimeline = [...timelineItems].reverse().find((item) => item.state === 'current')
+  const liveStatus = liveStatusCopy[request.status] || currentTimeline && liveStatusCopy[currentTimeline.status]
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -73,6 +103,25 @@ export function VendorRequestDetailDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto">
+          {liveStatus && (
+            <div className={`mx-4 mt-4 rounded-2xl border px-4 py-3 ${liveStatus.tone}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest">{liveStatus.label}</p>
+                  <p className="mt-1 text-sm leading-relaxed">{liveStatus.description}</p>
+                </div>
+                <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusColor}`}>
+                  {STATUS_LABELS[request.status]}
+                </span>
+              </div>
+            </div>
+          )}
+          {request.status === 'negotiating' && request.lastMessage && (
+            <div className="mx-4 mt-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-orange-700">Negotiation message</p>
+              <p className="mt-2 text-sm leading-relaxed text-orange-900 whitespace-pre-wrap">{request.lastMessage}</p>
+            </div>
+          )}
           <VendorStatusTimeline items={timelineItems} />
 
           <div className="border-t border-slate-200">

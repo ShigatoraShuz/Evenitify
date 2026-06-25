@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const multer = require('multer');
 const authenticate = require('../shared/middleware/auth.middleware');
+const requireRole = require('../shared/middleware/role.middleware');
 const AppError = require('../shared/utils/appError');
 const controller = require('./phase8.controller');
 
@@ -31,6 +32,16 @@ router.post('/documents/upload', authenticate, upload.single('file'), controller
 
 router.get('/bookings/:bookingId/messages', authenticate, controller.listBookingMessages);
 router.post('/bookings/:bookingId/messages', authenticate, controller.createBookingMessage);
+
+router.post('/organizer/vendor-requests', authenticate, requireRole('organizer', 'admin'), controller.createOrganizerVendorRequest);
+router.get('/organizer/vendor-requests', authenticate, requireRole('organizer', 'admin'), controller.listOrganizerVendorRequests);
+router.get('/organizer/vendor-requests/:requestId', authenticate, requireRole('organizer', 'admin'), controller.fetchOrganizerVendorRequest);
+router.get('/organizer/vendor-requests/:requestId/messages', authenticate, requireRole('organizer', 'admin'), controller.listOrganizerVendorMessages);
+router.post('/organizer/vendor-requests/:requestId/messages', authenticate, requireRole('organizer', 'admin'), controller.createOrganizerVendorMessage);
+router.patch('/organizer/vendor-requests/:requestId/accept', authenticate, requireRole('organizer', 'admin'), controller.acceptOrganizerVendorRequest);
+router.patch('/organizer/vendor-requests/:requestId/reject', authenticate, requireRole('organizer', 'admin'), controller.rejectOrganizerVendorRequest);
+router.patch('/organizer/vendor-requests/:requestId/confirm', authenticate, requireRole('organizer', 'admin'), controller.confirmOrganizerVendorRequest);
+router.get('/organizer/vendor-requests/:requestId/timeline', authenticate, requireRole('organizer', 'admin'), controller.getOrganizerVendorTimeline);
 
 router.get('/vendors/:vendorId/availability', authenticate, controller.getVendorAvailability);
 router.get('/vendor/availability', authenticate, controller.getMyAvailability);

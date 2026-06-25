@@ -71,6 +71,14 @@ export interface VendorMarketplaceVendor {
   responseTime: string
   description: string
   galleryImages: VendorGalleryImage[]
+  services: Array<{
+    id: string
+    category: string
+    serviceName: string
+    description: string
+    basePrice: number
+    availabilityStatus: string
+  }>
   reviews: VendorReview[]
   inclusions: string[]
   addOns: string[]

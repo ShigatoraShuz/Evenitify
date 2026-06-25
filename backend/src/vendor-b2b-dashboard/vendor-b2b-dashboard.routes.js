@@ -17,6 +17,7 @@ const {
   serviceIdSchema,
   bookingStatusSchema,
   bookingIdSchema,
+  requestChangesSchema,
   submitQuoteSchema
 } = require('./vendor-b2b-dashboard.validator');
 
@@ -34,5 +35,12 @@ router.get('/bookings', authenticate, requireRole('vendor'), controller.listB2BB
 router.get('/bookings/:bookingId', authenticate, requireRole('vendor'), validate(bookingIdSchema), controller.getBookingDetail);
 router.patch('/bookings/:bookingId/status', authenticate, requireRole('vendor'), validate(bookingStatusSchema), controller.updateBookingStatus);
 router.post('/bookings/:bookingId/quote', authenticate, requireRole('vendor'), validate(submitQuoteSchema), controller.submitQuote);
+
+router.get('/requests', authenticate, requireRole('vendor'), controller.listVendorRequests);
+router.get('/requests/:bookingId', authenticate, requireRole('vendor'), validate(bookingIdSchema), controller.getVendorRequestDetail);
+router.patch('/requests/:bookingId/view', authenticate, requireRole('vendor'), validate(bookingIdSchema), controller.viewVendorRequest);
+router.patch('/requests/:bookingId/accept', authenticate, requireRole('vendor'), validate(bookingIdSchema), controller.acceptVendorRequest);
+router.patch('/requests/:bookingId/reject', authenticate, requireRole('vendor'), validate(bookingIdSchema), controller.rejectVendorRequest);
+router.patch('/requests/:bookingId/request-changes', authenticate, requireRole('vendor'), validate(requestChangesSchema), controller.requestChangesVendorRequest);
 
 module.exports = router;

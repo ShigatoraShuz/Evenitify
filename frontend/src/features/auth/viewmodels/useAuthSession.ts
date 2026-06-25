@@ -8,6 +8,7 @@ const USER_CACHE_KEY = 'auth_user_cache'
 const CHOSEN_ROLES_KEY = 'eventify_chosen_roles'
 const ACTIVE_ROLE_KEY = 'eventify_active_role'
 const AUTH_SESSION_EVENT = 'eventify_auth_session_changed'
+let sharedSessionLoad: Promise<UserProfile | null> | null = null
 
 function clearSetupCache() {
   localStorage.removeItem('onboarding_complete')
@@ -139,7 +140,14 @@ export function useAuthSession() {
     }
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
-      const user = await authService.getMe()
+      sharedSessionLoad ??= authService.getMe().finally(() => {
+        sharedSessionLoad = null
+      })
+      const user = await sharedSessionLoad
+      if (!user) {
+        setState((s) => ({ ...s, loading: false }))
+        return
+      }
       const profileComplete = await checkProfileComplete(user)
       cacheUser(user)
       const activeRole = getActiveRole(user)

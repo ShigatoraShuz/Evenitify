@@ -31,7 +31,7 @@ interface VendorB2BDashboardViewProps {
   error: string | null
   realtimeSnapshot: RealtimeSnapshot | null
   realtimeRefreshing: boolean
-  onLoadBookings: () => Promise<void>
+  onLoadBookings: (status?: string, type?: string) => Promise<void>
   onRefreshRealtime: () => Promise<void>
   onSetTab: (tab: string) => void
   onSetTypeTab: (tab: RequestType) => void

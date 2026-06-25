@@ -1,10 +1,11 @@
 const asyncHandler = require('../shared/utils/asyncHandler');
 const { supabase, supabaseAdmin } = require('../config/supabase');
 const AppError = require('../shared/utils/appError');
-const { sendSuccess } = require('../shared/utils/response');
+const { sendSuccess, sendCreated } = require('../shared/utils/response');
 const organizerEventsService = require('../organizer-events/organizer-events.service');
 const adminOperationsService = require('../admin-operations/admin-operations.service');
 const authRepository = require('../auth/auth.repository');
+const bookingRepository = require('../contract-booking/contract-booking.repository');
 
 // A. Planning timeline endpoint
 const getPlanningTimeline = asyncHandler(async (req, res) => {
@@ -240,6 +241,47 @@ const getAuditActivity = asyncHandler(async (req, res) => {
   if (scope) {
     if (scope.startsWith('event:')) eventId = scope.split(':')[1];
     else if (scope.startsWith('booking:')) bookingId = scope.split(':')[1];
+  }
+
+  if (bookingId) {
+    const { data: request } = await supabaseAdmin
+      .from('procurement_requests')
+      .select(`
+        id,
+        title,
+        status,
+        created_at,
+        updated_at,
+        request_vendors(id, status, request_message, viewed_at, accepted_at, rejected_at, changes_requested_at)
+      `)
+      .eq('id', bookingId)
+      .maybeSingle();
+
+    if (request) {
+      const timelineEntries = buildRequestTimelineEntries(request);
+      const requestActivities = timelineEntries.map((entry) => ({
+        id: entry.id,
+        actorName: entry.status === 'sent' ? 'Organizer' : 'Vendor',
+        actorRole: entry.status === 'sent' ? 'organizer' : 'vendor',
+        action:
+          entry.status === 'sent'
+            ? 'sent request'
+            : entry.status === 'viewed'
+              ? 'viewed request'
+              : entry.status === 'negotiating'
+                ? 'requested negotiation'
+                : entry.status === 'accepted'
+                  ? 'accepted request'
+                  : entry.status === 'rejected'
+                    ? 'rejected request'
+                    : 'confirmed booking',
+        target: request.title || 'vendor request',
+        createdAt: entry.timestamp,
+        detail: entry.description
+      }));
+
+      return sendSuccess(res, requestActivities.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    }
   }
 
   // 1. Booking status history query
@@ -587,6 +629,403 @@ const createBookingMessage = asyncHandler(async (req, res) => {
   });
 });
 
+const getOrganizerProfileId = async (userId) => {
+  const { data } = await supabase
+    .from('organizer_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+  return data?.id || null;
+};
+
+const getRequestVendor = (request) => Array.isArray(request.request_vendors)
+  ? request.request_vendors[0] || null
+  : request.request_vendors || null;
+
+const normalizeOrganizerRequestStatus = (status) => {
+  if (status === 'pending' || status === 'open') return 'sent';
+  if (status === 'viewed') return 'viewed';
+  if (status === 'changes_requested') return 'negotiating';
+  if (status === 'accepted') return 'accepted';
+  if (status === 'rejected') return 'rejected';
+  if (status === 'confirmed') return 'confirmed';
+  return status;
+};
+
+const buildRequestTimelineEntries = (request) => {
+  const requestVendor = getRequestVendor(request);
+  const entries = [];
+
+  if (request?.created_at) {
+    entries.push({
+      id: `${request.id}-sent`,
+      status: 'sent',
+      label: 'sent',
+      timestamp: request.created_at,
+      description: 'Request sent to vendor'
+    });
+  }
+
+  if (requestVendor?.viewed_at) {
+    entries.push({
+      id: `${request.id}-viewed`,
+      status: 'viewed',
+      label: 'viewed',
+      timestamp: requestVendor.viewed_at,
+      description: 'Vendor viewed your request'
+    });
+  }
+
+  if (requestVendor?.changes_requested_at) {
+    entries.push({
+      id: `${request.id}-changes_requested`,
+      status: 'negotiating',
+      label: 'negotiating',
+      timestamp: requestVendor.changes_requested_at,
+      description: requestVendor.request_message || 'Vendor requested changes'
+    });
+  }
+
+  if (requestVendor?.accepted_at) {
+    entries.push({
+      id: `${request.id}-accepted`,
+      status: 'accepted',
+      label: 'accepted',
+      timestamp: requestVendor.accepted_at,
+      description: 'Vendor accepted the request'
+    });
+  }
+
+  if (requestVendor?.rejected_at) {
+    entries.push({
+      id: `${request.id}-rejected`,
+      status: 'rejected',
+      label: 'rejected',
+      timestamp: requestVendor.rejected_at,
+      description: requestVendor.request_message || 'Vendor rejected the request'
+    });
+  }
+
+  if ((requestVendor?.status === 'confirmed' || request?.status === 'confirmed') && request?.updated_at) {
+    entries.push({
+      id: `${request.id}-confirmed`,
+      status: 'confirmed',
+      label: 'confirmed',
+      timestamp: request.updated_at,
+      description: 'Booking confirmed'
+    });
+  }
+
+  return entries.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+};
+
+const mapRequestToOrganizerRequest = (request) => {
+  const requestVendor = getRequestVendor(request);
+  const rawStatus = requestVendor?.status || request.status || 'pending';
+  return ({
+  id: request.id,
+  eventBriefId: request.event_id,
+  organizerId: request.organizer_id,
+  vendorId: request.vendor_id,
+  vendorName: request.vendor_profiles?.business_name || 'Vendor',
+  vendorCategory: request.vendor_services?.category || requestVendor?.vendor_service?.category || 'Service',
+  eventName: request.large_events?.title || 'Event',
+  eventDate: request.large_events?.event_date || request.created_at,
+  location: request.large_events?.venue || '',
+  status: normalizeOrganizerRequestStatus(rawStatus),
+  quotedPrice: requestVendor?.budget_min ?? request.budget_min ?? null,
+  packageName: request.vendor_services?.service_name || null,
+  lastMessage: requestVendor?.request_message || request.request_message || request.description || `Request is currently ${normalizeOrganizerRequestStatus(rawStatus)}.`,
+  lastUpdatedAt: request.updated_at || request.created_at,
+  createdAt: request.created_at,
+  deadline: requestVendor?.deadline || request.deadline || null,
+  vendorServiceId: request.vendor_service_id || requestVendor?.vendor_service_id || null,
+  budgetMin: request.budget_min ?? requestVendor?.budget_min ?? null,
+  budgetMax: request.budget_max ?? requestVendor?.budget_max ?? null
+  });
+};
+
+const fetchOrganizerVendorRequest = asyncHandler(async (req, res) => {
+  const request = await assertOrganizerAccess(req, req.params.requestId);
+  return sendSuccess(res, mapRequestToOrganizerRequest(request));
+});
+
+const assertOrganizerAccess = async (req, requestId) => {
+  const organizerId = await getOrganizerProfileId(req.user.id);
+  if (!organizerId && req.user.role !== 'admin') {
+    throw new AppError('Organizer profile not found', 404, 'ORGANIZER_NOT_FOUND');
+  }
+
+  const { data: request } = await supabase
+    .from('procurement_requests')
+    .select(`
+      *,
+      large_events(title, event_date, venue, expected_guests),
+      vendor_profiles(business_name),
+      vendor_services(id, service_name, category),
+      request_vendors(id, vendor_id, vendor_service_id, status, request_message, budget_min, budget_max, deadline, viewed_at, accepted_at, rejected_at, changes_requested_at)
+    `)
+    .eq('id', requestId)
+    .maybeSingle();
+
+  if (!request) {
+    throw new AppError('Request not found', 404, 'REQUEST_NOT_FOUND');
+  }
+
+  if (req.user.role !== 'admin' && request.organizer_id !== organizerId) {
+    throw new AppError('Access denied', 403, 'FORBIDDEN');
+  }
+
+  return request;
+};
+
+const listOrganizerVendorRequests = asyncHandler(async (req, res) => {
+  const organizerId = await getOrganizerProfileId(req.user.id);
+  if (!organizerId && req.user.role !== 'admin') {
+    throw new AppError('Organizer profile not found', 404, 'ORGANIZER_NOT_FOUND');
+  }
+
+  const { data: requests } = await supabase
+    .from('procurement_requests')
+    .select(`
+      *,
+      large_events(title, event_date, venue, expected_guests),
+      vendor_profiles(business_name),
+      vendor_services(id, service_name, category),
+      request_vendors(id, vendor_id, vendor_service_id, status, request_message, budget_min, budget_max, deadline, viewed_at, accepted_at, rejected_at, changes_requested_at)
+    `)
+    .eq('organizer_id', organizerId || req.user.id)
+    .order('updated_at', { ascending: false });
+
+  return sendSuccess(res, (requests || []).map(mapRequestToOrganizerRequest));
+});
+
+const listOrganizerVendorMessages = asyncHandler(async (req, res) => {
+  const request = await assertOrganizerAccess(req, req.params.requestId);
+  const { data: messages, error } = await supabase
+    .from('booking_messages')
+    .select(`
+      id,
+      booking_id,
+      type,
+      body,
+      created_at,
+      author_user_id,
+      user_profiles:author_user_id(display_name, role)
+    `)
+    .eq('booking_id', request.id)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+
+  return sendSuccess(res, (messages || []).map((m) => ({
+    id: m.id,
+    requestId: m.booking_id,
+    senderId: m.author_user_id,
+    senderName: m.user_profiles?.display_name || 'User',
+    text: m.body,
+    timestamp: m.created_at,
+    isOrganizer: m.user_profiles?.role === 'organizer' || m.user_profiles?.role === 'admin'
+  })));
+});
+
+const createOrganizerVendorMessage = asyncHandler(async (req, res) => {
+  const request = await assertOrganizerAccess(req, req.params.requestId);
+  const text = String(req.body?.body || '').trim();
+  if (!text) {
+    throw new AppError('Message body is required', 400, 'MESSAGE_REQUIRED');
+  }
+
+  const { data: newMsg, error } = await supabase
+    .from('booking_messages')
+    .insert({
+      booking_id: request.id,
+      author_user_id: req.user.id,
+      type: req.user.role === 'vendor' ? 'vendor_message' : 'organizer_message',
+      body: text
+    })
+    .select(`
+      id,
+      booking_id,
+      type,
+      body,
+      created_at,
+      user_profiles:author_user_id(display_name)
+    `)
+    .single();
+
+  if (error) throw error;
+
+  return sendSuccess(res, {
+    id: newMsg.id,
+    requestId: newMsg.booking_id,
+    senderId: req.user.id,
+    senderName: newMsg.user_profiles?.display_name || 'User',
+    text: newMsg.body,
+    timestamp: newMsg.created_at,
+    isOrganizer: true
+  });
+});
+
+const createOrganizerVendorRequest = asyncHandler(async (req, res) => {
+  const organizerId = await getOrganizerProfileId(req.user.id);
+  if (!organizerId && req.user.role !== 'admin') {
+    throw new AppError('Organizer profile not found', 404, 'ORGANIZER_NOT_FOUND');
+  }
+
+  const { data: event, error: eventError } = await supabase
+    .from('large_events')
+    .select('id, organizer_id')
+    .eq('id', req.body.eventBriefId)
+    .single();
+
+  if (eventError || !event || (req.user.role !== 'admin' && event.organizer_id !== organizerId)) {
+    throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+  }
+
+  const { data: vendorService } = await supabase
+    .from('vendor_services')
+    .select('id, service_name, category, vendor_id')
+    .eq('id', req.body.vendorServiceId || null)
+    .maybeSingle();
+
+  if (!vendorService || vendorService.vendor_id !== req.body.vendorId) {
+    throw new AppError('Vendor service not found', 404, 'VENDOR_SERVICE_NOT_FOUND');
+  }
+
+  const { data: existing } = await supabase
+    .from('procurement_requests')
+    .select('id')
+    .eq('event_id', event.id)
+    .eq('vendor_id', req.body.vendorId)
+    .eq('vendor_service_id', vendorService.id)
+    .in('status', ['open', 'pending'])
+    .maybeSingle();
+
+  if (existing) {
+    return sendSuccess(res, { id: existing.id });
+  }
+
+  const deadline = req.body.selectedDate ? `${req.body.selectedDate}T23:59:59Z` : null;
+  const requestMessage = req.body.message || req.body.packageName || null;
+  const budgetMin = req.body.budgetMin ?? req.body.requestedBudget ?? null;
+  const budgetMax = req.body.budgetMax ?? req.body.requestedBudget ?? budgetMin;
+
+  const { data: request, error } = await supabase
+    .from('procurement_requests')
+    .insert({
+      event_id: event.id,
+      organizer_id: organizerId || event.organizer_id,
+      vendor_id: req.body.vendorId,
+      vendor_service_id: vendorService.id,
+      title: req.body.packageName || vendorService.service_name || 'Vendor request',
+      description: requestMessage,
+      request_message: requestMessage,
+      budget_min: budgetMin,
+      budget_max: budgetMax,
+      deadline,
+      status: 'open'
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+
+  const { error: rvError } = await supabase
+    .from('request_vendors')
+    .insert({
+      request_id: request.id,
+      vendor_id: req.body.vendorId,
+      vendor_service_id: vendorService.id,
+      request_message: requestMessage,
+      budget_min: budgetMin,
+      budget_max: budgetMax,
+      deadline,
+      status: 'pending'
+    });
+  if (rvError) throw rvError;
+
+  const { data: normalized } = await supabase
+    .from('procurement_requests')
+    .select(`
+      *,
+      large_events(title, event_date, venue, expected_guests),
+      organizer_profiles(organization_name),
+      vendor_profiles(business_name),
+      vendor_services(id, service_name, category),
+      request_vendors(id, vendor_id, vendor_service_id, status, request_message, budget_min, budget_max, deadline, viewed_at, accepted_at, rejected_at, changes_requested_at)
+    `)
+    .eq('id', request.id)
+    .single();
+
+  const { data: vendorProfile } = await supabase
+    .from('vendor_profiles')
+    .select('user_id')
+    .eq('id', req.body.vendorId)
+    .single();
+
+  await supabase.from('notifications').insert({
+    user_id: vendorProfile?.user_id || req.body.vendorUserId || null,
+    title: 'New organizer request',
+    message: 'You have received a new request from an organizer.',
+    notification_type: 'vendor_request',
+    priority: 'high',
+    action_url: '/vendor/bookings',
+    metadata: { related_type: 'vendor_request', related_id: request.id }
+  });
+
+  return sendCreated(res, mapRequestToOrganizerRequest(normalized));
+});
+
+const updateOrganizerVendorRequestStatus = async (req, booking, status) => {
+  const now = new Date().toISOString();
+  const requestVendor = getRequestVendor(booking);
+  const rvUpdates = { status, responded_at: now };
+  if (status === 'viewed') rvUpdates.viewed_at = now;
+  if (status === 'accepted') rvUpdates.accepted_at = now;
+  if (status === 'rejected') rvUpdates.rejected_at = now;
+  if (status === 'changes_requested') rvUpdates.changes_requested_at = now;
+
+  const { error: rvError } = await supabase
+    .from('request_vendors')
+    .update(rvUpdates)
+    .eq('request_id', booking.id)
+    .eq('vendor_id', requestVendor?.vendor_id || booking.vendor_id);
+  if (rvError) throw rvError;
+
+  await supabase
+    .from('procurement_requests')
+    .update({ status, updated_at: now })
+    .eq('id', booking.id);
+
+  return {
+    ...booking,
+    status,
+    updated_at: now,
+    request_vendors: { ...(requestVendor || {}), ...rvUpdates }
+  };
+};
+
+const acceptOrganizerVendorRequest = asyncHandler(async (req, res) => {
+  const request = await assertOrganizerAccess(req, req.params.requestId);
+  return sendSuccess(res, await updateOrganizerVendorRequestStatus(req, request, 'accepted'));
+});
+
+const rejectOrganizerVendorRequest = asyncHandler(async (req, res) => {
+  const request = await assertOrganizerAccess(req, req.params.requestId);
+  return sendSuccess(res, await updateOrganizerVendorRequestStatus(req, request, 'rejected'));
+});
+
+const confirmOrganizerVendorRequest = asyncHandler(async (req, res) => {
+  const request = await assertOrganizerAccess(req, req.params.requestId);
+  return sendSuccess(res, await updateOrganizerVendorRequestStatus(req, request, 'confirmed'));
+});
+
+const getOrganizerVendorTimeline = asyncHandler(async (req, res) => {
+  const request = await assertOrganizerAccess(req, req.params.requestId);
+  return sendSuccess(res, buildRequestTimelineEntries(request));
+});
+
 // I. Availability endpoints
 const buildAvailabilityPreview = async (vendorId, eventId = null) => {
   const { data: vendor } = await supabaseAdmin
@@ -742,6 +1181,15 @@ module.exports = {
   uploadDocument: asyncHandler(uploadDocument),
   listBookingMessages: asyncHandler(listBookingMessages),
   createBookingMessage: asyncHandler(createBookingMessage),
+  createOrganizerVendorRequest: asyncHandler(createOrganizerVendorRequest),
+  fetchOrganizerVendorRequest: asyncHandler(fetchOrganizerVendorRequest),
+  listOrganizerVendorRequests: asyncHandler(listOrganizerVendorRequests),
+  listOrganizerVendorMessages: asyncHandler(listOrganizerVendorMessages),
+  createOrganizerVendorMessage: asyncHandler(createOrganizerVendorMessage),
+  acceptOrganizerVendorRequest: asyncHandler(acceptOrganizerVendorRequest),
+  rejectOrganizerVendorRequest: asyncHandler(rejectOrganizerVendorRequest),
+  confirmOrganizerVendorRequest: asyncHandler(confirmOrganizerVendorRequest),
+  getOrganizerVendorTimeline: asyncHandler(getOrganizerVendorTimeline),
   getVendorAvailability: asyncHandler(getVendorAvailability),
   getMyAvailability: asyncHandler(getMyAvailability),
   updateMyAvailabilityStatus: asyncHandler(updateMyAvailabilityStatus)

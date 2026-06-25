@@ -1,6 +1,7 @@
 const AppError = require('../shared/utils/appError');
 const { supabase, supabaseAdmin } = require('../config/supabase');
 const vendorRepository = require('./vendor-b2b-dashboard.repository');
+const logger = require('../shared/utils/logger');
 
 async function getProfile(actor) {
   const profile = await vendorRepository.findByUserId(actor.id);
@@ -55,7 +56,7 @@ async function uploadServiceImage(actor, file) {
     });
 
   if (error) {
-    console.error('Supabase upload error:', error);
+    logger.error('Supabase upload error', { error });
     throw new AppError('Failed to upload image', 500, 'UPLOAD_FAILED');
   }
 
@@ -130,13 +131,162 @@ const VALID_TRANSITIONS = {
   pending: ['accepted', 'rejected', 'changes_requested']
 };
 
+function getRequestVendor(request) {
+  return Array.isArray(request?.request_vendors)
+    ? request.request_vendors[0] || null
+    : request?.request_vendors || null;
+}
+
+function buildVendorIds(profile, actor) {
+  return [...new Set([profile?.id, actor?.id].filter(Boolean))];
+}
+
+function requestBelongsToVendor(request, vendorIds) {
+  const requestVendorId = getRequestVendor(request)?.vendor_id;
+  return vendorIds.includes(requestVendorId) || vendorIds.includes(request?.vendor_id);
+}
+
+function bookingBelongsToVendor(booking, vendorIds) {
+  return vendorIds.includes(booking?.vendor_id);
+}
+
+function mapRequestToBookingShape(request) {
+  const requestVendor = getRequestVendor(request);
+  return {
+    id: request.id,
+    event_id: request.event_id,
+    requirement_id: request.vendor_service_id || requestVendor?.vendor_service_id || null,
+    vendor_id: request.vendor_id,
+    organizer_id: request.organizer_id,
+    booking_type: 'B2B',
+    status: requestVendor?.status || request.status || 'pending',
+    requested_budget: requestVendor?.budget_min ?? request.budget_min ?? null,
+    notes: request.request_message || request.description || null,
+    requested_at: request.created_at,
+    updated_at: request.updated_at,
+    large_events: request.large_events,
+    event_requirements: {
+      category: request.vendor_services?.category || 'Service',
+      quantity: 1
+    },
+    vendor_profiles: request.vendor_profiles,
+    organizer_profiles: request.organizer_profiles,
+    request_vendors: requestVendor,
+    vendor_services: request.vendor_services
+  };
+}
+
+function mapDirectBookingToBookingShape(booking) {
+  return {
+    id: booking.id,
+    event_id: booking.event_id,
+    requirement_id: booking.requirement_id,
+    vendor_id: booking.vendor_id,
+    organizer_id: booking.organizer_id,
+    booking_type: booking.booking_type || 'B2B',
+    status: booking.status || 'pending',
+    requested_budget: booking.requested_budget ?? null,
+    notes: booking.notes || null,
+    requested_at: booking.requested_at,
+    updated_at: booking.updated_at || booking.requested_at,
+    large_events: booking.large_events,
+    event_requirements: booking.event_requirements,
+    vendor_profiles: booking.vendor_profiles,
+    organizer_profiles: booking.organizer_profiles
+  };
+}
+
+function mapRequestToNormalized(request) {
+  const vendorRequest = getRequestVendor(request) || {};
+  const event = request.large_events || {};
+  const vendor = request.vendor_profiles || {};
+  const organizer = request.organizer_profiles || {};
+  const service = request.vendor_services || {};
+  return {
+    requestId: request.id,
+    requestVendorId: vendorRequest.id || null,
+    eventId: request.event_id,
+    eventName: event.title || 'Event',
+    eventType: request.request_type || 'large_event',
+    eventStartDate: event.event_date || null,
+    eventEndDate: null,
+    organizerId: request.organizer_id,
+    organizerName: organizer.organization_name || 'Organizer',
+    organizerUserId: organizer.user_id || null,
+    vendorId: request.vendor_id,
+    vendorName: vendor.business_name || 'Vendor',
+    vendorUserId: vendor.user_id || null,
+    vendorServiceId: request.vendor_service_id || vendorRequest.vendor_service_id || service.id || null,
+    serviceName: service.service_name || null,
+    serviceCategory: service.category || null,
+    requestMessage: request.request_message || request.description || null,
+    budgetMin: vendorRequest.budget_min ?? request.budget_min ?? null,
+    budgetMax: vendorRequest.budget_max ?? request.budget_max ?? null,
+    deadline: vendorRequest.deadline || request.deadline || null,
+    status: vendorRequest.status || request.status || 'pending',
+    sentAt: request.created_at,
+    viewedAt: vendorRequest.viewed_at || null,
+    respondedAt: vendorRequest.responded_at || null,
+    createdAt: request.created_at,
+    updatedAt: request.updated_at || request.created_at
+  };
+}
+
+async function notifyOrganizerForRequest(request, notificationType, title, message) {
+  const organizerUserId = request.organizer_profiles?.user_id || null;
+  if (!organizerUserId) return;
+  const { error } = await supabase.from('notifications').insert({
+    user_id: organizerUserId,
+    booking_id: null,
+    title,
+    message,
+    notification_type: notificationType,
+    priority: 'high',
+    action_url: `/organizer/vendor-status?requestId=${request.id}`,
+    metadata: {
+      related_type: 'vendor_request',
+      related_id: request.id
+    }
+  });
+  if (error) throw error;
+}
+
+async function loadRequest(actor, requestId) {
+  const profile = await vendorRepository.findByUserId(actor.id);
+  if (!profile) {
+    throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
+  }
+  const vendorIds = buildVendorIds(profile, actor);
+  const request = await vendorRepository.findRequestById(requestId);
+  if (!request) {
+    throw new AppError('Request not found', 404, 'REQUEST_NOT_FOUND');
+  }
+  if (!requestBelongsToVendor(request, vendorIds)) {
+    throw new AppError('Access denied', 403, 'FORBIDDEN');
+  }
+  return { profile, request, vendorIds };
+}
+
 async function listB2BBookings(actor, statusFilter, bookingTypeFilter) {
   const profile = await vendorRepository.findByUserId(actor.id);
   if (!profile) {
     throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
   }
+  const vendorIds = buildVendorIds(profile, actor);
 
-  return vendorRepository.listB2BBookings(profile.id, statusFilter, bookingTypeFilter);
+  const merged = await vendorRepository.listVendorB2BRequests(vendorIds, statusFilter, bookingTypeFilter);
+  const normalized = merged.map((item) => (
+    Object.prototype.hasOwnProperty.call(item, 'requirement_id')
+      ? mapDirectBookingToBookingShape(item)
+      : mapRequestToBookingShape(item)
+  ));
+
+  const seen = new Set();
+  return normalized.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
 }
 
 async function getBookingDetail(actor, bookingId) {
@@ -144,44 +294,89 @@ async function getBookingDetail(actor, bookingId) {
   if (!profile) {
     throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
   }
+  const vendorIds = buildVendorIds(profile, actor);
 
-  const booking = await vendorRepository.findBookingById(bookingId);
-  if (!booking) {
-    throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+  const request = await vendorRepository.findRequestById(bookingId);
+  if (request && requestBelongsToVendor(request, vendorIds)) {
+    return mapRequestToBookingShape(request);
   }
 
-  if (booking.vendor_id !== profile.id) {
-    throw new AppError('Access denied', 403, 'FORBIDDEN');
+  const directBooking = await vendorRepository.findBookingById(bookingId);
+  if (directBooking && bookingBelongsToVendor(directBooking, vendorIds)) {
+    return mapDirectBookingToBookingShape(directBooking);
   }
 
-  return booking;
+  throw new AppError('Request not found', 404, 'REQUEST_NOT_FOUND');
 }
 
 async function updateBookingStatus(actor, bookingId, payload) {
-  const profile = await vendorRepository.findByUserId(actor.id);
-  if (!profile) {
-    throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
-  }
-
-  const booking = await vendorRepository.findBookingById(bookingId);
-  if (!booking) {
-    throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
-  }
-
-  if (booking.vendor_id !== profile.id) {
-    throw new AppError('Access denied', 403, 'FORBIDDEN');
-  }
-
-  const allowed = VALID_TRANSITIONS[booking.status];
+  const { request } = await loadRequest(actor, bookingId);
+  const requestVendor = getRequestVendor(request);
+  const currentStatus = requestVendor?.status || request.status || 'pending';
+  const allowed = VALID_TRANSITIONS[currentStatus];
   if (!allowed || !allowed.includes(payload.status)) {
     throw new AppError(
-      `Cannot transition from '${booking.status}' to '${payload.status}'`,
+      `Cannot transition from '${currentStatus}' to '${payload.status}'`,
       400,
       'INVALID_STATUS_TRANSITION'
     );
   }
 
-  return vendorRepository.updateBookingStatus(bookingId, profile.id, payload.status, payload.reason);
+  await vendorRepository.updateRequestVendorStatus(
+    bookingId,
+    requestVendor?.vendor_id || request.vendor_id,
+    payload.status,
+    payload.reason
+  );
+  return mapRequestToNormalized(await vendorRepository.findRequestById(bookingId));
+}
+
+async function viewRequest(actor, requestId) {
+  const { request } = await loadRequest(actor, requestId);
+  const requestVendor = getRequestVendor(request);
+  const current = requestVendor?.status || request.status || 'pending';
+  if (current === 'pending') {
+    await vendorRepository.updateRequestVendorStatus(requestId, requestVendor?.vendor_id || request.vendor_id, 'viewed');
+    await notifyOrganizerForRequest(request, 'request_viewed', 'Request viewed', `A vendor reviewed your request for ${request.large_events?.title || 'an event'}.`);
+  } else if (current !== 'viewed' && current !== 'accepted' && current !== 'rejected' && current !== 'changes_requested') {
+    await vendorRepository.updateRequestVendorStatus(requestId, requestVendor?.vendor_id || request.vendor_id, 'viewed');
+    await notifyOrganizerForRequest(request, 'request_viewed', 'Request viewed', `A vendor reviewed your request for ${request.large_events?.title || 'an event'}.`);
+  }
+  return mapRequestToNormalized(await vendorRepository.findRequestById(requestId));
+}
+
+async function acceptRequest(actor, requestId) {
+  const { request } = await loadRequest(actor, requestId);
+  const requestVendor = getRequestVendor(request);
+  await vendorRepository.updateRequestVendorStatus(requestId, requestVendor?.vendor_id || request.vendor_id, 'accepted');
+  await notifyOrganizerForRequest(request, 'request_accepted', 'Request accepted', `Your request for ${request.large_events?.title || 'an event'} was accepted.`);
+  return mapRequestToNormalized(await vendorRepository.findRequestById(requestId));
+}
+
+async function rejectRequest(actor, requestId) {
+  const { request } = await loadRequest(actor, requestId);
+  const requestVendor = getRequestVendor(request);
+  await vendorRepository.updateRequestVendorStatus(requestId, requestVendor?.vendor_id || request.vendor_id, 'rejected');
+  await notifyOrganizerForRequest(request, 'request_rejected', 'Request rejected', `Your request for ${request.large_events?.title || 'an event'} was rejected.`);
+  return mapRequestToNormalized(await vendorRepository.findRequestById(requestId));
+}
+
+async function requestChanges(actor, requestId, reason) {
+  const { request } = await loadRequest(actor, requestId);
+  const requestVendor = getRequestVendor(request);
+  await vendorRepository.updateRequestVendorStatus(
+    requestId,
+    requestVendor?.vendor_id || request.vendor_id,
+    'changes_requested',
+    reason
+  );
+  await notifyOrganizerForRequest(
+    request,
+    'request_changes_requested',
+    'Request changes requested',
+    `The vendor requested changes for ${request.large_events?.title || 'an event'}. ${reason ? `Message: ${reason}` : ''}`.trim()
+  );
+  return mapRequestToNormalized(await vendorRepository.findRequestById(requestId));
 }
 
 async function submitQuote(actor, bookingId, payload) {
@@ -190,9 +385,9 @@ async function submitQuote(actor, bookingId, payload) {
     throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
   }
 
-  const booking = await vendorRepository.findBookingById(bookingId);
+  const booking = await vendorRepository.findRequestById(bookingId);
   if (!booking) {
-    throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+    throw new AppError('Request not found', 404, 'REQUEST_NOT_FOUND');
   }
 
   if (booking.vendor_id !== profile.id) {
@@ -238,5 +433,10 @@ module.exports = {
   listB2BBookings,
   getBookingDetail,
   updateBookingStatus,
-  submitQuote
+  submitQuote,
+  viewRequest,
+  acceptRequest,
+  rejectRequest,
+  requestChanges,
+  mapRequestToNormalized
 };

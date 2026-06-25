@@ -2,6 +2,7 @@ const asyncHandler = require('../shared/utils/asyncHandler');
 const { sendSuccess } = require('../shared/utils/response');
 const authRepository = require('../auth/auth.repository');
 const AppError = require('../shared/utils/appError');
+const { supabaseAdmin } = require('../config/supabase');
 
 const getOrganizerProfile = asyncHandler(async (req, res) => {
   const profile = await authRepository.findOrganizerProfile(req.user.id);

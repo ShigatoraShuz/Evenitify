@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePlanEventViewModel } from '../viewmodels/usePlanEventViewModel'
 import { OrganizerPlanEventView } from './OrganizerPlanEventView'
+import type { DraftEvent } from '../components/DraftEventsTab'
 
 const BRIEF_STORAGE_KEY = 'eventify:marketplace-brief'
 
@@ -48,6 +49,20 @@ export default function OrganizerPlanEventViewWrapper() {
     <OrganizerPlanEventView
       currentStep={vm.currentStep}
       form={vm.form}
+      drafts={vm.drafts.map((draft) => ({
+        id: draft.id,
+        title: draft.title,
+        eventType: draft.eventType,
+        venue: draft.venue,
+        eventDate: draft.eventDate,
+        guests: draft.guests,
+        budget: draft.budget,
+        progress: draft.progress,
+        lastSaved: draft.lastSaved,
+      })) as DraftEvent[]}
+      completedBriefs={vm.completedBriefs}
+      loading={vm.loading}
+      error={vm.error}
       errors={vm.errors}
       submitted={vm.submitted}
       submitting={vm.submitting}
@@ -64,6 +79,17 @@ export default function OrganizerPlanEventViewWrapper() {
       onSaveDraft={vm.saveDraft}
       onReset={vm.reset}
       onContinueToProcurement={redirect}
+      onContinueDraft={(draftId) => {
+        vm.loadDraft(draftId)
+        navigate('/organizer/plan-event', { replace: true })
+      }}
+      onEditDraft={(draftId) => {
+        vm.loadDraft(draftId)
+        navigate('/organizer/plan-event', { replace: true })
+      }}
+      onDeleteDraft={(draftId) => {
+        vm.clearDraft(draftId)
+      }}
     />
   )
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { hasAuthToken } from '../../../services/apiClient'
 import { notificationService } from '../../../services/notificationService'
 import type { AppNotification } from '../models/notifications.model'
@@ -32,6 +32,8 @@ const GROUP_LABELS: Record<string, string> = {
 const GROUP_ORDER = ['today', 'this_week', 'earlier']
 
 export function useNotifications() {
+  const unreadLoadInFlight = useRef<Promise<void> | null>(null)
+  const lastUnreadLoadAt = useRef(0)
   const [state, setState] = useState<NotificationsState>({
     notifications: [],
     unreadCount: 0,
@@ -69,12 +71,21 @@ export function useNotifications() {
 
   const loadUnreadCount = useCallback(async () => {
     if (!hasAuthToken()) return
+    if (unreadLoadInFlight.current) return unreadLoadInFlight.current
+    const now = Date.now()
+    if (now - lastUnreadLoadAt.current < 5000) return
+    lastUnreadLoadAt.current = now
+    unreadLoadInFlight.current = (async () => {
     try {
       const { count } = await notificationService.getUnreadCount()
       setState((s) => ({ ...s, unreadCount: count }))
     } catch {
       // silently fail for unread count
+    } finally {
+      unreadLoadInFlight.current = null
     }
+    })()
+    return unreadLoadInFlight.current
   }, [])
 
   const markAsRead = useCallback(async (notificationId: string) => {

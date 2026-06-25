@@ -92,25 +92,6 @@ async function findQuoteById(quoteId) {
   return data;
 }
 
-async function createQuote(input) {
-  const { data, error } = await supabase
-    .from('quotes')
-    .insert({
-      request_id: input.requestId,
-      vendor_id: input.vendorId,
-      requirement_id: input.requirementId,
-      price: input.price,
-      notes: input.notes || null,
-      status: 'submitted',
-      valid_until: input.validUntil || null
-    })
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
 async function updateQuoteStatus(quoteId, status) {
   const { data, error } = await supabase
     .from('quotes')
@@ -276,6 +257,5 @@ module.exports = {
   updateBookingStatus,
   findQuoteForBooking,
   findQuoteById,
-  createQuote,
   updateQuoteStatus
 };

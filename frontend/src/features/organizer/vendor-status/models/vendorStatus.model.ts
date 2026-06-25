@@ -45,6 +45,13 @@ export interface VendorStatusTimelineItem {
   label: string
   timestamp: string
   description: string
+  state: 'completed' | 'current' | 'upcoming'
+}
+
+export interface VendorStatusHistoryEntry {
+  status: VendorRequestStatus
+  timestamp: string
+  description?: string
 }
 
 export const STATUS_COLORS_VENDOR: Record<VendorRequestStatus, string> = {
@@ -75,33 +82,34 @@ export const STATUS_LABELS: Record<VendorRequestStatus, string> = {
   cancelled: 'Cancelled',
 }
 
-export function buildTimeline(status: VendorRequestStatus): VendorStatusTimelineItem[] {
-  const timeline: VendorStatusTimelineItem[] = []
-  const now = new Date().toISOString()
+export function buildTimeline(status: VendorRequestStatus, history: VendorStatusHistoryEntry[] = []): VendorStatusTimelineItem[] {
+  const ordered: Array<{ status: VendorRequestStatus; label: string; description: string }> = [
+    { status: 'draft', label: 'Draft', description: 'Request drafted' },
+    { status: 'sent', label: 'Sent', description: 'Request sent to vendor' },
+    { status: 'viewed', label: 'Viewed', description: 'Vendor viewed your request' },
+    { status: 'quoted', label: 'Quoted', description: 'Vendor sent a quote' },
+    { status: 'negotiating', label: 'Negotiating', description: 'Negotiating terms and pricing' },
+    { status: 'accepted', label: 'Accepted', description: 'Offer accepted' },
+    { status: 'contract_pending', label: 'Contract Pending', description: 'Contract awaiting signature' },
+    { status: 'confirmed', label: 'Confirmed', description: 'Booking confirmed' },
+  ]
+  const currentIndex = ordered.findIndex((item) => item.status === status)
+  const historyByStatus = new Map(history.map((entry) => [entry.status, entry]))
 
-  timeline.push({ id: 'tl-1', status: 'draft', label: 'Draft', timestamp: now, description: 'Request drafted' })
-  timeline.push({ id: 'tl-2', status: 'sent', label: 'Sent', timestamp: now, description: 'Request sent to vendor' })
-
-  if (status === 'sent') return timeline
-
-  timeline.push({ id: 'tl-3', status: 'viewed', label: 'Viewed', timestamp: now, description: 'Vendor viewed your request' })
-  if (status === 'viewed') return timeline
-
-  timeline.push({ id: 'tl-4', status: 'quoted', label: 'Quoted', timestamp: now, description: 'Vendor sent a quote' })
-  if (status === 'quoted') return timeline
-
-  timeline.push({ id: 'tl-5', status: 'negotiating', label: 'Negotiating', timestamp: now, description: 'Negotiating terms and pricing' })
-  if (status === 'negotiating') return timeline
-
-  timeline.push({ id: 'tl-6', status: 'accepted', label: 'Accepted', timestamp: now, description: 'Offer accepted' })
-  if (status === 'accepted') return timeline
-
-  timeline.push({ id: 'tl-7', status: 'contract_pending', label: 'Contract Pending', timestamp: now, description: 'Contract awaiting signature' })
-  if (status === 'contract_pending') return timeline
-
-  timeline.push({ id: 'tl-8', status: 'confirmed', label: 'Confirmed', timestamp: now, description: 'Booking confirmed' })
-
-  return timeline
+  return ordered.map((item, index) => ({
+    id: `tl-${index + 1}`,
+    status: item.status,
+    label: item.label,
+    timestamp: historyByStatus.get(item.status)?.timestamp || '',
+    description: historyByStatus.get(item.status)?.description || item.description,
+    state: currentIndex === -1
+      ? 'upcoming'
+      : index < currentIndex
+        ? 'completed'
+        : index === currentIndex
+          ? 'current'
+          : 'upcoming',
+  }))
 }
 
-export type StatusFilterTab = 'all' | 'pending' | 'accepted' | 'rejected' | 'confirmed'
+export type StatusFilterTab = 'all' | 'pending' | 'negotiating' | 'accepted' | 'rejected' | 'confirmed'

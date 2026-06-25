@@ -31,7 +31,8 @@ async function create(input) {
       event_date: input.eventDate,
       venue: input.venue,
       budget: input.budget,
-      expected_guests: input.expectedGuests
+      expected_guests: input.expectedGuests,
+      status: input.status || 'draft'
     })
     .select('*')
     .single();
@@ -60,4 +61,13 @@ async function update(eventId, input) {
   return data;
 }
 
-module.exports = { findByOrganizerId, findById, create, update };
+async function remove(eventId) {
+  const { error } = await supabase
+    .from('large_events')
+    .delete()
+    .eq('id', eventId);
+
+  if (error) throw error;
+}
+
+module.exports = { findByOrganizerId, findById, create, update, remove };

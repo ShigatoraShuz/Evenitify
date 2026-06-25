@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 import { hasAuthToken } from '../../../services/apiClient'
 import { organizerDashboardService } from '../../../services/organizerDashboardService'
+import type { DashboardSummary } from '../../../services/organizerDashboardService'
 import type {
   DashboardEventPreview as ModelEventPreview,
   DashboardDraft as ModelDraft,
@@ -13,6 +14,7 @@ import type {
 } from '../models/organizer-dashboard.model'
 
 interface DashboardViewModelState {
+  summary: DashboardSummary
   events: ModelEventPreview[]
   drafts: ModelDraft[]
   vendorRequests: ModelVendorRequest[]
@@ -26,6 +28,14 @@ interface DashboardViewModelState {
 
 export function useOrganizerDashboard() {
   const [state, setState] = useState<DashboardViewModelState>({
+    summary: {
+      totalEvents: 0,
+      draftEvents: 0,
+      activeVendorRequests: 0,
+      pendingResponses: 0,
+      acceptedBookings: 0,
+      confirmedBookings: 0,
+    },
     events: [],
     drafts: [],
     vendorRequests: [],
@@ -39,8 +49,9 @@ export function useOrganizerDashboard() {
 
   const applyDashboardState = useCallback((payload: Awaited<ReturnType<typeof organizerDashboardService.getDashboardData>>) => {
     setState({
+      summary: payload.summary,
       events: payload.events as ModelEventPreview[],
-      drafts: payload.drafts as ModelDraft[],
+      drafts: payload.drafts as unknown as ModelDraft[],
       vendorRequests: payload.vendorRequests as ModelVendorRequest[],
       bookings: payload.bookings as ModelBooking[],
       recommendedVendors: payload.recommendedVendors as ModelRecommendedVendor[],
@@ -54,6 +65,14 @@ export function useOrganizerDashboard() {
   const loadDashboard = useCallback(async (cancelled?: () => boolean) => {
     if (!hasAuthToken()) {
       setState({
+        summary: {
+          totalEvents: 0,
+          draftEvents: 0,
+          activeVendorRequests: 0,
+          pendingResponses: 0,
+          acceptedBookings: 0,
+          confirmedBookings: 0,
+        },
         events: [],
         drafts: [],
         vendorRequests: [],
@@ -87,31 +106,23 @@ export function useOrganizerDashboard() {
     return () => { cancelled = true }
   }, [loadDashboard])
 
-  const summaryStats = useMemo(() => {
-    const totalEvents = state.events.length
-    const draftEvents = state.drafts.length
-    const activeVendorRequests = state.vendorRequests.length
-    const pendingResponses = state.vendorRequests.filter(
-      (r) => r.status === 'sent' || r.status === 'pending' || r.status === 'viewed' || r.status === 'quoted' || r.status === 'negotiating'
-    ).length
-    const acceptedBookings = state.bookings.filter((b) => b.status === 'accepted' || b.status === 'confirmed').length
-    const confirmedBookings = state.bookings.filter((b) => b.status === 'confirmed').length
-
-    return {
-      totalEvents,
-      draftEvents,
-      activeVendorRequests,
-      pendingResponses,
-      acceptedBookings,
-      confirmedBookings,
+  useEffect(() => {
+    const handler = () => {
+      void loadDashboard()
     }
-  }, [state.events, state.drafts, state.vendorRequests, state.bookings])
+    window.addEventListener('eventify:dashboard-refresh', handler as EventListener)
+    return () => window.removeEventListener('eventify:dashboard-refresh', handler as EventListener)
+  }, [loadDashboard])
+
+  const summaryStats = useMemo(() => {
+    return state.summary
+  }, [state.summary])
 
   const vendorRequestCounts = useMemo(() => {
     const all = state.vendorRequests
     return {
       sent: all.filter((r) => r.status === 'sent').length,
-      pending: all.filter((r) => ['pending', 'viewed', 'quoted', 'negotiating'].includes(r.status)).length,
+      pending: all.filter((r) => ['pending', 'viewed', 'quoted'].includes(r.status)).length,
       accepted: all.filter((r) => r.status === 'accepted').length,
       rejected: all.filter((r) => r.status === 'rejected').length,
       confirmed: all.filter((r) => r.status === 'confirmed').length,

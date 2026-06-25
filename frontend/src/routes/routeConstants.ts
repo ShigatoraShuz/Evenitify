@@ -21,7 +21,7 @@ export const ROUTES: Record<string, RouteConfig> = {
   ORGANIZER_REPORTS: { path: '/organizer/reports', label: 'Reports', roles: ['organizer', 'admin'], sidebar: true, icon: 'BarChart3' },
   ORGANIZER_PROFILE: { path: '/organizer/profile', label: 'Profile', roles: ['organizer', 'admin'], sidebar: true, icon: 'User' },
   VENDOR_DASHBOARD: { path: '/vendor', label: 'Dashboard', roles: ['vendor'], sidebar: true, icon: 'LayoutDashboard' },
-  VENDOR_SERVICES: { path: '/vendor/services', label: 'Create Event', roles: ['vendor'], sidebar: true, icon: 'Store' },
+  VENDOR_SERVICES: { path: '/vendor/services', label: 'Services', roles: ['vendor'], sidebar: true, icon: 'Store' },
   VENDOR_BOOKINGS: { path: '/vendor/bookings', label: 'Bookings', roles: ['vendor'], sidebar: true, icon: 'Inbox' },
   VENDOR_AVAILABILITY: { path: '/vendor/availability', label: 'Availability', roles: ['vendor'], sidebar: true, icon: 'Clock' },
   VENDOR_REPORTS: { path: '/vendor/reports', label: 'Reports', roles: ['vendor'], sidebar: true, icon: 'BarChart3' },

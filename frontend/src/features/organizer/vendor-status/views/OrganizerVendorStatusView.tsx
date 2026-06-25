@@ -15,7 +15,7 @@ interface Props {
   searchQuery: string
   activeTab: StatusFilterTab
   showDetailDrawer: boolean
-  summaryCounts: { pending: number; accepted: number; rejected: number; confirmed: number }
+  summaryCounts: { pending: number; negotiating: number; accepted: number; rejected: number; confirmed: number }
   onSearchChange: (q: string) => void
   onTabChange: (tab: StatusFilterTab) => void
   onRequestClick: (id: string) => void

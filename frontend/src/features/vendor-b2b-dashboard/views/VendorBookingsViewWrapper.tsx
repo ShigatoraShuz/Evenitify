@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useVendorB2BDashboard } from '../viewmodels/useVendorB2BDashboard'
 import { VendorBookingsView } from './VendorBookingsView'
 import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
@@ -7,10 +6,6 @@ import { useRealtimeSnapshot } from '../../../shared/hooks/useRealtimeSnapshot'
 export default function VendorBookingsViewWrapper() {
   const vm = useVendorB2BDashboard()
   const realtime = useRealtimeSnapshot('vendor:bookings')
-
-  useEffect(() => {
-    void vm.loadBookings()
-  }, [vm.loadBookings])
 
   return (
     <VendorBookingsView

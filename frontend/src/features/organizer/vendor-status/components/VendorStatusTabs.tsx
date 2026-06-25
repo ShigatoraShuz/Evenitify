@@ -9,6 +9,7 @@ interface Props {
 const tabs: { key: StatusFilterTab; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'pending', label: 'Pending' },
+  { key: 'negotiating', label: 'Negotiating' },
   { key: 'accepted', label: 'Accepted' },
   { key: 'rejected', label: 'Rejected' },
   { key: 'confirmed', label: 'Confirmed' },

@@ -10,6 +10,7 @@ const env = require('./config/env');
 const logger = require('./shared/utils/logger');
 
 const app = express();
+const isLocalDevelopment = process.env.NODE_ENV !== 'production';
 
 app.use(helmet());
 app.use(cors({ origin: env.clientOrigin, credentials: true }));
@@ -17,17 +18,25 @@ app.use(express.json({ limit: '1mb' }));
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: isLocalDevelopment ? 100 : 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => isLocalDevelopment && req.method === 'GET' && req.path === '/auth/me',
   message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests, please try again later.' } }
 });
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: isLocalDevelopment ? 2000 : 200,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => isLocalDevelopment && req.method === 'GET' && (
+    req.path === '/api/auth/me' ||
+    req.path === '/api/notifications/unread-count' ||
+    req.path === '/api/realtime/snapshot' ||
+    req.path === '/api/vendor/bookings' ||
+    req.path === '/api/vendor/services'
+  ),
   message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests, please try again later.' } }
 });
 
@@ -69,14 +78,19 @@ app.get('/health', async (_req, res) => {
 app.use('/auth', require('./auth/auth.routes'));
 app.use('/api/auth', require('./auth/auth.routes'));
 app.use('/onboarding', require('./onboarding/onboarding.routes'));
+app.use('/api/onboarding', require('./onboarding/onboarding.routes'));
 app.use('/events', require('./organizer-events/organizer-events.routes'));
 app.use('/api/events', require('./organizer-events/organizer-events.routes'));
 app.use('/', require('./vendor-procurement/vendor-procurement.routes'));
+app.use('/api', require('./vendor-procurement/vendor-procurement.routes'));
 app.use('/procurement-requests', require('./contract-booking/contract-booking.routes'));
+app.use('/api/procurement-requests', require('./contract-booking/contract-booking.routes'));
 app.use('/vendor', require('./vendor-b2b-dashboard/vendor-b2b-dashboard.routes'));
 app.use('/api/vendor', require('./vendor-b2b-dashboard/vendor-b2b-dashboard.routes'));
 app.use('/admin', require('./admin-operations/admin-operations.routes'));
+app.use('/api/admin', require('./admin-operations/admin-operations.routes'));
 app.use('/contracts', require('./contract-booking/contract.routes'));
+app.use('/api/contracts', require('./contract-booking/contract.routes'));
 app.use('/notifications', require('./notifications/notifications.routes'));
 app.use('/api/notifications', require('./notifications/notifications.routes'));
 app.use('/organizer/dashboard', require('./organizer-dashboard/organizer-dashboard.routes'));

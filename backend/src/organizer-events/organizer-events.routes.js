@@ -15,6 +15,7 @@ router.get('/dashboard/summary', authenticate, requireRole('organizer', 'admin')
 router.get('/:eventId', authenticate, requireRole('organizer', 'admin'), validate(eventIdSchema), controller.getEvent);
 router.get('/:eventId/portfolio', authenticate, requireRole('organizer', 'admin'), validate(eventIdSchema), controller.getEventPortfolio);
 router.patch('/:eventId', authenticate, requireRole('organizer'), validate(updateEventSchema), controller.updateEvent);
+router.delete('/:eventId', authenticate, requireRole('organizer'), validate(eventIdSchema), controller.deleteEvent);
 router.get('/:eventId/bookings', authenticate, requireRole('organizer', 'admin'), validate(eventBookingsSchema), bookingController.listEventBookings);
 
 module.exports = router;

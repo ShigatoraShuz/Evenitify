@@ -32,4 +32,9 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
   return sendSuccess(res, summary);
 });
 
-module.exports = { listEvents, getEvent, createEvent, updateEvent, getEventPortfolio, getDashboardSummary };
+const deleteEvent = asyncHandler(async (req, res) => {
+  const result = await eventService.deleteEvent(req.user, req.validated.params.eventId);
+  return sendSuccess(res, result);
+});
+
+module.exports = { listEvents, getEvent, createEvent, updateEvent, deleteEvent, getEventPortfolio, getDashboardSummary };

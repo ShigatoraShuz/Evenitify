@@ -41,9 +41,9 @@ export const authService = {
   syncProfile: (payload?: { role?: string }) =>
     api.post<UserProfile>('/auth/sync-profile', payload || {}),
 
-  refreshSession: () =>
-    api.post<AuthResult>('/auth/refresh', {}),
+  refreshSession: (refreshToken: string) =>
+    api.post<AuthResult>('/auth/refresh', { refreshToken }),
 
   logout: () =>
-    api.post<void>('/auth/logout', {}),
+    api.post<void>('/auth/logout', null),
 }

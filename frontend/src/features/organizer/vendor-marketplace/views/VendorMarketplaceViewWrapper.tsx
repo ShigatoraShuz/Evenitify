@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useVendorMarketplaceViewModel } from '../viewmodels/useVendorMarketplaceViewModel'
 import { VendorMarketplaceView } from './VendorMarketplaceView'
@@ -9,9 +9,27 @@ const BRIEF_STORAGE_KEY = 'eventify:marketplace-brief'
 export default function VendorMarketplaceViewWrapper() {
   const navigate = useNavigate()
   const params = new URLSearchParams(window.location.search)
-  const eventId = params.get('eventId')
+  const eventId = params.get('eventId') || null
 
   const vm = useVendorMarketplaceViewModel(eventId)
+
+  useEffect(() => {
+    void vm.refresh()
+
+    const interval = window.setInterval(() => {
+      void vm.refresh()
+    }, 15000)
+
+    const onFocus = () => {
+      void vm.refresh()
+    }
+
+    window.addEventListener('focus', onFocus)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [vm.refresh])
 
   const handleChangeEventBrief = useCallback(() => {
     if (eventId) {
@@ -56,6 +74,7 @@ export default function VendorMarketplaceViewWrapper() {
       compareVendors={vm.compareVendors}
       showCompareDrawer={vm.showCompareDrawer}
       showRequestModal={vm.showRequestModal}
+      showRequestSuccessModal={vm.showRequestSuccessModal}
       showVendorDetail={vm.showVendorDetail}
       showSelectBriefModal={vm.showSelectBriefModal}
       showGeneralInquiry={vm.showGeneralInquiry}
@@ -89,6 +108,8 @@ export default function VendorMarketplaceViewWrapper() {
       onClearEventFilter={handleClearEventFilter}
       onChangeEventBrief={handleChangeEventBrief}
       onCloseSelectBriefModal={vm.closeSelectBriefModal}
+      onCloseRequestSuccessModal={vm.closeRequestSuccessModal}
+      onGoToVendorTracker={vm.goToVendorTracker}
       onSelectExistingEvent={handleSelectExistingEvent}
       onPlanNewEvent={handlePlanNewEvent}
       onToggleGeneralInquiry={vm.toggleGeneralInquiry}

@@ -43,7 +43,7 @@ export function VendorServicesView({
     <DashboardShell>
       <div className="space-y-8">
         <PageHeader
-          title="Create Event"
+          title="Services"
           subtitle="Manage the services and packages you offer to organizers."
           action={
             <Button onClick={() => setIsServiceModalOpen(true)} className="gap-2">

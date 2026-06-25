@@ -49,7 +49,7 @@ export const vendorTrackingService = {
   },
 
   async sendMessage(requestId: string, text: string): Promise<VendorTrackingMessage> {
-    return api.post<VendorTrackingMessage>(`/organizer/vendor-requests/${requestId}/messages`, { text })
+    return api.post<VendorTrackingMessage>(`/organizer/vendor-requests/${requestId}/messages`, { body: text })
   },
 
   async acceptOffer(requestId: string): Promise<VendorTrackingRequest> {

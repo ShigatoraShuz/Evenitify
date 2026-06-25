@@ -26,20 +26,21 @@ export function VendorStatusTimeline({ items }: Props) {
         {items.map((item, idx) => {
           const Icon = statusIcons[item.status] || CheckCircle2
           const isLast = idx === items.length - 1
-          const isActive = idx === items.length - 1
+          const isCompleted = item.state === 'completed'
+          const isCurrent = item.state === 'current'
 
           return (
             <div key={item.id} className="flex gap-3 pb-4 relative">
               {!isLast && (
-                <div className="absolute left-[15px] top-[30px] bottom-0 w-0.5 bg-slate-200" />
+                <div className={`absolute left-[15px] top-[30px] bottom-0 w-0.5 ${isCompleted ? 'bg-emerald-300' : 'bg-slate-200'}`} />
               )}
               <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                isActive ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-400'
+                isCurrent ? 'bg-brand-100 text-brand-700 ring-2 ring-brand-200' : isCompleted ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
               }`}>
                 <Icon className="w-4 h-4" />
               </div>
               <div className="flex-1 pt-1">
-                <p className={`text-sm font-medium ${isActive ? 'text-brand-700' : 'text-slate-600'}`}>
+                <p className={`text-sm font-medium ${isCurrent ? 'text-brand-700' : isCompleted ? 'text-emerald-700' : 'text-slate-600'}`}>
                   {item.label}
                 </p>
                 <p className="text-xs text-slate-400">{item.description}</p>

@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const authenticate = require('../shared/middleware/auth.middleware');
-const requireRole = require('../shared/middleware/requireRole.middleware');
+const requireRole = require('../shared/middleware/role.middleware');
 const validate = require('../shared/middleware/validate.middleware');
 const controller = require('./profiles.controller');
 const { organizerProfileSchema, adminSettingsSchema } = require('./profiles.validator');

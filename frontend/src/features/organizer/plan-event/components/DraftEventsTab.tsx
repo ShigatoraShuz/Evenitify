@@ -1,6 +1,6 @@
 import { FileEdit, Trash2, Play, Calendar, MapPin, Users, Clock, ArrowRight } from 'lucide-react'
 
-interface DraftEvent {
+export interface DraftEvent {
   id: string
   title: string
   eventType: string
@@ -57,6 +57,7 @@ export function DraftEventsTab({ drafts = [], onContinue, onEdit, onDelete }: Pr
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => onContinue(draft.id)}
               className="flex items-center gap-1.5 px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors"
             >
@@ -64,6 +65,7 @@ export function DraftEventsTab({ drafts = [], onContinue, onEdit, onDelete }: Pr
               Continue
             </button>
             <button
+              type="button"
               onClick={() => onEdit(draft.id)}
               className="flex items-center gap-1.5 px-4 py-2 bg-white text-slate-600 text-sm font-medium rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
             >
@@ -71,6 +73,7 @@ export function DraftEventsTab({ drafts = [], onContinue, onEdit, onDelete }: Pr
               Edit
             </button>
             <button
+              type="button"
               onClick={() => onDelete(draft.id)}
               className="flex items-center gap-1.5 px-4 py-2 bg-white text-red-500 text-sm font-medium rounded-lg border border-slate-200 hover:bg-red-50 transition-colors ml-auto"
             >

@@ -1,7 +1,9 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { buildViewModelStateMeta } from '../../../../shared/types/viewModelState'
 import {
   type EventBrief,
+  type EventTypeId,
   type VendorMarketplaceVendor,
   type VendorFilterState,
   type ProcurementRequest,
@@ -12,6 +14,8 @@ import {
   type TimeSlotType,
   type TimeSlot,
   type EventBriefReference,
+  type MatchLevel,
+  type SetupMode,
   DEFAULT_VENDOR_FILTERS,
 } from '../models/vendorMarketplace.model'
 import { vendorMarketplaceService } from '../../../../services/vendorMarketplaceService'
@@ -21,6 +25,7 @@ import type { VendorMarketplaceItem } from '../../../../services/vendorMarketpla
 
 const BRIEF_STORAGE_KEY = 'eventify:marketplace-brief'
 const SAVED_VENDORS_KEY = 'eventify:saved-vendors'
+const LAST_VENDOR_REQUEST_KEY = 'eventify:last-vendor-request'
 
 interface VendorMarketplaceViewModelState {
   brief: EventBrief | null
@@ -39,6 +44,8 @@ interface VendorMarketplaceViewModelState {
   selectedDate: string | null
   selectedTimeSlot: TimeSlotType | null
   showSelectBriefModal: boolean
+  showRequestSuccessModal: boolean
+  requestSuccessVendorName: string
   showGeneralInquiry: boolean
   generalInquiryMessage: string
   eventBriefs: EventBriefReference[]
@@ -78,6 +85,14 @@ function mapVendorItemToModel(item: VendorMarketplaceItem): VendorMarketplaceVen
     responseTime: item.responseTime,
     description: item.description,
     galleryImages: item.galleryImages.map((g) => ({ url: g.url, label: g.label })),
+    services: item.services.map((service) => ({
+      id: service.id,
+      category: service.category,
+      serviceName: service.serviceName,
+      description: service.description,
+      basePrice: service.basePrice,
+      availabilityStatus: service.availabilityStatus,
+    })),
     reviews: item.reviews.map((r) => ({
       id: r.id,
       authorName: r.authorName,
@@ -104,9 +119,96 @@ const DEFAULT_TIME_SLOTS: TimeSlot[] = [
   { label: 'Full Day', value: 'full_day', isOccupied: false },
 ]
 
+function categoriesMatch(cat1: string, cat2: string): boolean {
+  const c1 = cat1.toLowerCase().trim()
+  const c2 = cat2.toLowerCase().trim()
+
+  if (c1 === c2) return true
+  if (c1.includes(c2) || c2.includes(c1)) return true
+
+  const synonyms: Array<[string[], string[]]> = [
+    [['photography', 'videography', 'photo', 'video'], ['photo/video', 'photography', 'videography']],
+    [['transport', 'transportation'], ['transport', 'transportation', 'shuttle']],
+    [['lights and sounds', 'av', 'lighting', 'sound'], ['lights and sounds', 'audio', 'visual']],
+    [['event staff', 'staff', 'security', 'cleanup crew'], ['staff', 'security']],
+    [['venue', 'venue decoration', 'event styling', 'florist'], ['venue', 'decoration', 'decor']]
+  ]
+
+  for (const [group1, group2] of synonyms) {
+    const inGroup1 = group1.some(item => c1.includes(item) || item.includes(c1))
+    const inGroup2 = group2.some(item => c2.includes(item) || item.includes(c2))
+    if (inGroup1 && inGroup2) return true
+  }
+
+  return false
+}
+
+function calculateMatchScore(vendor: VendorMarketplaceVendor, brief: EventBrief | null): { score: number, level: MatchLevel } {
+  if (!brief) return { score: 0, level: 'none' }
+
+  let score = 0
+
+  // 1. Service Category Match (up to 40 points)
+  const matchingServices = vendor.serviceCategory.filter(cat =>
+    brief.selectedVendorServices.some(s => categoriesMatch(cat, s))
+  )
+  if (matchingServices.length > 0) {
+    score += 40
+  }
+
+  // 2. Rating Match (up to 30 points)
+  score += Math.round((vendor.rating / 5) * 30)
+
+  // 3. Location Match (up to 20 points)
+  const locMatch = !!(vendor.location && brief.location && (
+    vendor.location.toLowerCase().includes(brief.location.toLowerCase()) ||
+    vendor.serviceArea.toLowerCase().includes(brief.location.toLowerCase()) ||
+    brief.location.toLowerCase().includes(vendor.location.toLowerCase())
+  ))
+  if (locMatch) {
+    score += 20
+  }
+
+  // 4. Budget Match (up to 10 points)
+  if (vendor.startingPrice <= brief.budget) {
+    score += 10
+  }
+
+  let level: MatchLevel = 'none'
+  if (score >= 75) level = 'recommended'
+  else if (score >= 40) level = 'partial'
+
+  return { score, level }
+}
+
+function normalizeEventType(value: string | null | undefined): EventTypeId {
+  const normalized = (value || '').toLowerCase().trim()
+  if (normalized === 'product launch') return 'product-launch'
+  if (normalized === 'wedding' || normalized === 'concert' || normalized === 'corporate' || normalized === 'conference' || normalized === 'festival' || normalized === 'birthday' || normalized === 'expo' || normalized === 'private' || normalized === 'custom') {
+    return normalized as EventTypeId
+  }
+  return 'custom'
+}
+
+function normalizeSetupMode(value: string | null | undefined): SetupMode {
+  const normalized = (value || '').toLowerCase().trim()
+  if (normalized === 'indoor' || normalized === 'outdoor' || normalized === 'hybrid') return normalized
+  return 'hybrid'
+}
+
 export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
+  const navigate = useNavigate()
+  const storedBrief = useMemo(() => {
+    try {
+      const raw = sessionStorage.getItem(BRIEF_STORAGE_KEY)
+      if (!raw) return null
+      return JSON.parse(raw) as EventBrief
+    } catch {
+      return null
+    }
+  }, [eventIdFromUrl])
   const [state, setState] = useState<VendorMarketplaceViewModelState>({
-    brief: null,
+    brief: eventIdFromUrl ? null : storedBrief,
     allVendors: [],
     filteredVendors: [],
     filters: DEFAULT_VENDOR_FILTERS,
@@ -122,6 +224,8 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     selectedDate: null,
     selectedTimeSlot: null,
     showSelectBriefModal: false,
+    showRequestSuccessModal: false,
+    requestSuccessVendorName: '',
     showGeneralInquiry: false,
     generalInquiryMessage: '',
     eventBriefs: [],
@@ -130,52 +234,74 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     error: null,
   })
 
+  const loadMarketplace = useCallback(async (cancelled?: () => boolean) => {
+    setState((s) => ({ ...s, loading: true, error: null }))
+    try {
+      const briefsPromise = eventBriefService.getAll()
+      const vendorsData = eventIdFromUrl
+        ? await vendorMarketplaceService.getMatched(eventIdFromUrl)
+        : await vendorMarketplaceService.getAll()
+
+      const briefsData = await briefsPromise
+      const resolvedVendors = vendorsData.length > 0 || !eventIdFromUrl
+        ? vendorsData
+        : await vendorMarketplaceService.getAll()
+
+      if (cancelled?.()) return
+      const vendors = resolvedVendors.map(mapVendorItemToModel)
+      const briefs: EventBriefReference[] = briefsData.map((b) => ({
+        id: b.id,
+        eventName: b.eventName,
+        eventType: b.eventType,
+        eventDate: b.eventDate,
+      }))
+      setState((s) => ({
+        ...s,
+        allVendors: vendors,
+        filteredVendors: vendors,
+        eventBriefs: briefs,
+        brief: eventIdFromUrl ? s.brief : (s.brief ?? storedBrief),
+        filters: eventIdFromUrl
+          ? s.filters
+          : {
+            ...DEFAULT_VENDOR_FILTERS,
+          },
+        loading: false,
+        error: null,
+      }))
+    } catch (err) {
+      if (cancelled?.()) return
+      setState((s) => ({
+        ...s,
+        loading: false,
+        error: err instanceof Error ? err.message : 'Failed to load marketplace data',
+      }))
+    }
+  }, [eventIdFromUrl])
+
   useEffect(() => {
     let cancelled = false
-    async function load() {
-      setState((s) => ({ ...s, loading: true, error: null }))
-      try {
-        const [vendorsData, briefsData] = await Promise.all([
-          vendorMarketplaceService.getAll(),
-          eventBriefService.getAll(),
-        ])
-        if (cancelled) return
-        const vendors = vendorsData.map(mapVendorItemToModel)
-        const briefs: EventBriefReference[] = briefsData.map((b) => ({
-          id: b.id,
-          eventName: b.eventName,
-          eventType: b.eventType,
-          eventDate: b.eventDate,
-        }))
-        setState((s) => ({
-          ...s,
-          allVendors: vendors,
-          filteredVendors: vendors,
-          eventBriefs: briefs,
-          loading: false,
-          error: null,
-        }))
-      } catch (err) {
-        if (cancelled) return
-        setState((s) => ({
-          ...s,
-          loading: false,
-          error: err instanceof Error ? err.message : 'Failed to load marketplace data',
-        }))
-      }
+    if (!eventIdFromUrl && !storedBrief) {
+      sessionStorage.removeItem(BRIEF_STORAGE_KEY)
     }
-    load()
+    void loadMarketplace(() => cancelled)
     return () => { cancelled = true }
-  }, [])
+  }, [loadMarketplace, eventIdFromUrl, storedBrief])
 
   const vendorsRefined = useMemo(() => {
     let result = [...state.allVendors]
+
+    result = result.map(v => {
+      const { score, level } = calculateMatchScore(v, state.brief)
+      return { ...v, matchScore: score, matchLevel: level }
+    })
+
     const f = state.filters
 
     if (f.service.length > 0) {
       result = result.filter((v) =>
         v.serviceCategory.some((cat) =>
-          f.service.some((s) => cat.toLowerCase().includes(s.toLowerCase()))
+          f.service.some((s) => categoriesMatch(cat, s))
         )
       )
     }
@@ -219,27 +345,98 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     }
 
     return result
-  }, [state.allVendors, state.filters])
+  }, [state.allVendors, state.filters, state.brief])
 
   useEffect(() => {
     setState((s) => ({ ...s, filteredVendors: vendorsRefined }))
   }, [vendorsRefined])
 
   useEffect(() => {
-    if (!eventIdFromUrl) return
+    if (!eventIdFromUrl) {
+      if (storedBrief) {
+        setState((s) => ({
+          ...s,
+          brief: storedBrief,
+          filters: {
+            ...s.filters,
+            service: storedBrief.selectedVendorServices || []
+          }
+        }))
+      }
+      return
+    }
+
     const stored = sessionStorage.getItem(BRIEF_STORAGE_KEY)
-    if (!stored) return
-    const brief = JSON.parse(stored) as EventBrief
-    if (brief.eventId !== eventIdFromUrl) return
-    setState((s) => ({ ...s, brief }))
-  }, [eventIdFromUrl])
+    if (stored) {
+      try {
+        const brief = JSON.parse(stored) as EventBrief
+        if (brief.eventId === eventIdFromUrl) {
+          setState((s) => ({
+            ...s,
+            brief,
+            filters: {
+              ...s.filters,
+              service: brief.selectedVendorServices || []
+            }
+          }))
+          return
+        }
+      } catch (e) {
+        console.error('Failed to parse event brief from session storage', e)
+      }
+    }
+
+    let cancelled = false
+    async function fetchBrief() {
+      try {
+        const backendBrief = await eventBriefService.getById(eventIdFromUrl!)
+        if (cancelled) return
+
+        const brief: EventBrief = {
+          eventId: backendBrief.id,
+          eventType: normalizeEventType(backendBrief.eventType),
+          eventName: backendBrief.eventName,
+          location: backendBrief.location,
+          eventDate: backendBrief.eventDate,
+          startTime: backendBrief.startTime || '',
+          endTime: backendBrief.endTime || '',
+          guestCount: backendBrief.guestCount,
+          budget: backendBrief.budget,
+          selectedTheme: backendBrief.selectedTheme || '',
+          setupStyle: normalizeSetupMode(backendBrief.setupStyle),
+          selectedVendorServices: backendBrief.selectedVendorServices || [],
+          indoorOutdoorType: normalizeSetupMode(backendBrief.setupStyle),
+          specialRequirements: backendBrief.specialRequirements || '',
+          preferredPackageTier: 'premium',
+        }
+
+        sessionStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(brief))
+        setState((s) => ({
+          ...s,
+          brief,
+          filters: {
+            ...s.filters,
+            service: brief.selectedVendorServices || []
+          }
+        }))
+      } catch (err) {
+        console.error('Failed to fetch event brief from backend', err)
+      }
+    }
+
+    fetchBrief()
+    return () => { cancelled = true }
+  }, [eventIdFromUrl, storedBrief])
 
   const setBrief = useCallback((brief: EventBrief) => {
     sessionStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(brief))
     setState((s) => ({
       ...s,
       brief,
-      filters: DEFAULT_VENDOR_FILTERS,
+      filters: {
+        ...DEFAULT_VENDOR_FILTERS,
+        service: brief.selectedVendorServices || []
+      },
       compareList: [],
     }))
   }, [])
@@ -401,6 +598,15 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     setState((s) => ({ ...s, showSelectBriefModal: false, showGeneralInquiry: false, generalInquiryMessage: '' }))
   }, [])
 
+  const closeRequestSuccessModal = useCallback(() => {
+    setState((s) => ({ ...s, showRequestSuccessModal: false, requestSuccessVendorName: '' }))
+  }, [])
+
+  const goToVendorTracker = useCallback(() => {
+    setState((s) => ({ ...s, showRequestSuccessModal: false, requestSuccessVendorName: '' }))
+    navigate('/organizer/vendor-status', { replace: true })
+  }, [navigate])
+
   const setGeneralInquiryMessage = useCallback((msg: string) => {
     setState((s) => ({ ...s, generalInquiryMessage: msg }))
   }, [])
@@ -413,41 +619,39 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     const req = state.requestForm
     if (!req.vendorId || !state.brief) return
 
-    const newRequest: ProcurementRequest = {
-      id: `pr-${Date.now()}`,
-      eventId: state.brief.eventId,
+    const requestedBudget = req.requestedBudget ? Number(req.requestedBudget) : null
+    const selectedService = state.selectedVendor?.services.find((service) => service.category === req.serviceCategory)
+
+    const createdRequest = await vendorRequestService.sendBookingRequest({
+      eventBriefId: state.brief.eventId,
       vendorId: req.vendorId,
+      vendorServiceId: selectedService?.id,
+      packageName: state.selectedTimeSlot || req.serviceCategory || undefined,
+      selectedDate: state.selectedDate || undefined,
+      selectedTimeSlot: state.selectedTimeSlot || undefined,
+      budgetMin: requestedBudget,
+      budgetMax: requestedBudget,
+      message: req.notes,
+    })
+
+    sessionStorage.setItem(LAST_VENDOR_REQUEST_KEY, JSON.stringify({
+      requestId: createdRequest.id,
       vendorName: req.vendorName,
-      serviceCategory: req.serviceCategory,
-      status: 'sent',
-      requestedBudget: req.requestedBudget ? Number(req.requestedBudget) : null,
-      notes: req.notes,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
+      eventName: state.brief.eventName,
+    }))
 
-    try {
-      await vendorRequestService.sendBookingRequest({
-        eventBriefId: state.brief.eventId,
-        vendorId: req.vendorId,
-        packageName: state.selectedTimeSlot || undefined,
-        selectedDate: state.selectedDate || undefined,
-        selectedTimeSlot: state.selectedTimeSlot || undefined,
-        message: req.notes,
-      })
-    } catch {
-      // Continue with local state even if API fails
-    }
-
+    await loadMarketplace()
     setState((s) => ({
       ...s,
-      procurementRequests: [...s.procurementRequests, newRequest],
       showRequestModal: false,
       selectedVendor: null,
       selectedDate: null,
       selectedTimeSlot: null,
+      showRequestSuccessModal: true,
+      requestSuccessVendorName: req.vendorName,
     }))
-  }, [state.requestForm, state.brief, state.selectedDate, state.selectedTimeSlot])
+    navigate(`/organizer/vendor-status?tab=pending&requestId=${createdRequest.id}`, { replace: true })
+  }, [navigate, state.requestForm, state.brief, state.selectedDate, state.selectedTimeSlot, state.selectedVendor, loadMarketplace])
 
   const sendGeneralInquiry = useCallback(async () => {
     const vendor = state.selectedVendor
@@ -518,6 +722,8 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     selectedDate: state.selectedDate,
     selectedTimeSlot: state.selectedTimeSlot,
     showSelectBriefModal: state.showSelectBriefModal,
+    showRequestSuccessModal: state.showRequestSuccessModal,
+    requestSuccessVendorName: state.requestSuccessVendorName,
     showGeneralInquiry: state.showGeneralInquiry,
     generalInquiryMessage: state.generalInquiryMessage,
     eventBriefs: state.eventBriefs,
@@ -548,10 +754,13 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     getRequestStatus,
     openSelectBriefModal,
     closeSelectBriefModal,
+    closeRequestSuccessModal,
+    goToVendorTracker,
     setGeneralInquiryMessage,
     toggleGeneralInquiry,
     sendGeneralInquiry,
     handleSendRequest,
+    refresh: loadMarketplace,
     setShowCompareDrawer: (v: boolean) => setState((s) => ({ ...s, showCompareDrawer: v })),
     ...buildViewModelStateMeta({
       loading: state.loading,

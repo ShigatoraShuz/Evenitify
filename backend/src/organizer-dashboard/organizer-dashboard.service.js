@@ -1,4 +1,21 @@
+const AppError = require('../shared/utils/appError');
 const repository = require('./organizer-dashboard.repository');
+
+function getRequestVendor(request) {
+  return Array.isArray(request?.request_vendors)
+    ? request.request_vendors[0] || null
+    : request?.request_vendors || null;
+}
+
+function normalizeOrganizerRequestStatus(status) {
+  if (status === 'open' || status === 'pending') return 'sent';
+  if (status === 'changes_requested') return 'negotiating';
+  if (status === 'viewed') return 'viewed';
+  if (status === 'accepted') return 'accepted';
+  if (status === 'rejected') return 'rejected';
+  if (status === 'confirmed') return 'confirmed';
+  return 'sent';
+}
 
 function toDashboardEvent(event) {
   return {
@@ -26,14 +43,18 @@ function toDraft(event) {
 }
 
 function toVendorRequest(booking) {
+  const requestVendor = getRequestVendor(booking);
+  const status = normalizeOrganizerRequestStatus(requestVendor?.status || booking.status || 'open');
   return {
     id: booking.id,
     vendorName: booking.vendor_profiles?.business_name || 'Vendor',
-    category: booking.event_requirements?.category || 'Service',
+    category: booking.vendor_services?.category || 'Service',
     eventName: booking.large_events?.title || 'Event',
-    status: mapVendorRequestStatus(booking.status),
-    lastMessage: booking.notes || `Request is currently ${booking.status}.`,
-    lastUpdated: booking.updated_at || booking.requested_at
+    status,
+    requestedBudget: Number(requestVendor?.budget_min ?? booking.budget_min ?? 0) || undefined,
+    date: booking.large_events?.event_date || requestVendor?.deadline || undefined,
+    lastMessage: requestVendor?.request_message || booking.request_message || booking.description || `Request is currently ${status}.`,
+    lastUpdated: booking.updated_at || booking.created_at || booking.requested_at
   };
 }
 
@@ -92,7 +113,7 @@ async function getDashboardPayload(actor) {
   const organizer = await repository.findOrganizerProfileByUserId(actor.id);
 
   if (!organizer) {
-    return buildEmptyDashboard();
+    throw new AppError('Organizer profile not found', 404, 'ORGANIZER_NOT_FOUND');
   }
 
   const [events, bookings, activity, notifications] = await Promise.all([
@@ -102,11 +123,9 @@ async function getDashboardPayload(actor) {
     repository.findUnreadNotificationsByUserId(actor.id)
   ]);
 
-  const activeEvents = events.filter((event) => event.status !== 'draft');
   const draftEvents = events.filter((event) => event.status === 'draft');
-  const vendorRequestBookings = bookings.filter((booking) =>
-    ['pending', 'accepted', 'rejected', 'changes_requested', 'confirmed'].includes(booking.status)
-  );
+  const activeEvents = events.filter((event) => event.status !== 'draft');
+  const vendorRequestBookings = await repository.findVendorRequestsByOrganizerId(organizer.id);
   const upcomingBookings = bookings.filter((booking) =>
     ['accepted', 'confirmed'].includes(booking.status) || hasPendingContract(booking.contracts)
   );
@@ -124,18 +143,18 @@ async function getDashboardPayload(actor) {
 
   return {
     summary: {
-      totalEvents: activeEvents.length,
+      totalEvents: events.length,
       draftEvents: draftEvents.length,
       activeVendorRequests: vendorRequestBookings.length,
       pendingResponses: vendorRequestBookings.filter((item) =>
-        ['sent', 'pending', 'viewed', 'quoted', 'negotiating'].includes(mapVendorRequestStatus(item.status))
+        ['sent', 'viewed'].includes(normalizeOrganizerRequestStatus(getRequestVendor(item)?.status || item.status))
       ).length,
       acceptedBookings: upcomingBookings.filter((item) => ['accepted', 'confirmed'].includes(item.status)).length,
       confirmedBookings: upcomingBookings.filter((item) => item.status === 'confirmed').length
     },
     events: activeEvents.map(toDashboardEvent),
     drafts: draftEvents.map(toDraft),
-    vendorRequests: vendorRequestBookings.map(toVendorRequest),
+    vendorRequests: vendorRequestBookings.map((request) => toVendorRequest(request)),
     bookings: upcomingBookings.map(toBooking),
     recommendedVendors,
     activities: activity.map(toActivity).slice(0, 5),
@@ -233,15 +252,6 @@ function mapEventStatus(status) {
   if (status === 'booking' || status === 'confirmed') return 'active';
   if (status === 'cancelled') return 'draft';
   return status;
-}
-
-function mapVendorRequestStatus(status) {
-  if (status === 'pending') return 'sent';
-  if (status === 'changes_requested') return 'negotiating';
-  if (status === 'confirmed') return 'confirmed';
-  if (status === 'accepted') return 'accepted';
-  if (status === 'rejected') return 'rejected';
-  return 'pending';
 }
 
 function mapBookingStatus(booking) {

@@ -27,7 +27,12 @@ async function createBooking(actor, payload) {
     throw new AppError('Organizer profile not found', 404, 'ORGANIZER_NOT_FOUND');
   }
 
-  const event = await bookingRepository.findById(payload.eventId);
+  const { data: event } = await supabase
+    .from('large_events')
+    .select('id, organizer_id')
+    .eq('id', payload.eventId)
+    .single();
+
   if (!event) {
     throw new AppError('Large Event not found', 404, 'EVENT_NOT_FOUND');
   }
@@ -77,14 +82,17 @@ async function createBooking(actor, payload) {
   };
 
   if (payload.requestedBudget !== null && payload.requestedBudget !== undefined) {
+    let notes = payload.notes || '';
+
     if (requirement.min_budget && payload.requestedBudget < requirement.min_budget) {
-      return bookingRepository.create({ ...baseInput, notes: payload.notes });
+      notes = (notes + ' [Budget below requirement minimum]').trim();
     }
 
     if (requirement.max_budget && payload.requestedBudget > requirement.max_budget) {
-      const notes = (payload.notes || '') + ' [Budget exceeds requirement max - justification needed]';
-      return bookingRepository.create({ ...baseInput, notes: notes.trim() });
+      notes = (notes + ' [Budget exceeds requirement max - justification needed]').trim();
     }
+
+    return bookingRepository.create({ ...baseInput, notes });
   }
 
   return bookingRepository.create({ ...baseInput, notes: payload.notes });
@@ -108,7 +116,12 @@ async function listEventBookings(actor, eventId) {
     .single();
 
   if (actor.role !== 'admin') {
-    const event = await bookingRepository.findById(eventId);
+    const { data: event } = await supabase
+      .from('large_events')
+      .select('id, organizer_id')
+      .eq('id', eventId)
+      .single();
+
     if (!event || event.organizer_id !== organizer?.id) {
       throw new AppError('Access denied', 403, 'FORBIDDEN');
     }

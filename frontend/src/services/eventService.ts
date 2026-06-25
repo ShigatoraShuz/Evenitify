@@ -123,8 +123,12 @@ export const eventService = {
     venue: string
     budget: number
     expectedGuests: number
+    status?: string
   }) => api.post<LargeEvent>('/events', payload),
 
   updateEvent: (eventId: string, payload: Partial<LargeEvent>) =>
-    api.patch<LargeEvent>(`/events/${eventId}`, payload)
+    api.patch<LargeEvent>(`/events/${eventId}`, payload),
+
+  deleteEvent: (eventId: string) =>
+    api.delete<{ deleted: boolean; id: string }>(`/events/${eventId}`)
 }

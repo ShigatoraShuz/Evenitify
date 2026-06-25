@@ -3,6 +3,7 @@ import { Clock, CheckCircle2, XCircle, BadgeCheck } from 'lucide-react'
 interface Props {
   counts: {
     pending: number
+    negotiating: number
     accepted: number
     rejected: number
     confirmed: number
@@ -11,6 +12,7 @@ interface Props {
 
 const cards = [
   { label: 'Pending', count: 'pending', icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50' },
+  { label: 'Negotiating', count: 'negotiating', icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50' },
   { label: 'Accepted', count: 'accepted', icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-50' },
   { label: 'Rejected', count: 'rejected', icon: XCircle, color: 'text-red-500', bg: 'bg-red-50' },
   { label: 'Confirmed', count: 'confirmed', icon: BadgeCheck, color: 'text-green-500', bg: 'bg-green-50' },

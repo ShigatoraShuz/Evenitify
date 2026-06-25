@@ -5,6 +5,7 @@ import {
   type VendorMessage,
   type VendorRequestStatus,
   type StatusFilterTab,
+  type VendorStatusHistoryEntry,
   buildTimeline,
 } from '../models/vendorStatus.model'
 import { vendorTrackingService } from '../../../../services/vendorTrackingService'
@@ -55,10 +56,18 @@ function mapTrackingMessageToModel(m: import('../../../../services/vendorTrackin
 }
 
 export function useVendorStatusViewModel() {
+  const { requestIdFromUrl, tabFromUrl } = useMemo(() => {
+    const params = new URLSearchParams(window.location.search)
+    return {
+      requestIdFromUrl: params.get('requestId'),
+      tabFromUrl: params.get('tab'),
+    }
+  }, [])
+  const initialTab: StatusFilterTab = tabFromUrl === 'pending' || tabFromUrl === 'negotiating' || tabFromUrl === 'accepted' || tabFromUrl === 'rejected' || tabFromUrl === 'confirmed' ? tabFromUrl : 'all'
   const [state, setState] = useState<VendorStatusViewModelState>({
     requests: [],
     searchQuery: '',
-    activeTab: 'all',
+    activeTab: initialTab,
     selectedRequest: null,
     showDetailDrawer: false,
     messages: [],
@@ -68,6 +77,7 @@ export function useVendorStatusViewModel() {
     refreshing: false,
     error: null,
   })
+  const [timelineHistory, setTimelineHistory] = useState<VendorStatusHistoryEntry[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -76,9 +86,14 @@ export function useVendorStatusViewModel() {
       try {
         const data = await vendorTrackingService.getAll()
         if (cancelled) return
+        const mappedRequests = data.map(mapTrackingRequestToModel)
+        const nextSelected = requestIdFromUrl ? mappedRequests.find((r) => r.id === requestIdFromUrl) || null : null
         setState((s) => ({
           ...s,
-          requests: data.map(mapTrackingRequestToModel),
+          requests: mappedRequests,
+          selectedRequest: nextSelected,
+          showDetailDrawer: !!nextSelected,
+          activeTab: initialTab,
           loading: false,
           error: null,
         }))
@@ -93,7 +108,33 @@ export function useVendorStatusViewModel() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [requestIdFromUrl, initialTab])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadTimeline() {
+      if (!state.selectedRequest) {
+        setTimelineHistory([])
+        return
+      }
+
+      try {
+        const timelineData = await vendorTrackingService.getTimeline(state.selectedRequest.id)
+        if (cancelled) return
+        setTimelineHistory(timelineData.map((item) => ({
+          status: item.status as VendorRequestStatus,
+          timestamp: item.timestamp,
+          description: item.description,
+        })))
+      } catch {
+        if (cancelled) return
+        setTimelineHistory([])
+      }
+    }
+
+    void loadTimeline()
+    return () => { cancelled = true }
+  }, [state.selectedRequest?.id])
 
   const filteredRequests = useMemo(() => {
     let result = [...state.requests]
@@ -109,7 +150,9 @@ export function useVendorStatusViewModel() {
     }
 
     if (state.activeTab === 'pending') {
-      result = result.filter((r) => ['sent', 'pending', 'viewed', 'quoted', 'negotiating'].includes(r.status))
+      result = result.filter((r) => ['sent', 'pending', 'viewed', 'quoted'].includes(r.status))
+    } else if (state.activeTab === 'negotiating') {
+      result = result.filter((r) => r.status === 'negotiating')
     } else if (state.activeTab === 'accepted') {
       result = result.filter((r) => r.status === 'accepted')
     } else if (state.activeTab === 'rejected') {
@@ -124,7 +167,8 @@ export function useVendorStatusViewModel() {
   const summaryCounts = useMemo(() => {
     const all = state.requests
     return {
-      pending: all.filter((r) => ['sent', 'pending', 'viewed', 'quoted', 'negotiating'].includes(r.status)).length,
+      pending: all.filter((r) => ['sent', 'pending', 'viewed', 'quoted'].includes(r.status)).length,
+      negotiating: all.filter((r) => r.status === 'negotiating').length,
       accepted: all.filter((r) => r.status === 'accepted').length,
       rejected: all.filter((r) => r.status === 'rejected' || r.status === 'cancelled').length,
       confirmed: all.filter((r) => r.status === 'confirmed' || r.status === 'contract_pending').length,
@@ -152,13 +196,22 @@ export function useVendorStatusViewModel() {
     }))
 
     try {
-      const messagesData = await vendorTrackingService.getMessages(requestId)
+      const [requestData, messagesData] = await Promise.all([
+        vendorTrackingService.getById(requestId),
+        vendorTrackingService.getMessages(requestId)
+      ])
+      const normalized = mapTrackingRequestToModel(requestData)
       setState((s) => ({
         ...s,
+        requests: s.requests.map((item) => item.id === requestId ? normalized : item),
+        selectedRequest: normalized,
         messages: messagesData.map(mapTrackingMessageToModel),
       }))
-    } catch {
-      // Messages not critical; show detail drawer without them
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        error: err instanceof Error ? err.message : 'Failed to load request detail',
+      }))
     }
   }, [state.requests])
 
@@ -180,76 +233,73 @@ export function useVendorStatusViewModel() {
     const text = state.messageInput.trim()
     if (!text || !state.selectedRequest) return
 
-    const newMsg: VendorMessage = {
-      id: `msg-${Date.now()}`,
-      requestId: state.selectedRequest.id,
-      senderId: 'organizer',
-      senderRole: 'organizer',
-      message: text,
-      createdAt: new Date().toISOString(),
-    }
-
-    setState((s) => ({
-      ...s,
-      messages: [...s.messages, newMsg],
-      messageInput: '',
-      requests: s.requests.map((r) =>
-        r.id === s.selectedRequest?.id
-          ? { ...r, lastMessage: text, lastUpdatedAt: new Date().toISOString() }
-          : r
-      ),
-    }))
-
     try {
+      setState((s) => ({ ...s, sending: true, error: null }))
       await vendorTrackingService.sendMessage(state.selectedRequest.id, text)
-    } catch {
-      // Message sent locally; API failure is non-critical
+      const [requestData, messagesData] = await Promise.all([
+        vendorTrackingService.getById(state.selectedRequest.id),
+        vendorTrackingService.getMessages(state.selectedRequest.id)
+      ])
+      const normalized = mapTrackingRequestToModel(requestData)
+      setState((s) => ({
+        ...s,
+        sending: false,
+        messageInput: '',
+        requests: s.requests.map((r) => r.id === normalized.id ? normalized : r),
+        selectedRequest: normalized,
+        messages: messagesData.map(mapTrackingMessageToModel),
+      }))
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        sending: false,
+        error: err instanceof Error ? err.message : 'Failed to send message',
+      }))
     }
   }, [state.messageInput, state.selectedRequest])
 
   const updateRequestStatus = useCallback(async (requestId: string, newStatus: VendorRequestStatus) => {
-    const statusMsg: VendorMessage = {
-      id: `sys-${Date.now()}`,
-      requestId,
-      senderId: 'system',
-      senderRole: 'system',
-      message: `Status changed to ${newStatus}`,
-      createdAt: new Date().toISOString(),
-    }
-
-    setState((s) => ({
-      ...s,
-      requests: s.requests.map((r) =>
-        r.id === requestId
-          ? { ...r, status: newStatus, lastUpdatedAt: new Date().toISOString() }
-          : r
-      ),
-      messages: s.selectedRequest?.id === requestId
-        ? [...s.messages, statusMsg]
-        : s.messages,
-      selectedRequest:
-        s.selectedRequest?.id === requestId
-          ? { ...s.selectedRequest, status: newStatus, lastUpdatedAt: new Date().toISOString() }
-          : s.selectedRequest,
-    }))
-
     try {
+      setState((s) => ({ ...s, sending: true, error: null }))
+      let updatedRequest: import('../../../../services/vendorTrackingService').VendorTrackingRequest | null = null
       if (newStatus === 'accepted') {
-        await vendorTrackingService.acceptOffer(requestId)
+        updatedRequest = await vendorTrackingService.acceptOffer(requestId)
       } else if (newStatus === 'rejected') {
-        await vendorTrackingService.rejectOffer(requestId)
+        updatedRequest = await vendorTrackingService.rejectOffer(requestId)
       } else if (newStatus === 'confirmed') {
-        await vendorTrackingService.confirmBooking(requestId)
+        updatedRequest = await vendorTrackingService.confirmBooking(requestId)
       }
-    } catch {
-      // Status update applied locally; API sync is non-critical
+
+      if (updatedRequest) {
+        const normalized = mapTrackingRequestToModel(updatedRequest)
+        const timelineData = await vendorTrackingService.getTimeline(requestId)
+        setState((s) => ({
+          ...s,
+          sending: false,
+          requests: s.requests.map((r) => (r.id === requestId ? normalized : r)),
+          selectedRequest: s.selectedRequest?.id === requestId ? normalized : s.selectedRequest,
+        }))
+        setTimelineHistory(timelineData.map((item) => ({
+          status: item.status as VendorRequestStatus,
+          timestamp: item.timestamp,
+          description: item.description,
+        })))
+        return
+      }
+      setState((s) => ({ ...s, sending: false }))
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        sending: false,
+        error: err instanceof Error ? err.message : 'Failed to update request status',
+      }))
     }
   }, [])
 
   const timelineItems = useMemo(() => {
     if (!state.selectedRequest) return []
-    return buildTimeline(state.selectedRequest.status)
-  }, [state.selectedRequest])
+    return buildTimeline(state.selectedRequest.status, timelineHistory)
+  }, [state.selectedRequest, timelineHistory])
 
   return {
     requests: filteredRequests,
@@ -258,6 +308,7 @@ export function useVendorStatusViewModel() {
     activeTab: state.activeTab,
     selectedRequest: state.selectedRequest,
     showDetailDrawer: state.showDetailDrawer,
+    timelineHistory,
     messages: state.messages,
     messageInput: state.messageInput,
     sending: state.sending,

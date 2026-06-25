@@ -27,10 +27,27 @@ async function findBookingsByOrganizerId(organizerId) {
     .from('bookings')
     .select(`
       *,
-      large_events!inner(id, title, event_date, venue),
-      vendor_profiles!inner(id, business_name, rating),
-      event_requirements!inner(id, category),
+      large_events(id, title, event_date, venue),
+      vendor_profiles(id, business_name, rating),
+      event_requirements(id, category),
       contracts(contract_status)
+    `)
+    .eq('organizer_id', organizerId)
+    .order('updated_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function findVendorRequestsByOrganizerId(organizerId) {
+  const { data, error } = await supabase
+    .from('procurement_requests')
+    .select(`
+      *,
+      large_events(id, title, event_date, venue),
+      vendor_profiles(id, business_name, rating),
+      vendor_services(id, category, service_name),
+      request_vendors(id, status, request_message, budget_min, budget_max, deadline, sent_at, viewed_at, accepted_at, rejected_at, changes_requested_at, vendor_service_id)
     `)
     .eq('organizer_id', organizerId)
     .order('updated_at', { ascending: false });
@@ -103,6 +120,7 @@ module.exports = {
   findOrganizerProfileByUserId,
   findEventsByOrganizerId,
   findBookingsByOrganizerId,
+  findVendorRequestsByOrganizerId,
   findUnreadNotificationsByUserId,
   findRecentBookingActivityByOrganizerId,
   findRelevantVendorServices

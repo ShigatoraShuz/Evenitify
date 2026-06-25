@@ -50,23 +50,35 @@ async function getEvent(actor, eventId) {
     .order('requested_at', { ascending: false });
 
   const enhancedBookings = [];
-  if (bookings) {
+  if (bookings && bookings.length > 0) {
+    const bookingIds = bookings.map(b => b.id);
+
+    const { data: allContracts } = await supabase
+      .from('contracts')
+      .select('*')
+      .in('booking_id', bookingIds);
+
+    const { data: allStatusHistory } = await supabase
+      .from('booking_status_history')
+      .select('*')
+      .in('booking_id', bookingIds)
+      .order('created_at', { ascending: false });
+
+    const contractsByBooking = {};
+    for (const c of allContracts || []) {
+      (contractsByBooking[c.booking_id] = contractsByBooking[c.booking_id] || []).push(c);
+    }
+
+    const historyByBooking = {};
+    for (const h of allStatusHistory || []) {
+      (historyByBooking[h.booking_id] = historyByBooking[h.booking_id] || []).push(h);
+    }
+
     for (const booking of bookings) {
-      const { data: contracts } = await supabase
-        .from('contracts')
-        .select('*')
-        .eq('booking_id', booking.id);
-
-      const { data: statusHistory } = await supabase
-        .from('booking_status_history')
-        .select('*')
-        .eq('booking_id', booking.id)
-        .order('created_at', { ascending: false });
-
       enhancedBookings.push({
         ...booking,
-        contracts: contracts || [],
-        statusHistory: statusHistory || []
+        contracts: contractsByBooking[booking.id] || [],
+        statusHistory: historyByBooking[booking.id] || []
       });
     }
   }
@@ -135,7 +147,8 @@ async function createEvent(actor, payload) {
     eventDate: payload.eventDate,
     venue: payload.venue,
     budget: payload.budget,
-    expectedGuests: payload.expectedGuests
+    expectedGuests: payload.expectedGuests,
+    status: payload.status || 'draft'
   });
 }
 
@@ -241,4 +254,25 @@ async function updateEvent(actor, eventId, payload) {
   return eventRepository.update(eventId, payload);
 }
 
-module.exports = { listEvents, getEvent, createEvent, updateEvent, getDashboardSummary };
+async function deleteEvent(actor, eventId) {
+  const event = await eventRepository.findById(eventId);
+
+  if (!event) {
+    throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
+  }
+
+  const { data: organizer } = await supabase
+    .from('organizer_profiles')
+    .select('id')
+    .eq('user_id', actor.id)
+    .single();
+
+  if (event.organizer_id !== organizer?.id) {
+    throw new AppError('Access denied', 403, 'FORBIDDEN');
+  }
+
+  await eventRepository.remove(eventId);
+  return { deleted: true, id: eventId };
+}
+
+module.exports = { listEvents, getEvent, createEvent, updateEvent, getDashboardSummary, getEventPortfolio, deleteEvent };

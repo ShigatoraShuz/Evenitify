@@ -39,7 +39,7 @@ export const B2B_TABS: { key: VendorB2BBookingStatus | 'all'; label: string }[] 
   { key: 'all', label: 'All Requests' },
   { key: 'pending', label: 'Pending' },
   { key: 'accepted', label: 'Accepted' },
-  { key: 'changes_requested', label: 'Changes Requested' },
+  { key: 'changes_requested', label: 'Negotiating' },
   { key: 'rejected', label: 'Rejected' },
   { key: 'confirmed', label: 'Confirmed' },
   { key: 'completed', label: 'Completed' }

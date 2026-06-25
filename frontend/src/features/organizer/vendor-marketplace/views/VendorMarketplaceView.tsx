@@ -7,6 +7,8 @@ import { VendorGrid } from '../components/VendorGrid'
 import { VendorCompareDrawer } from '../components/VendorCompareDrawer'
 import { VendorDetailModal } from '../components/VendorDetailModal'
 import { SelectEventBriefModal } from '../components/SelectEventBriefModal'
+import { RequestVendorModal } from '../components/RequestVendorModal'
+import { RequestSuccessModal } from '../components/RequestSuccessModal'
 import type {
   EventBrief,
   VendorMarketplaceVendor,
@@ -30,6 +32,7 @@ interface VendorMarketplaceViewProps {
   showRequestModal: boolean
   showVendorDetail: boolean
   showSelectBriefModal: boolean
+  showRequestSuccessModal: boolean
   showGeneralInquiry: boolean
   requestForm: RequestFormData
   selectedVendor: VendorMarketplaceVendor | null
@@ -61,6 +64,8 @@ interface VendorMarketplaceViewProps {
   onClearEventFilter: () => void
   onChangeEventBrief: () => void
   onCloseSelectBriefModal: () => void
+  onCloseRequestSuccessModal: () => void
+  onGoToVendorTracker: () => void
   onSelectExistingEvent: (id: string) => void
   onPlanNewEvent: () => void
   onToggleGeneralInquiry: () => void
@@ -77,9 +82,12 @@ export function VendorMarketplaceView({
   eventFilterActive,
   compareVendors,
   showCompareDrawer,
+  showRequestModal,
   showVendorDetail,
   showSelectBriefModal,
+  showRequestSuccessModal,
   showGeneralInquiry,
+  requestForm,
   selectedVendor,
   selectedGalleryImage,
   selectedDate,
@@ -100,11 +108,16 @@ export function VendorMarketplaceView({
   onSelectGalleryImage,
   onSelectDate,
   onSelectTimeSlot,
+  onCloseRequestModal,
+  onUpdateRequestForm,
+  onSubmitRequest,
   onSetShowCompareDrawer,
   onClearCompare,
   onClearEventFilter,
   onChangeEventBrief,
   onCloseSelectBriefModal,
+  onCloseRequestSuccessModal,
+  onGoToVendorTracker,
   onSelectExistingEvent,
   onPlanNewEvent,
   onToggleGeneralInquiry,
@@ -222,6 +235,16 @@ export function VendorMarketplaceView({
         onToggleSave={onToggleSave}
       />
 
+      <RequestVendorModal
+        open={showRequestModal}
+        vendor={selectedVendor}
+        brief={brief}
+        requestForm={requestForm}
+        onClose={onCloseRequestModal}
+        onUpdateRequestForm={onUpdateRequestForm}
+        onSubmitRequest={onSubmitRequest}
+      />
+
       <VendorCompareDrawer
         open={showCompareDrawer}
         vendors={compareVendors}
@@ -242,6 +265,14 @@ export function VendorMarketplaceView({
         onToggleGeneralInquiry={onToggleGeneralInquiry}
         onSetGeneralInquiryMessage={onSetGeneralInquiryMessage}
         onSendGeneralInquiry={onSendGeneralInquiry}
+      />
+
+      <RequestSuccessModal
+        open={showRequestSuccessModal}
+        vendorName={selectedVendor?.businessName || 'the vendor'}
+        eventName={brief?.eventName || 'your event'}
+        onClose={onCloseRequestSuccessModal}
+        onGoToTracker={onGoToVendorTracker}
       />
     </DashboardShell>
   )

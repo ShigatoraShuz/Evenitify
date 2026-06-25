@@ -1,4 +1,4 @@
-const { supabase, supabaseAdmin } = require('../config/supabase');
+const { supabase, supabaseAdmin, supabaseAuth } = require('../config/supabase');
 const AppError = require('../shared/utils/appError');
 const authRepository = require('./auth.repository');
 
@@ -40,7 +40,7 @@ function buildUserResponse(authUser, profile, organizerProfile, vendorProfile) {
 }
 
 async function login({ email, password }) {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabaseAuth.auth.signInWithPassword({
     email,
     password
   });
@@ -95,7 +95,7 @@ async function syncProfile(userId, { role }) {
 }
 
 async function refreshSession({ refreshToken }) {
-  const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+  const { data, error } = await supabaseAuth.auth.refreshSession({ refresh_token: refreshToken });
 
   if (error) {
     throw new AppError(error.message, 400, 'AUTH_REFRESH_FAILED');
@@ -113,9 +113,14 @@ async function refreshSession({ refreshToken }) {
 
 async function logout(token) {
   if (!token) return;
-  const { error } = await supabaseAdmin.auth.admin.signOut(token);
-  if (error) {
-    throw new AppError(error.message, 400, 'AUTH_LOGOUT_FAILED');
+  try {
+    const { error } = await supabaseAdmin.auth.admin.signOut(token);
+    if (error) {
+      // Logout is best-effort. A missing or already-revoked token should not block the UI.
+      return;
+    }
+  } catch {
+    return;
   }
 }
 

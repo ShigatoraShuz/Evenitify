@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { bookingService, type BookingRequest } from '../../../services/bookingService'
 import { contractService, type ContractDetail } from '../../../services/contractService'
 import { auditService, type AuditActivity } from '../../../services/auditService'
@@ -8,6 +8,7 @@ import { vendorService, type VendorService } from '../../../services/vendorServi
 import type { VendorB2BBookingStatus, RequestType } from '../models/vendor-b2b-dashboard.model'
 import { buildViewModelStateMeta } from '../../../shared/types/viewModelState'
 import { useAuthSession } from '../../auth/viewmodels/useAuthSession'
+import { useToast } from '../../../shared/components/ToastContext'
 
 interface VendorB2BDashboardState {
   bookings: BookingRequest[]
@@ -27,7 +28,9 @@ interface VendorB2BDashboardState {
 
 export function useVendorB2BDashboard() {
   const { user } = useAuthSession()
+  const { addToast } = useToast()
   const submittingRef = useRef(false)
+  const loadInFlightRef = useRef<Promise<void> | null>(null)
   const [state, setState] = useState<VendorB2BDashboardState>({
     bookings: [],
     services: [],
@@ -45,22 +48,33 @@ export function useVendorB2BDashboard() {
   })
 
   const loadBookings = useCallback(async (status?: string, type?: string) => {
-    setState((s) => ({ ...s, loading: true, error: null }))
-    if (user && !user.hasVendorProfile && !user.vendorProfile) {
-      setState((s) => ({ ...s, loading: false, error: 'VENDOR_NOT_FOUND' }))
+    if (!user) return
+    if (!user.hasVendorProfile && !user.vendorProfile) {
+      setState((s) => ({ ...s, error: 'VENDOR_NOT_FOUND' }))
       return
     }
-    try {
+    if (loadInFlightRef.current) return loadInFlightRef.current
+    setState((s) => ({ ...s, loading: true, error: null }))
+    loadInFlightRef.current = (async () => {
+      try {
       const [bookings, availability, services] = await Promise.all([
         bookingService.listVendorB2BBookings(status, type),
         availabilityService.getMyAvailability(),
         vendorService.listServices()
       ])
       setState((s) => ({ ...s, bookings, availability, services, loading: false }))
-    } catch (err) {
-      setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
-    }
+      } catch (err) {
+        setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
+      } finally {
+        loadInFlightRef.current = null
+      }
+    })()
+    return loadInFlightRef.current
   }, [user])
+
+  useEffect(() => {
+    void loadBookings()
+  }, [loadBookings])
 
   const setTab = useCallback((tab: VendorB2BBookingStatus | 'all') => {
     setState((s) => ({ ...s, activeTab: tab, selectedBooking: null, bookingMessages: [] }))
@@ -77,16 +91,27 @@ export function useVendorB2BDashboard() {
   const selectBooking = useCallback(async (bookingId: string) => {
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
+      const selected = state.bookings.find((booking) => booking.id === bookingId)
+      if (selected?.status === 'pending' || selected?.status === 'sent') {
+        await bookingService.viewVendorRequest(bookingId)
+        addToast('info', 'Request marked as viewed')
+      }
+
       const [booking, auditActivities, bookingMessages] = await Promise.all([
         bookingService.getVendorBookingDetail(bookingId),
-        auditService.listActivities(`vendor-booking:${bookingId}`),
+        auditService.listActivities(`booking:${bookingId}`),
         communicationService.listBookingMessages(bookingId)
       ])
-      setState((s) => ({ ...s, selectedBooking: booking, auditActivities, bookingMessages, loading: false }))
+
+      const statusFilter = state.activeTab === 'all' ? undefined : state.activeTab
+      const typeFilter = state.activeTypeTab === 'all' ? undefined : state.activeTypeTab
+      const bookings = await bookingService.listVendorB2BBookings(statusFilter, typeFilter)
+
+      setState((s) => ({ ...s, bookings, selectedBooking: booking, auditActivities, bookingMessages, loading: false }))
     } catch (err) {
       setState((s) => ({ ...s, loading: false, error: (err as Error).message }))
     }
-  }, [])
+  }, [state.bookings, state.activeTab, state.activeTypeTab])
 
   const updateStatus = useCallback(async (
     bookingId: string,
@@ -97,17 +122,31 @@ export function useVendorB2BDashboard() {
     submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
     try {
-      await bookingService.updateBookingStatus(bookingId, { status, reason })
+      if (status === 'accepted') {
+        await bookingService.acceptVendorRequest(bookingId)
+      } else if (status === 'rejected') {
+        await bookingService.rejectVendorRequest(bookingId)
+      } else if (status === 'changes_requested') {
+        await bookingService.requestChangesVendorRequest(bookingId, reason || 'Requested changes')
+      }
       const statusFilter = state.activeTab === 'all' ? undefined : state.activeTab
       const typeFilter = state.activeTypeTab === 'all' ? undefined : state.activeTypeTab
       const bookings = await bookingService.listVendorB2BBookings(statusFilter, typeFilter)
       setState((s) => ({ ...s, bookings, selectedBooking: null, submitting: false }))
+      addToast(
+        'success',
+        status === 'accepted'
+          ? 'Request accepted successfully'
+          : status === 'rejected'
+            ? 'Request declined successfully'
+            : 'Negotiation request sent successfully'
+      )
     } catch (err) {
       setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
     } finally {
       submittingRef.current = false
     }
-  }, [state.activeTab, state.activeTypeTab])
+  }, [addToast, state.activeTab, state.activeTypeTab])
 
   const submitQuote = useCallback(async (bookingId: string, payload: {
     price: number

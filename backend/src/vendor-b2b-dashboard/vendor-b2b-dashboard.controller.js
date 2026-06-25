@@ -44,7 +44,17 @@ const listB2BBookings = asyncHandler(async (req, res) => {
   return sendSuccess(res, bookings);
 });
 
+const listVendorRequests = asyncHandler(async (req, res) => {
+  const bookings = await vendorService.listB2BBookings(req.user, req.query.status, req.query.type);
+  return sendSuccess(res, bookings);
+});
+
 const getBookingDetail = asyncHandler(async (req, res) => {
+  const booking = await vendorService.getBookingDetail(req.user, req.validated.params.bookingId);
+  return sendSuccess(res, booking);
+});
+
+const getVendorRequestDetail = asyncHandler(async (req, res) => {
   const booking = await vendorService.getBookingDetail(req.user, req.validated.params.bookingId);
   return sendSuccess(res, booking);
 });
@@ -58,6 +68,26 @@ const updateBookingStatus = asyncHandler(async (req, res) => {
   return sendSuccess(res, booking);
 });
 
+const viewVendorRequest = asyncHandler(async (req, res) => {
+  const booking = await vendorService.viewRequest(req.user, req.validated.params.bookingId);
+  return sendSuccess(res, booking);
+});
+
+const acceptVendorRequest = asyncHandler(async (req, res) => {
+  const booking = await vendorService.acceptRequest(req.user, req.validated.params.bookingId);
+  return sendSuccess(res, booking);
+});
+
+const rejectVendorRequest = asyncHandler(async (req, res) => {
+  const booking = await vendorService.rejectRequest(req.user, req.validated.params.bookingId);
+  return sendSuccess(res, booking);
+});
+
+const requestChangesVendorRequest = asyncHandler(async (req, res) => {
+  const booking = await vendorService.requestChanges(req.user, req.validated.params.bookingId, req.validated.body?.reason);
+  return sendSuccess(res, booking);
+});
+
 const submitQuote = asyncHandler(async (req, res) => {
   const quote = await vendorService.submitQuote(
     req.user,
@@ -67,4 +97,21 @@ const submitQuote = asyncHandler(async (req, res) => {
   return sendCreated(res, quote);
 });
 
-module.exports = { getProfile, updateProfile, listServices, createService, uploadServiceImage, updateService, listB2BBookings, getBookingDetail, updateBookingStatus, submitQuote };
+module.exports = {
+  getProfile,
+  updateProfile,
+  listServices,
+  createService,
+  uploadServiceImage,
+  updateService,
+  listB2BBookings,
+  listVendorRequests,
+  getBookingDetail,
+  getVendorRequestDetail,
+  updateBookingStatus,
+  viewVendorRequest,
+  acceptVendorRequest,
+  rejectVendorRequest,
+  requestChangesVendorRequest,
+  submitQuote
+};

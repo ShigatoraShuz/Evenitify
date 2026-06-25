@@ -90,6 +90,32 @@ function ServiceCard({
 interface OrganizerPlanEventViewProps {
   currentStep: number
   form: PlanEventFormState
+  drafts: Array<{
+    id: string
+    title: string
+    eventType: string
+    venue: string
+    eventDate: string
+    guests: string
+    budget: string
+    progress: number
+    lastSaved: string
+  }>
+  completedBriefs: Array<{
+    id: string
+    title: string
+    eventType: string
+    status: string
+    venue: string
+    eventDate: string
+    guests: number
+    budget: number
+    servicesRequested: number
+    servicesConfirmed: number
+    completedAt: string
+  }>
+  loading: boolean
+  error: string | null
   errors: string[]
   submitted: boolean
   submitting: boolean
@@ -106,11 +132,18 @@ interface OrganizerPlanEventViewProps {
   onSaveDraft: () => void
   onReset: () => void
   onContinueToProcurement?: () => void
+  onContinueDraft: (id: string) => void
+  onEditDraft: (id: string) => void
+  onDeleteDraft: (id: string) => void
 }
 
 export function OrganizerPlanEventView({
   currentStep,
   form,
+  drafts,
+  completedBriefs,
+  loading,
+  error,
   errors,
   submitted,
   submitting,
@@ -125,7 +158,10 @@ export function OrganizerPlanEventView({
   onSubmit,
   onSaveDraft,
   onReset,
-  onContinueToProcurement
+  onContinueToProcurement,
+  onContinueDraft,
+  onEditDraft,
+  onDeleteDraft
 }: OrganizerPlanEventViewProps) {
   const [activeTab, setActiveTab] = useState<PlanTab>('create')
   const navigate = useNavigate()
@@ -317,6 +353,17 @@ export function OrganizerPlanEventView({
           description="Build a complete event brief through a guided setup before sending vendor requirements."
         />
 
+        {loading && (
+          <div className="mb-2 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600" />
+            Loading events...
+          </div>
+        )}
+        {error && (
+          <div className="mb-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        )}
         <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 mb-2">
           {tabs.map((tab) => {
             const Icon = tab.icon
@@ -397,10 +444,11 @@ export function OrganizerPlanEventView({
 
         {activeTab === 'drafts' && (
           <section className="rounded-[28px] border border-slate-200/80 bg-white/95 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur md:p-6">
-            <DraftEventsTab
-              onContinue={() => { setActiveTab('create'); onReset() }}
-              onEdit={() => { setActiveTab('create') }}
-              onDelete={() => {}}
+          <DraftEventsTab
+              drafts={drafts}
+              onContinue={(id) => { setActiveTab('create'); onContinueDraft(id) }}
+              onEdit={(id) => { setActiveTab('create'); onEditDraft(id) }}
+              onDelete={onDeleteDraft}
             />
           </section>
         )}
@@ -408,6 +456,7 @@ export function OrganizerPlanEventView({
         {activeTab === 'completed' && (
           <section className="rounded-[28px] border border-slate-200/80 bg-white/95 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur md:p-6">
             <CompletedEventBriefsTab
+              events={completedBriefs}
               onViewMarketplace={(eventId) => navigate(`/organizer/vendor-marketplace?eventId=${eventId}`)}
             />
           </section>

@@ -21,6 +21,10 @@ export interface BookingRequest {
   event_requirements?: {
     category: string
     quantity: number
+    min_budget?: number | null
+    max_budget?: number | null
+    notes?: string | null
+    requirement_status?: string
   }
   vendor_profiles?: {
     business_name: string
@@ -59,6 +63,18 @@ export const bookingService = {
 
   getVendorBookingDetail: (bookingId: string) =>
     api.get<BookingRequest>(`/vendor/bookings/${bookingId}`),
+
+  viewVendorRequest: (bookingId: string) =>
+    api.patch(`/vendor/requests/${bookingId}/view`, {}),
+
+  acceptVendorRequest: (bookingId: string) =>
+    api.patch<BookingRequest>(`/vendor/requests/${bookingId}/accept`, {}),
+
+  rejectVendorRequest: (bookingId: string) =>
+    api.patch<BookingRequest>(`/vendor/requests/${bookingId}/reject`, {}),
+
+  requestChangesVendorRequest: (bookingId: string, reason: string) =>
+    api.patch<BookingRequest>(`/vendor/requests/${bookingId}/request-changes`, { reason }),
 
   updateBookingStatus: (bookingId: string, payload: {
     status: 'accepted' | 'rejected' | 'changes_requested'

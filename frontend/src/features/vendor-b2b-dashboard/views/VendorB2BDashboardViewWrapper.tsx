@@ -19,7 +19,7 @@ export default function VendorB2BDashboardViewWrapper() {
       realtimeRefreshing={realtime.refreshing}
       onLoadBookings={vm.loadBookings}
       onRefreshRealtime={realtime.refresh}
-      onSetTab={vm.setTab}
+      onSetTab={(tab: string) => vm.setTab(tab as Parameters<typeof vm.setTab>[0])}
       onSetTypeTab={vm.setTypeTab}
       onSelectBooking={vm.selectBooking}
       onUpdateStatus={vm.updateStatus}

@@ -1,7 +1,16 @@
 const { createClient } = require('@supabase/supabase-js');
 const env = require('./env');
 
-const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey);
+const supabaseAuth = createClient(
+  env.supabaseUrl,
+  env.supabaseAnonKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 const supabaseAdmin = createClient(
   env.supabaseUrl,
@@ -14,4 +23,6 @@ const supabaseAdmin = createClient(
   }
 );
 
-module.exports = { supabase, supabaseAdmin };
+const supabase = supabaseAdmin;
+
+module.exports = { supabase, supabaseAdmin, supabaseAuth };

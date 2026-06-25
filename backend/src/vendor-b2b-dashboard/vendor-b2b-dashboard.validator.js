@@ -72,6 +72,16 @@ const bookingIdSchema = z.object({
   query: z.object({}).optional()
 });
 
+const requestChangesSchema = z.object({
+  body: z.object({
+    reason: z.string().min(1, 'Negotiation message is required').max(500)
+  }),
+  params: z.object({
+    bookingId: z.string().uuid('Invalid booking ID')
+  }),
+  query: z.object({}).optional()
+});
+
 const submitQuoteSchema = z.object({
   body: z.object({
     price: z.number().min(0, 'Price must be non-negative'),
@@ -91,5 +101,6 @@ module.exports = {
   serviceIdSchema,
   bookingStatusSchema,
   bookingIdSchema,
+  requestChangesSchema,
   submitQuoteSchema
 };

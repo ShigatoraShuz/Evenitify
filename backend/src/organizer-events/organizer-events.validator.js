@@ -6,7 +6,8 @@ const createEventSchema = z.object({
     eventDate: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
     venue: z.string().min(1, 'Venue is required').max(300),
     budget: z.number().min(0, 'Budget must be non-negative'),
-    expectedGuests: z.number().int().min(1, 'Expected guests must be at least 1')
+    expectedGuests: z.number().int().min(1, 'Expected guests must be at least 1'),
+    status: z.enum(['draft', 'planning', 'booking', 'confirmed', 'completed', 'cancelled']).optional()
   }),
   params: z.object({}).optional(),
   query: z.object({}).optional()
