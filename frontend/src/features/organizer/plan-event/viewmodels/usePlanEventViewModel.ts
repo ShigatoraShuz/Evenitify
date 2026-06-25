@@ -247,7 +247,7 @@ export function usePlanEventViewModel() {
           ...s,
           loading: false,
           events,
-          drafts: events.filter((event) => event.status === 'draft' || event.status === 'planning').map(mapEventToDraft),
+          drafts: events.filter((event) => event.status === 'draft').map(mapEventToDraft),
           completedBriefs: mapCompletedBriefs(events)
         }))
       })
@@ -269,7 +269,7 @@ export function usePlanEventViewModel() {
         ...s,
         events,
         error: null,
-        drafts: events.filter((event) => event.status === 'draft' || event.status === 'planning').map(mapEventToDraft),
+        drafts: events.filter((event) => event.status === 'draft').map(mapEventToDraft),
         completedBriefs: mapCompletedBriefs(events)
       }))
     } catch (err) {
