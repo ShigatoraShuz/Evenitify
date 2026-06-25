@@ -12,7 +12,7 @@ import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { BookingMessageThread } from '../../../shared/components/CommunicationComponents'
 import { PlaceholderMedia } from '../../../shared/components/PlaceholderMedia'
 import { Modal } from '../../../shared/components/Modal'
-import { B2B_TABS } from '../models/vendor-b2b-dashboard.model'
+import { B2B_TABS, REQUEST_TYPE_TABS, type RequestType } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
 import type { ContractDetail } from '../../../services/contractService'
 import type { AuditActivity } from '../../../services/auditService'
@@ -23,6 +23,7 @@ interface VendorBookingsViewProps {
   bookings: BookingRequest[]
   selectedBooking: BookingRequest | null
   activeTab: string
+  activeTypeTab: RequestType
   loading: boolean
   submitting: boolean
   error: string | null
@@ -35,6 +36,7 @@ interface VendorBookingsViewProps {
   onRefreshRealtime: () => Promise<void>
   onLoadBookings: (status?: string) => Promise<void>
   onSetTab: (tab: string) => void
+  onSetTypeTab: (tab: RequestType) => void
   onSelectBooking: (bookingId: string) => Promise<void>
   onUpdateStatus: (bookingId: string, status: 'accepted' | 'rejected' | 'changes_requested', reason?: string) => Promise<void>
   onClearError: () => void
@@ -81,6 +83,7 @@ export function VendorBookingsView({
   bookings,
   selectedBooking,
   activeTab,
+  activeTypeTab,
   loading,
   submitting,
   error,
@@ -93,6 +96,7 @@ export function VendorBookingsView({
   onRefreshRealtime,
   onLoadBookings,
   onSetTab,
+  onSetTypeTab,
   onSelectBooking,
   onUpdateStatus,
   onClearError,
@@ -226,6 +230,31 @@ export function VendorBookingsView({
               )}
             </button>
           ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+            Request Type
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {REQUEST_TYPE_TABS.map((tab) => {
+              const isActive = activeTypeTab === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => onSetTypeTab(tab.key)}
+                  className={`rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    isActive
+                      ? 'bg-brand-600 text-white shadow-sm'
+                      : 'border border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:text-brand-700'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-start">

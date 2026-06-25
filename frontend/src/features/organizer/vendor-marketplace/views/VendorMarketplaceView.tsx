@@ -1,4 +1,4 @@
-import { GitCompare, ShoppingBag, X, Calendar, Clock } from 'lucide-react'
+﻿import { GitCompare, ShoppingBag, X, Calendar, Clock } from 'lucide-react'
 import { DashboardShell } from '../../../../shared/components/DashboardShell'
 import { Button } from '../../../../shared/components/Button'
 import { OrganizerPage, OrganizerPageHeader } from '../../../../shared/components/OrganizerUI'
@@ -286,3 +286,5 @@ export function VendorMarketplaceView({
     </DashboardShell>
   )
 }
+
+

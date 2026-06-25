@@ -196,6 +196,33 @@ function getDefaultSelectedServiceIds(
   return selected.length > 0 ? selected : [vendor.services[0].id]
 }
 
+function buildRequestFormForVendor(
+  vendor: VendorMarketplaceVendor,
+  brief: EventBrief | null,
+  existing?: RequestFormData,
+): RequestFormData {
+  const sameVendor = existing?.vendorId === vendor.id
+  const selectedServiceIds =
+    sameVendor && existing?.selectedServiceIds.length
+      ? existing.selectedServiceIds
+      : getDefaultSelectedServiceIds(vendor, brief)
+
+  return {
+    vendorId: vendor.id,
+    vendorName: vendor.businessName,
+    serviceCategory: sameVendor && existing?.serviceCategory
+      ? existing.serviceCategory
+      : vendor.serviceCategory[0] || '',
+    requestedBudget: sameVendor && existing?.requestedBudget
+      ? existing.requestedBudget
+      : brief
+        ? String(Math.round(brief.budget / Math.max(brief.selectedVendorServices.length, 1)))
+        : '',
+    notes: sameVendor ? existing?.notes || '' : '',
+    selectedServiceIds,
+  }
+}
+
 export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
   const navigate = useNavigate()
   const storedBrief = useMemo(() => {
@@ -500,23 +527,19 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     setState((s) => ({
       ...s,
       selectedVendor: vendor,
+      showVendorDetail: false,
+      showSelectBriefModal: false,
       showRequestModal: true,
-      requestForm: {
-        vendorId: vendor.id,
-        vendorName: vendor.businessName,
-        serviceCategory: vendor.serviceCategory[0] || '',
-        requestedBudget: s.brief ? String(Math.round(s.brief.budget / Math.max(s.brief.selectedVendorServices.length, 1))) : '',
-        notes: '',
-        selectedServiceIds:
-          s.requestForm.vendorId === vendor.id && s.requestForm.selectedServiceIds.length > 0
-            ? s.requestForm.selectedServiceIds
-            : getDefaultSelectedServiceIds(vendor, s.brief),
-      },
+      requestForm: buildRequestFormForVendor(vendor, s.brief, s.requestForm),
     }))
   }, [])
 
   const closeRequestModal = useCallback(() => {
-    setState((s) => ({ ...s, showRequestModal: false }))
+    setState((s) => ({
+      ...s,
+      showRequestModal: false,
+      showVendorDetail: !!s.selectedVendor,
+    }))
   }, [])
 
   const openVendorDetail = useCallback(async (vendorId: string) => {
@@ -526,10 +549,13 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       ...s,
       selectedVendor: vendor,
       showVendorDetail: true,
+      showRequestModal: false,
+      showSelectBriefModal: false,
 
       selectedDate: null,
       selectedTimeSlot: null,
       currentAvailability: null,
+      requestForm: buildRequestFormForVendor(vendor, s.brief, s.requestForm),
     }))
     try {
       const now = new Date()
@@ -581,6 +607,53 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
   const openSelectBriefModal = useCallback(() => {
     setState((s) => ({ ...s, showSelectBriefModal: true, showGeneralInquiry: false, generalInquiryMessage: '' }))
   }, [])
+
+  const selectBriefForRequest = useCallback(async (eventBriefId: string) => {
+    const vendor = state.selectedVendor
+    if (!vendor) return
+
+    try {
+      const backendBrief = await eventBriefService.getById(eventBriefId)
+      const brief: EventBrief = {
+        eventId: backendBrief.id,
+        eventType: normalizeEventType(backendBrief.eventType),
+        eventName: backendBrief.eventName,
+        location: backendBrief.location,
+        eventDate: backendBrief.eventDate,
+        startTime: backendBrief.startTime || '',
+        endTime: backendBrief.endTime || '',
+        guestCount: backendBrief.guestCount,
+        budget: backendBrief.budget,
+        selectedTheme: backendBrief.selectedTheme || '',
+        setupStyle: normalizeSetupMode(backendBrief.setupStyle),
+        selectedVendorServices: backendBrief.selectedVendorServices || [],
+        indoorOutdoorType: normalizeSetupMode(backendBrief.setupStyle),
+        specialRequirements: backendBrief.specialRequirements || '',
+        preferredPackageTier: 'premium',
+      }
+
+      sessionStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(brief))
+      setState((s) => ({
+        ...s,
+        brief,
+        filters: {
+          ...DEFAULT_VENDOR_FILTERS,
+          service: brief.selectedVendorServices || [],
+        },
+        showSelectBriefModal: false,
+        showGeneralInquiry: false,
+        generalInquiryMessage: '',
+        showVendorDetail: false,
+        showRequestModal: true,
+        requestForm: buildRequestFormForVendor(vendor, brief, s.requestForm),
+      }))
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        error: err instanceof Error ? err.message : 'Failed to load selected event brief',
+      }))
+    }
+  }, [state.selectedVendor])
 
   const closeSelectBriefModal = useCallback(() => {
     setState((s) => ({ ...s, showSelectBriefModal: false, showGeneralInquiry: false, generalInquiryMessage: '' }))
@@ -709,8 +782,10 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
         ...s,
         selectedVendor: vendor,
         showSelectBriefModal: true,
+        showVendorDetail: false,
         showGeneralInquiry: false,
         generalInquiryMessage: '',
+        requestForm: buildRequestFormForVendor(vendor, s.brief, s.requestForm),
       }))
     }
   }, [state.brief, openRequestModal])
@@ -764,6 +839,7 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     getRequestStatus,
     openSelectBriefModal,
     closeSelectBriefModal,
+    selectBriefForRequest,
     closeRequestSuccessModal,
     goToVendorTracker,
     setGeneralInquiryMessage,

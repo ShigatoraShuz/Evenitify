@@ -7,6 +7,41 @@ const adminOperationsService = require('../admin-operations/admin-operations.ser
 const authRepository = require('../auth/auth.repository');
 const bookingRepository = require('../contract-booking/contract-booking.repository');
 
+function isMissingVendorServiceIdsColumnError(error) {
+  const message = String(error?.message || '').toLowerCase();
+  return message.includes('vendor_service_ids') && (
+    message.includes('schema cache') ||
+    message.includes('could not find') ||
+    message.includes('column')
+  );
+}
+
+async function insertProcurementRequestWithFallback(payload, vendorServiceIds) {
+  const fullPayload = {
+    ...payload,
+    vendor_service_ids: vendorServiceIds.length > 0 ? JSON.stringify(vendorServiceIds) : null,
+  };
+
+  const { data, error } = await supabase
+    .from('procurement_requests')
+    .insert(fullPayload)
+    .select('*')
+    .single();
+
+  if (!error) return data;
+  if (!isMissingVendorServiceIdsColumnError(error)) throw error;
+
+  const fallbackPayload = { ...payload };
+  const { data: fallbackData, error: fallbackError } = await supabase
+    .from('procurement_requests')
+    .insert(fallbackPayload)
+    .select('*')
+    .single();
+
+  if (fallbackError) throw fallbackError;
+  return fallbackData;
+}
+
 // A. Planning timeline endpoint
 const getPlanningTimeline = asyncHandler(async (req, res) => {
   const { eventId } = req.params;
@@ -1018,26 +1053,19 @@ const createOrganizerVendorRequest = asyncHandler(async (req, res) => {
   const budgetMin = req.body.budgetMin ?? req.body.requestedBudget ?? null;
   const budgetMax = req.body.budgetMax ?? req.body.requestedBudget ?? budgetMin;
 
-  const { data: request, error } = await supabase
-    .from('procurement_requests')
-    .insert({
-      event_id: event.id,
-      organizer_id: organizerId || event.organizer_id,
-      vendor_id: req.body.vendorId,
-      vendor_service_id: primaryService?.id || null,
-      vendor_service_ids: vendorServiceIds.length > 0 ? JSON.stringify(vendorServiceIds) : null,
-      title: req.body.packageName || primaryService?.service_name || 'Vendor request',
-      description: requestMessage,
-      request_message: requestMessage,
-      budget_min: budgetMin,
-      budget_max: budgetMax,
-      deadline,
-      status: 'open'
-    })
-    .select('*')
-    .single();
-
-  if (error) throw error;
+  const request = await insertProcurementRequestWithFallback({
+    event_id: event.id,
+    organizer_id: organizerId || event.organizer_id,
+    vendor_id: req.body.vendorId,
+    vendor_service_id: primaryService?.id || null,
+    title: req.body.packageName || primaryService?.service_name || 'Vendor request',
+    description: requestMessage,
+    request_message: requestMessage,
+    budget_min: budgetMin,
+    budget_max: budgetMax,
+    deadline,
+    status: 'open'
+  }, vendorServiceIds);
 
   const { error: rvError } = await supabase
     .from('request_vendors')

@@ -50,5 +50,5 @@ export type RequestType = 'all' | 'large_event' | 'personal'
 export const REQUEST_TYPE_TABS: { key: RequestType; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'large_event', label: 'Large Event' },
-  { key: 'personal', label: 'Personal Event' }
+  { key: 'personal', label: 'Micro Events' }
 ]

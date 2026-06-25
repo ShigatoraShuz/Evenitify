@@ -173,6 +173,40 @@ function groupServicesByVendor(serviceRows) {
   return [...vendorMap.values()];
 }
 
+function isMissingVendorServiceIdsColumnError(error) {
+  const message = String(error?.message || '').toLowerCase();
+  return message.includes('vendor_service_ids') && (
+    message.includes('schema cache') ||
+    message.includes('could not find') ||
+    message.includes('column')
+  );
+}
+
+async function insertProcurementRequestWithFallback(payload, vendorServiceIds) {
+  const fullPayload = {
+    ...payload,
+    vendor_service_ids: vendorServiceIds.length > 0 ? JSON.stringify(vendorServiceIds) : null,
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from('procurement_requests')
+    .insert(fullPayload)
+    .select('id')
+    .single();
+
+  if (!error) return data;
+  if (!isMissingVendorServiceIdsColumnError(error)) throw error;
+
+  const { data: fallbackData, error: fallbackError } = await supabaseAdmin
+    .from('procurement_requests')
+    .insert(payload)
+    .select('id')
+    .single();
+
+  if (fallbackError) throw fallbackError;
+  return fallbackData;
+}
+
 router.get(
   '/organizer/event-briefs',
   asyncHandler(async (req, res) => {
@@ -301,26 +335,19 @@ router.post(
       ? req.body.vendorServiceIds
       : (req.body.vendorServiceId ? [req.body.vendorServiceId] : []);
 
-    const { data: pr, error: prError } = await supabaseAdmin
-      .from('procurement_requests')
-      .insert({
-        event_id: event.id,
-        organizer_id: organizerId,
-        vendor_id: req.body.vendorId,
-        vendor_service_id: vendorServiceIds[0] || null,
-        vendor_service_ids: vendorServiceIds.length > 0 ? JSON.stringify(vendorServiceIds) : null,
-        title,
-        description: req.body.message || null,
-        request_message: req.body.message || null,
-        budget_min: req.body.budgetMin ?? null,
-        budget_max: req.body.budgetMax ?? null,
-        deadline: req.body.selectedDate ? `${req.body.selectedDate}T23:59:59Z` : null,
-        status: 'open'
-      })
-      .select('id')
-      .single();
-
-    if (prError) throw prError;
+    const pr = await insertProcurementRequestWithFallback({
+      event_id: event.id,
+      organizer_id: organizerId,
+      vendor_id: req.body.vendorId,
+      vendor_service_id: vendorServiceIds[0] || null,
+      title,
+      description: req.body.message || null,
+      request_message: req.body.message || null,
+      budget_min: req.body.budgetMin ?? null,
+      budget_max: req.body.budgetMax ?? null,
+      deadline: req.body.selectedDate ? `${req.body.selectedDate}T23:59:59Z` : null,
+      status: 'open'
+    }, vendorServiceIds);
 
     const { error: rvError } = await supabaseAdmin
       .from('request_vendors')
@@ -392,21 +419,15 @@ router.post(
       .limit(1)
       .maybeSingle();
 
-    const { data: pr, error: prError } = await supabaseAdmin
-      .from('procurement_requests')
-      .insert({
-        event_id: event?.id || null,
-        organizer_id: organizerId,
-        vendor_id: vendorId,
-        title: 'General vendor inquiry',
-        description: req.body.message || null,
-        request_message: req.body.message || null,
-        status: 'open'
-      })
-      .select('id')
-      .single();
-
-    if (prError) throw prError;
+    const pr = await insertProcurementRequestWithFallback({
+      event_id: event?.id || null,
+      organizer_id: organizerId,
+      vendor_id: vendorId,
+      title: 'General vendor inquiry',
+      description: req.body.message || null,
+      request_message: req.body.message || null,
+      status: 'open'
+    }, []);
 
     const { error: rvError } = await supabaseAdmin
       .from('request_vendors')

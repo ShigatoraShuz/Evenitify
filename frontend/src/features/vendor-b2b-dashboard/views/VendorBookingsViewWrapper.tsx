@@ -12,6 +12,7 @@ export default function VendorBookingsViewWrapper() {
       bookings={vm.bookings}
       selectedBooking={vm.selectedBooking}
       activeTab={vm.activeTab}
+      activeTypeTab={vm.activeTypeTab}
       loading={vm.loading}
       submitting={vm.submitting}
       error={vm.error}
@@ -24,6 +25,7 @@ export default function VendorBookingsViewWrapper() {
       onRefreshRealtime={realtime.refresh}
       onLoadBookings={vm.loadBookings}
       onSetTab={(tab: string) => vm.setTab(tab as VendorB2BBookingStatus | 'all')}
+      onSetTypeTab={vm.setTypeTab}
       onSelectBooking={vm.selectBooking}
       onUpdateStatus={vm.updateStatus}
       onClearError={vm.clearError}

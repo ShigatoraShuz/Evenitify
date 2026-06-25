@@ -25,13 +25,33 @@ export function RequestVendorModal({
   if (!open || !vendor) return null
 
   const canSubmit = !!requestForm.vendorId
+  const selectedServiceNames = requestForm.selectedServiceIds
+    .map((serviceId) => vendor.services.find((service) => service.id === serviceId)?.serviceName)
+    .filter((name): name is string => !!name)
 
   return (
     <Modal open={open} onClose={onClose} title={`Send Request to ${vendor.businessName}`}>
       <div className="space-y-4">
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-          <p className="font-semibold text-slate-900">{brief?.eventName || 'Selected event'}</p>
-          <p className="mt-1 text-slate-600">{vendor.serviceCategory.join(' · ')}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Event brief</p>
+          <p className="mt-1 font-semibold text-slate-900">{brief?.eventName || 'Selected event'}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            {brief?.eventDate || 'No event date selected'} · {brief?.location || 'No location selected'}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {selectedServiceNames.length > 0 ? (
+              selectedServiceNames.map((serviceName) => (
+                <span
+                  key={serviceName}
+                  className="inline-flex rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200"
+                >
+                  {serviceName}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-slate-500">No service selected yet.</span>
+            )}
+          </div>
         </div>
 
         <Input

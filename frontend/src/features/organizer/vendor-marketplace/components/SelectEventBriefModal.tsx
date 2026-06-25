@@ -1,4 +1,4 @@
-import { Calendar, ClipboardList, Send, MessageSquare } from 'lucide-react'
+﻿import { Calendar, ClipboardList, Send, MessageSquare } from 'lucide-react'
 import { Modal } from '../../../../shared/components/Modal'
 import { Button } from '../../../../shared/components/Button'
 import type { EventBriefReference } from '../models/vendorMarketplace.model'
@@ -127,3 +127,5 @@ export function SelectEventBriefModal({
     </Modal>
   )
 }
+
+

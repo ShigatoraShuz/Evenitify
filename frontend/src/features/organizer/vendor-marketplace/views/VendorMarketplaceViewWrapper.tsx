@@ -47,9 +47,8 @@ export default function VendorMarketplaceViewWrapper() {
   }, [vm.openVendorDetail])
 
   const handleSelectExistingEvent = useCallback((eventBriefId: string) => {
-    navigate(`/organizer/vendor-marketplace?eventId=${eventBriefId}`)
-    vm.closeSelectBriefModal()
-  }, [navigate, vm.closeSelectBriefModal])
+    void vm.selectBriefForRequest(eventBriefId)
+  }, [vm.selectBriefForRequest])
 
   const handlePlanNewEvent = useCallback(() => {
     vm.closeSelectBriefModal()
