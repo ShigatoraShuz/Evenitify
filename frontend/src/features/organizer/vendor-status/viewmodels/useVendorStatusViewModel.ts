@@ -38,6 +38,7 @@ function mapTrackingRequestToModel(r: import('../../../../services/vendorTrackin
     status: r.status as VendorRequestStatus,
     quotedPrice: r.quotedPrice,
     packageName: r.packageName,
+    requestedServices: r.requestedServices || [],
     lastMessage: r.lastMessage,
     lastUpdatedAt: r.lastUpdatedAt,
     createdAt: r.createdAt,

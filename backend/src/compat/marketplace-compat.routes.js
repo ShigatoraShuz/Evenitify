@@ -72,10 +72,16 @@ function mapProcurementRequestToTrackingItem(pr) {
   const event = pr.large_events || {};
   const vendor = pr.vendor_profiles || {};
   const service = pr.vendor_services || {};
+  const requestedServices = Array.isArray(pr.requestedServices) ? pr.requestedServices : [];
+  const primaryService = requestedServices[0] || (service.id ? {
+    id: service.id,
+    serviceName: service.service_name || 'Service',
+    category: service.category || null,
+  } : null);
   return {
     id: pr.id,
     vendorName: vendor.business_name || 'Vendor',
-    vendorCategory: service.category || rv.vendor_service_category || 'Service',
+    vendorCategory: primaryService?.category || service.category || rv.vendor_service_category || 'Service',
     eventName: event.title || 'Event',
     status: rv.status || pr.status || 'pending',
     lastMessage: pr.request_message || pr.description || `Request is currently ${rv.status || pr.status || 'pending'}.`,
@@ -83,8 +89,9 @@ function mapProcurementRequestToTrackingItem(pr) {
     eventDate: event.event_date || null,
     location: event.venue || null,
     quotedPrice: null,
-    packageName: null,
-    selectedDate: null,
+    packageName: primaryService?.serviceName || null,
+    requestedServices,
+    selectedDate: (rv.deadline || pr.deadline || null) ? new Date(rv.deadline || pr.deadline).toISOString().split('T')[0] : null,
     selectedTimeSlot: null,
     createdAt: pr.created_at
   };
@@ -207,6 +214,116 @@ async function insertProcurementRequestWithFallback(payload, vendorServiceIds) {
   return fallbackData;
 }
 
+function parseVendorServiceIds(value) {
+  if (Array.isArray(value)) {
+    return value.map((id) => String(id)).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map((id) => String(id)).filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+function getRequestServiceIds(request) {
+  const fromColumn = parseVendorServiceIds(request?.vendor_service_ids);
+  if (fromColumn.length > 0) return fromColumn;
+
+  const fallback = request?.vendor_service_id || request?.request_vendors?.vendor_service_id || request?.vendor_services?.id;
+  return fallback ? [String(fallback)] : [];
+}
+
+function getDateKey(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().split('T')[0];
+}
+
+function isActiveRequestStatus(status) {
+  return !['rejected', 'cancelled'].includes(String(status || '').toLowerCase());
+}
+
+async function hydrateRequestedServices(requests) {
+  const list = Array.isArray(requests) ? requests : [requests];
+  const serviceIds = [...new Set(list.flatMap((request) => getRequestServiceIds(request)))];
+
+  const { data: services } = serviceIds.length > 0
+    ? await supabaseAdmin
+      .from('vendor_services')
+      .select('id, service_name, category')
+      .in('id', serviceIds)
+    : { data: [] };
+
+  const serviceMap = new Map((services || []).map((service) => [
+    service.id,
+    {
+      id: service.id,
+      serviceName: service.service_name,
+      category: service.category || null,
+    },
+  ]));
+
+  return list.map((request) => {
+    const requestedServiceIds = getRequestServiceIds(request);
+    const requestedServices = requestedServiceIds
+      .map((serviceId) => serviceMap.get(serviceId))
+      .filter(Boolean);
+
+    return {
+      ...request,
+      requestedServiceIds,
+      requestedServices: requestedServices.length > 0 ? requestedServices : (
+        request.vendor_services?.id
+          ? [{
+              id: request.vendor_services.id,
+              serviceName: request.vendor_services.service_name || 'Service',
+              category: request.vendor_services.category || null,
+            }]
+          : []
+      ),
+    };
+  });
+}
+
+async function getVendorBlockedDates(vendorId) {
+  const [blockedDatesResult, activeRequestsResult, bookingsResult] = await Promise.all([
+    supabaseAdmin.from('vendor_blocked_dates').select('date').eq('vendor_id', vendorId),
+    supabaseAdmin.from('procurement_requests').select('deadline, status').eq('vendor_id', vendorId),
+    supabaseAdmin.from('bookings').select('large_events(event_date)').eq('vendor_id', vendorId).in('status', ['accepted', 'confirmed', 'completed']),
+  ]);
+
+  if (blockedDatesResult.error) throw blockedDatesResult.error;
+  if (activeRequestsResult.error) throw activeRequestsResult.error;
+  if (bookingsResult.error) throw bookingsResult.error;
+
+  const blockedSet = new Set();
+
+  for (const row of blockedDatesResult.data || []) {
+    const key = getDateKey(row.date);
+    if (key) blockedSet.add(key);
+  }
+
+  for (const row of activeRequestsResult.data || []) {
+    if (!isActiveRequestStatus(row.status)) continue;
+    const key = getDateKey(row.deadline);
+    if (key) blockedSet.add(key);
+  }
+
+  for (const row of bookingsResult.data || []) {
+    const key = getDateKey(row.large_events?.event_date);
+    if (key) blockedSet.add(key);
+  }
+
+  return blockedSet;
+}
+
 router.get(
   '/organizer/event-briefs',
   asyncHandler(async (req, res) => {
@@ -264,7 +381,8 @@ router.get(
       .eq('organizer_id', organizerId)
       .order('updated_at', { ascending: false });
 
-    sendSuccess(res, (requests || []).map(mapProcurementRequestToTrackingItem));
+    const hydrated = await hydrateRequestedServices(requests || []);
+    sendSuccess(res, hydrated.map(mapProcurementRequestToTrackingItem));
   })
 );
 
@@ -297,7 +415,8 @@ router.get(
       });
     }
 
-    sendSuccess(res, mapProcurementRequestToTrackingItem(request));
+    const [hydrated] = await hydrateRequestedServices([request]);
+    sendSuccess(res, mapProcurementRequestToTrackingItem(hydrated));
   })
 );
 
@@ -334,6 +453,18 @@ router.post(
     const vendorServiceIds = Array.isArray(req.body.vendorServiceIds)
       ? req.body.vendorServiceIds
       : (req.body.vendorServiceId ? [req.body.vendorServiceId] : []);
+    const selectedDate = req.body.selectedDate || null;
+
+    if (selectedDate) {
+      const blockedDates = await getVendorBlockedDates(req.body.vendorId);
+      if (blockedDates.has(selectedDate)) {
+        return res.status(409).json({
+          success: false,
+          error: { code: 'VENDOR_DATE_UNAVAILABLE', message: 'The selected vendor date is already booked or on hold.' },
+          meta: {}
+        });
+      }
+    }
 
     const pr = await insertProcurementRequestWithFallback({
       event_id: event.id,
@@ -345,7 +476,7 @@ router.post(
       request_message: req.body.message || null,
       budget_min: req.body.budgetMin ?? null,
       budget_max: req.body.budgetMax ?? null,
-      deadline: req.body.selectedDate ? `${req.body.selectedDate}T23:59:59Z` : null,
+      deadline: selectedDate ? `${selectedDate}T23:59:59Z` : null,
       status: 'open'
     }, vendorServiceIds);
 
@@ -532,27 +663,7 @@ router.get(
     const year = Number(req.query.year) || new Date().getFullYear();
     const month = Number(req.query.month) || new Date().getMonth() + 1;
     const vendorId = req.params.vendorId;
-
-    const { data: blockedDates } = await supabaseAdmin
-      .from('vendor_blocked_dates')
-      .select('date, reason')
-      .eq('vendor_id', vendorId);
-
-    const { data: bookings } = await supabaseAdmin
-      .from('bookings')
-      .select('large_events(event_date)')
-      .eq('vendor_id', vendorId)
-      .in('status', ['accepted', 'confirmed', 'completed']);
-
-    const blockedSet = new Set();
-    for (const b of blockedDates || []) {
-      blockedSet.add(new Date(b.date).toISOString().split('T')[0]);
-    }
-    for (const b of bookings || []) {
-      if (b.large_events?.event_date) {
-        blockedSet.add(new Date(b.large_events.event_date).toISOString().split('T')[0]);
-      }
-    }
+    const blockedSet = await getVendorBlockedDates(vendorId);
 
     const daysInMonth = new Date(year, month, 0).getDate();
     const days = [];
@@ -650,6 +761,18 @@ router.post(
     const vendorServiceIds = Array.isArray(req.body.vendorServiceIds)
       ? req.body.vendorServiceIds
       : (req.body.vendorServiceId ? [req.body.vendorServiceId] : []);
+    const selectedDate = req.body.selectedDate || null;
+
+    if (selectedDate) {
+      const blockedDates = await getVendorBlockedDates(req.body.vendorId);
+      if (blockedDates.has(selectedDate)) {
+        return res.status(409).json({
+          success: false,
+          error: { code: 'VENDOR_DATE_UNAVAILABLE', message: 'The selected vendor date is already booked or on hold.' },
+          meta: {}
+        });
+      }
+    }
 
     const { data: pr, error: prError } = await supabaseAdmin
       .from('procurement_requests')
@@ -664,7 +787,7 @@ router.post(
         request_message: req.body.message || null,
         budget_min: req.body.budgetMin ?? null,
         budget_max: req.body.budgetMax ?? null,
-        deadline: req.body.selectedDate ? `${req.body.selectedDate}T23:59:59Z` : null,
+        deadline: selectedDate ? `${selectedDate}T23:59:59Z` : null,
         status: 'open'
       })
       .select('id')

@@ -36,6 +36,11 @@ export interface BookingRequest {
   }
   request_vendors?: Record<string, unknown> | null
   vendor_services?: Record<string, unknown> | null
+  requestedServices?: Array<{
+    id: string
+    serviceName: string
+    category: string | null
+  }>
 }
 
 export const bookingService = {

@@ -80,7 +80,6 @@ export default function VendorMarketplaceViewWrapper() {
       savedVendorIds={vm.savedVendorIds}
       isInCompare={vm.isInCompare}
       isSaved={vm.isSaved}
-      getRequestStatus={vm.getRequestStatus}
       onVendorClick={handleVendorClick}
       onToggleCompare={vm.toggleCompare}
       onToggleSave={vm.toggleSaveVendor}

@@ -150,8 +150,84 @@ function bookingBelongsToVendor(booking, vendorIds) {
   return vendorIds.includes(booking?.vendor_id);
 }
 
+function parseVendorServiceIds(value) {
+  if (Array.isArray(value)) {
+    return value.map((id) => String(id)).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.map((id) => String(id)).filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+function getVendorServiceIds(request) {
+  const fromColumn = parseVendorServiceIds(request?.vendor_service_ids);
+  if (fromColumn.length > 0) return fromColumn;
+
+  const fallback = request?.vendor_service_id || request?.request_vendors?.vendor_service_id || request?.vendor_services?.id;
+  return fallback ? [String(fallback)] : [];
+}
+
+async function hydrateRequestedServices(requests) {
+  const list = Array.isArray(requests) ? requests : [requests];
+  const serviceIds = [...new Set(list.flatMap((request) => getVendorServiceIds(request)))];
+
+  const { data: services } = serviceIds.length > 0
+    ? await supabase
+      .from('vendor_services')
+      .select('id, service_name, category')
+      .in('id', serviceIds)
+    : { data: [] };
+
+  const serviceMap = new Map((services || []).map((service) => [
+    service.id,
+    {
+      id: service.id,
+      serviceName: service.service_name,
+      category: service.category || null,
+    },
+  ]));
+
+  return list.map((request) => {
+    const requestedServiceIds = getVendorServiceIds(request);
+    const requestedServices = requestedServiceIds
+      .map((serviceId) => serviceMap.get(serviceId))
+      .filter(Boolean);
+
+    const fallbackServices = request?.event_requirements?.category
+      ? [{
+          id: request.requirement_id || request.id,
+          serviceName: request.event_requirements.category,
+          category: request.event_requirements.category,
+        }]
+      : [];
+
+    return {
+      ...request,
+      requestedServiceIds,
+      requestedServices: requestedServices.length > 0 ? requestedServices : (
+        request.vendor_services?.id
+          ? [{
+              id: request.vendor_services.id,
+              serviceName: request.vendor_services.service_name || 'Service',
+              category: request.vendor_services.category || null,
+            }]
+          : fallbackServices
+      ),
+    };
+  });
+}
+
 function mapRequestToBookingShape(request) {
   const requestVendor = getRequestVendor(request);
+  const requestedServices = Array.isArray(request.requestedServices) ? request.requestedServices : [];
   return {
     id: request.id,
     event_id: request.event_id,
@@ -166,17 +242,19 @@ function mapRequestToBookingShape(request) {
     updated_at: request.updated_at,
     large_events: request.large_events,
     event_requirements: {
-      category: request.vendor_services?.category || 'Service',
+      category: requestedServices[0]?.category || request.vendor_services?.category || 'Service',
       quantity: 1
     },
     vendor_profiles: request.vendor_profiles,
     organizer_profiles: request.organizer_profiles,
     request_vendors: requestVendor,
-    vendor_services: request.vendor_services
+    vendor_services: request.vendor_services,
+    requestedServices
   };
 }
 
 function mapDirectBookingToBookingShape(booking) {
+  const requestedServices = Array.isArray(booking.requestedServices) ? booking.requestedServices : [];
   return {
     id: booking.id,
     event_id: booking.event_id,
@@ -192,7 +270,8 @@ function mapDirectBookingToBookingShape(booking) {
     large_events: booking.large_events,
     event_requirements: booking.event_requirements,
     vendor_profiles: booking.vendor_profiles,
-    organizer_profiles: booking.organizer_profiles
+    organizer_profiles: booking.organizer_profiles,
+    requestedServices
   };
 }
 
@@ -202,6 +281,7 @@ function mapRequestToNormalized(request) {
   const vendor = request.vendor_profiles || {};
   const organizer = request.organizer_profiles || {};
   const service = request.vendor_services || {};
+  const requestedServices = Array.isArray(request.requestedServices) ? request.requestedServices : [];
   return {
     requestId: request.id,
     requestVendorId: vendorRequest.id || null,
@@ -217,8 +297,9 @@ function mapRequestToNormalized(request) {
     vendorName: vendor.business_name || 'Vendor',
     vendorUserId: vendor.user_id || null,
     vendorServiceId: request.vendor_service_id || vendorRequest.vendor_service_id || service.id || null,
-    serviceName: service.service_name || null,
-    serviceCategory: service.category || null,
+    serviceName: requestedServices[0]?.serviceName || service.service_name || null,
+    serviceCategory: requestedServices[0]?.category || service.category || null,
+    requestedServices,
     requestMessage: request.request_message || request.description || null,
     budgetMin: vendorRequest.budget_min ?? request.budget_min ?? null,
     budgetMax: vendorRequest.budget_max ?? request.budget_max ?? null,
@@ -275,7 +356,8 @@ async function listB2BBookings(actor, statusFilter, bookingTypeFilter) {
   const vendorIds = buildVendorIds(profile, actor);
 
   const merged = await vendorRepository.listVendorB2BRequests(vendorIds, statusFilter, bookingTypeFilter);
-  const normalized = merged.map((item) => (
+  const hydrated = await hydrateRequestedServices(merged);
+  const normalized = hydrated.map((item) => (
     Object.prototype.hasOwnProperty.call(item, 'requirement_id')
       ? mapDirectBookingToBookingShape(item)
       : mapRequestToBookingShape(item)
@@ -298,12 +380,14 @@ async function getBookingDetail(actor, bookingId) {
 
   const request = await vendorRepository.findRequestById(bookingId);
   if (request && requestBelongsToVendor(request, vendorIds)) {
-    return mapRequestToBookingShape(request);
+    const [hydrated] = await hydrateRequestedServices([request]);
+    return mapRequestToBookingShape(hydrated);
   }
 
   const directBooking = await vendorRepository.findBookingById(bookingId);
   if (directBooking && bookingBelongsToVendor(directBooking, vendorIds)) {
-    return mapDirectBookingToBookingShape(directBooking);
+    const [hydrated] = await hydrateRequestedServices([directBooking]);
+    return mapDirectBookingToBookingShape(hydrated);
   }
 
   throw new AppError('Request not found', 404, 'REQUEST_NOT_FOUND');
@@ -328,7 +412,8 @@ async function updateBookingStatus(actor, bookingId, payload) {
     payload.status,
     payload.reason
   );
-  return mapRequestToNormalized(await vendorRepository.findRequestById(bookingId));
+  const [hydrated] = await hydrateRequestedServices([await vendorRepository.findRequestById(bookingId)]);
+  return mapRequestToNormalized(hydrated);
 }
 
 async function viewRequest(actor, requestId) {
@@ -342,7 +427,8 @@ async function viewRequest(actor, requestId) {
     await vendorRepository.updateRequestVendorStatus(requestId, requestVendor?.vendor_id || request.vendor_id, 'viewed');
     await notifyOrganizerForRequest(request, 'request_viewed', 'Request viewed', `A vendor reviewed your request for ${request.large_events?.title || 'an event'}.`);
   }
-  return mapRequestToNormalized(await vendorRepository.findRequestById(requestId));
+  const [hydrated] = await hydrateRequestedServices([await vendorRepository.findRequestById(requestId)]);
+  return mapRequestToNormalized(hydrated);
 }
 
 async function acceptRequest(actor, requestId) {
@@ -350,7 +436,8 @@ async function acceptRequest(actor, requestId) {
   const requestVendor = getRequestVendor(request);
   await vendorRepository.updateRequestVendorStatus(requestId, requestVendor?.vendor_id || request.vendor_id, 'accepted');
   await notifyOrganizerForRequest(request, 'request_accepted', 'Request accepted', `Your request for ${request.large_events?.title || 'an event'} was accepted.`);
-  return mapRequestToNormalized(await vendorRepository.findRequestById(requestId));
+  const [hydrated] = await hydrateRequestedServices([await vendorRepository.findRequestById(requestId)]);
+  return mapRequestToNormalized(hydrated);
 }
 
 async function rejectRequest(actor, requestId) {
@@ -358,7 +445,8 @@ async function rejectRequest(actor, requestId) {
   const requestVendor = getRequestVendor(request);
   await vendorRepository.updateRequestVendorStatus(requestId, requestVendor?.vendor_id || request.vendor_id, 'rejected');
   await notifyOrganizerForRequest(request, 'request_rejected', 'Request rejected', `Your request for ${request.large_events?.title || 'an event'} was rejected.`);
-  return mapRequestToNormalized(await vendorRepository.findRequestById(requestId));
+  const [hydrated] = await hydrateRequestedServices([await vendorRepository.findRequestById(requestId)]);
+  return mapRequestToNormalized(hydrated);
 }
 
 async function requestChanges(actor, requestId, reason) {
@@ -376,7 +464,8 @@ async function requestChanges(actor, requestId, reason) {
     'Request changes requested',
     `The vendor requested changes for ${request.large_events?.title || 'an event'}. ${reason ? `Message: ${reason}` : ''}`.trim()
   );
-  return mapRequestToNormalized(await vendorRepository.findRequestById(requestId));
+  const [hydrated] = await hydrateRequestedServices([await vendorRepository.findRequestById(requestId)]);
+  return mapRequestToNormalized(hydrated);
 }
 
 async function submitQuote(actor, bookingId, payload) {

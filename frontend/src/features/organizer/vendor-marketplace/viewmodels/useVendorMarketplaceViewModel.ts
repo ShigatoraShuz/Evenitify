@@ -9,7 +9,6 @@ import {
   type ProcurementRequest,
   type RequestFormData,
   type CompareEntry,
-  type ProcurementStatus,
   type VendorAvailability,
   type TimeSlotType,
   type TimeSlot,
@@ -223,19 +222,16 @@ function buildRequestFormForVendor(
   }
 }
 
+function getSelectedServiceNames(vendor: VendorMarketplaceVendor, serviceIds: string[]): string[] {
+  return serviceIds
+    .map((serviceId) => vendor.services.find((service) => service.id === serviceId)?.serviceName)
+    .filter((name): name is string => !!name)
+}
+
 export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
   const navigate = useNavigate()
-  const storedBrief = useMemo(() => {
-    try {
-      const raw = sessionStorage.getItem(BRIEF_STORAGE_KEY)
-      if (!raw) return null
-      return JSON.parse(raw) as EventBrief
-    } catch {
-      return null
-    }
-  }, [eventIdFromUrl])
   const [state, setState] = useState<VendorMarketplaceViewModelState>({
-    brief: eventIdFromUrl ? null : storedBrief,
+    brief: null,
     allVendors: [],
     filteredVendors: [],
     filters: DEFAULT_VENDOR_FILTERS,
@@ -287,12 +283,8 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
         allVendors: vendors,
         filteredVendors: vendors,
         eventBriefs: briefs,
-        brief: eventIdFromUrl ? s.brief : (s.brief ?? storedBrief),
-        filters: eventIdFromUrl
-          ? s.filters
-          : {
-            ...DEFAULT_VENDOR_FILTERS,
-          },
+        brief: s.brief,
+        filters: s.filters,
         loading: false,
         error: null,
       }))
@@ -308,12 +300,12 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
 
   useEffect(() => {
     let cancelled = false
-    if (!eventIdFromUrl && !storedBrief) {
+    if (!eventIdFromUrl) {
       sessionStorage.removeItem(BRIEF_STORAGE_KEY)
     }
     void loadMarketplace(() => cancelled)
     return () => { cancelled = true }
-  }, [loadMarketplace, eventIdFromUrl, storedBrief])
+  }, [loadMarketplace, eventIdFromUrl])
 
   const vendorsRefined = useMemo(() => {
     let result = [...state.allVendors]
@@ -369,19 +361,7 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
   }, [vendorsRefined])
 
   useEffect(() => {
-    if (!eventIdFromUrl) {
-      if (storedBrief) {
-        setState((s) => ({
-          ...s,
-          brief: storedBrief,
-          filters: {
-            ...s.filters,
-            service: storedBrief.selectedVendorServices || []
-          }
-        }))
-      }
-      return
-    }
+    if (!eventIdFromUrl) return
 
     const stored = sessionStorage.getItem(BRIEF_STORAGE_KEY)
     if (stored) {
@@ -443,7 +423,7 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
 
     fetchBrief()
     return () => { cancelled = true }
-  }, [eventIdFromUrl, storedBrief])
+  }, [eventIdFromUrl])
 
   const setBrief = useCallback((brief: EventBrief) => {
     sessionStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(brief))
@@ -686,6 +666,10 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       : state.selectedVendor?.services[0]
         ? [state.selectedVendor.services[0].id]
         : []
+    const selectedServiceNames = state.selectedVendor
+      ? getSelectedServiceNames(state.selectedVendor, selectedServiceIds)
+      : []
+    const packageName = selectedServiceNames.join(' + ') || req.serviceCategory || state.selectedVendor?.businessName || undefined
 
     setState((s) => ({ ...s, submitting: true, error: null }))
 
@@ -694,7 +678,7 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
         eventBriefId: state.brief.eventId,
         vendorId: req.vendorId,
         vendorServiceIds: selectedServiceIds,
-        packageName: state.selectedTimeSlot || req.serviceCategory || undefined,
+        packageName,
         selectedDate: state.selectedDate || undefined,
         selectedTimeSlot: state.selectedTimeSlot || undefined,
         budgetMin: requestedBudget,
@@ -757,11 +741,6 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       submitting: false,
     }))
   }, [state.selectedVendor, state.generalInquiryMessage])
-
-  const getRequestStatus = useCallback((vendorId: string): ProcurementStatus | null => {
-    const req = state.procurementRequests.find((r) => r.vendorId === vendorId)
-    return req ? req.status : null
-  }, [state.procurementRequests])
 
   const compareVendors = useMemo(() => {
     return state.allVendors.filter((v) => state.compareList.some((e) => e.vendorId === v.id))
@@ -836,7 +815,6 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     getSelectedDateSlots,
     updateRequestForm,
     submitRequest,
-    getRequestStatus,
     openSelectBriefModal,
     closeSelectBriefModal,
     selectBriefForRequest,

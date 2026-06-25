@@ -69,6 +69,11 @@ export function VendorRequestDetailDrawer({
   const statusColor = STATUS_COLORS_VENDOR[request.status]
   const currentTimeline = [...timelineItems].reverse().find((item) => item.state === 'current')
   const liveStatus = liveStatusCopy[request.status] || currentTimeline && liveStatusCopy[currentTimeline.status]
+  const requestedServices = request.requestedServices.length > 0
+    ? request.requestedServices
+    : request.packageName
+      ? [{ id: request.packageName, serviceName: request.packageName, category: request.vendorCategory }]
+      : []
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -111,8 +116,24 @@ export function VendorRequestDetailDrawer({
             )}
           </div>
 
-          {request.packageName && (
+          {request.packageName && requestedServices.length === 0 && (
             <p className="text-sm text-brand-600 mt-2">Package: <span className="font-medium">{request.packageName}</span></p>
+          )}
+
+          {requestedServices.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Requested services</p>
+              <div className="flex flex-wrap gap-2">
+                {requestedServices.map((service) => (
+                  <span
+                    key={service.id}
+                    className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700"
+                  >
+                    {service.serviceName}
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
 

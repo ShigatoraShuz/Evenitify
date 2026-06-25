@@ -11,6 +11,7 @@ import {
   type PlanEventFormState
 } from '../models/planEvent.model'
 import type { EventSetupPayload } from '../models/planEvent.model'
+import type { EventBrief } from '../../vendor-marketplace/models/vendorMarketplace.model'
 
 interface PlanEventViewModelState {
   currentStep: number
@@ -22,6 +23,7 @@ interface PlanEventViewModelState {
   errors: string[]
   submitted: boolean
   createdEventId: string | null
+  pendingMarketplaceBrief: EventBrief | null
   submitting: boolean
   loading: boolean
   error: string | null
@@ -212,6 +214,7 @@ export function usePlanEventViewModel() {
       errors: [],
       submitted: false,
       createdEventId: null,
+      pendingMarketplaceBrief: null,
       submitting: false,
       loading: false,
       error: null
@@ -341,6 +344,22 @@ export function usePlanEventViewModel() {
         error: err instanceof Error ? err.message : 'Failed to refresh events.'
       }))
     }
+  }, [])
+
+  const resetBuilderState = useCallback((pendingMarketplaceBrief: EventBrief | null = null) => {
+    sessionStorage.removeItem(STORAGE_KEY)
+    setState((s) => ({
+      ...s,
+      currentStep: 0,
+      form: INITIAL_FORM_STATE,
+      errors: [],
+      submitted: false,
+      draftEventId: null,
+      createdEventId: null,
+      pendingMarketplaceBrief,
+      submitting: false,
+      error: null,
+    }))
   }, [])
 
   const saveDraft = useCallback(async () => {
@@ -543,14 +562,24 @@ export function usePlanEventViewModel() {
 
       clearDraft()
       await refreshEvents()
+      resetBuilderState({
+        eventId: createdEvent.id,
+        eventType: payload.eventType,
+        eventName: payload.title,
+        location: payload.venue,
+        eventDate: normalizedEventDate,
+        startTime: payload.eventTime,
+        endTime: '',
+        guestCount: payload.guests,
+        budget: payload.budget,
+        selectedTheme: payload.theme,
+        setupStyle: payload.setupMode,
+        selectedVendorServices: payload.selectedServices,
+        indoorOutdoorType: payload.setupMode,
+        specialRequirements: payload.specialRequirements,
+        preferredPackageTier: 'premium',
+      })
       window.dispatchEvent(new CustomEvent('eventify:dashboard-refresh'))
-      setState((s) => ({
-        ...s,
-        submitted: true,
-        submitting: false,
-        createdEventId: createdEvent.id,
-        currentStep: TOTAL_STEPS - 1
-      }))
     } catch (err) {
       setState((s) => ({
         ...s,
@@ -560,24 +589,11 @@ export function usePlanEventViewModel() {
     } finally {
       submittingRef.current = false
     }
-  }, [state.form, eventTypeMeta.label, recommendedServices, clearDraft, refreshEvents])
+  }, [state.form, eventTypeMeta.label, recommendedServices, clearDraft, refreshEvents, resetBuilderState])
 
   const reset = useCallback(() => {
-    setState({
-      currentStep: 0,
-      form: INITIAL_FORM_STATE,
-      events: state.events,
-      drafts: state.drafts,
-      completedBriefs: state.completedBriefs,
-      draftEventId: null,
-      errors: [],
-      submitted: false,
-      createdEventId: null,
-      submitting: false,
-      loading: false,
-      error: null
-    })
-  }, [state.events, state.drafts, state.completedBriefs])
+    resetBuilderState()
+  }, [resetBuilderState])
 
     return {
       currentStep: state.currentStep,
@@ -588,6 +604,7 @@ export function usePlanEventViewModel() {
     loading: state.loading,
     error: state.error,
     createdEventId: state.createdEventId,
+    pendingMarketplaceBrief: state.pendingMarketplaceBrief,
     eventTypeMeta,
     recommendedServices,
       progress,

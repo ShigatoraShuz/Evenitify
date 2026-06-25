@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { usePlanEventViewModel } from '../viewmodels/usePlanEventViewModel'
 import { OrganizerPlanEventView } from './OrganizerPlanEventView'
 import type { DraftEvent } from '../components/DraftEventsTab'
+import type { EventBrief } from '../../vendor-marketplace/models/vendorMarketplace.model'
 
 const BRIEF_STORAGE_KEY = 'eventify:marketplace-brief'
 
@@ -15,35 +16,18 @@ export default function OrganizerPlanEventViewWrapper() {
     vm.loadDraft()
   }, [])
 
-  const redirect = useCallback(async () => {
-    if (!vm.createdEventId || redirectingRef.current) return
+  const redirect = useCallback(async (brief: EventBrief) => {
+    if (redirectingRef.current) return
     redirectingRef.current = true
-    const brief = {
-      eventId: vm.createdEventId,
-      eventType: vm.form.eventType,
-      eventName: vm.form.title,
-      location: vm.form.venue,
-      eventDate: vm.form.eventDate,
-      startTime: vm.form.eventTime,
-      endTime: '',
-      guestCount: Number(vm.form.guests),
-      budget: Number(vm.form.budget),
-      selectedTheme: vm.form.theme,
-      setupStyle: vm.form.setupMode,
-      selectedVendorServices: vm.recommendedServices,
-      indoorOutdoorType: vm.form.setupMode,
-      specialRequirements: vm.form.specialRequirements,
-      preferredPackageTier: 'premium' as const,
-    }
     sessionStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(brief))
-    navigate(`/organizer/vendor-marketplace?eventId=${vm.createdEventId}`)
-  }, [vm.createdEventId, vm.form, vm.recommendedServices, navigate])
+    navigate(`/organizer/vendor-marketplace?eventId=${brief.eventId}`)
+  }, [navigate])
 
   useEffect(() => {
-    if (vm.submitted && vm.createdEventId) {
-      redirect()
+    if (vm.pendingMarketplaceBrief) {
+      void redirect(vm.pendingMarketplaceBrief)
     }
-  }, [vm.submitted, vm.createdEventId, redirect])
+  }, [vm.pendingMarketplaceBrief, redirect])
 
   return (
     <OrganizerPlanEventView
@@ -78,7 +62,7 @@ export default function OrganizerPlanEventViewWrapper() {
       onSubmit={vm.handleSubmit}
       onSaveDraft={vm.saveDraft}
       onReset={vm.reset}
-      onContinueToProcurement={redirect}
+      onContinueToProcurement={vm.pendingMarketplaceBrief ? () => redirect(vm.pendingMarketplaceBrief!) : undefined}
       onContinueDraft={(draftId) => {
         vm.loadDraft(draftId)
         navigate('/organizer/plan-event', { replace: true })

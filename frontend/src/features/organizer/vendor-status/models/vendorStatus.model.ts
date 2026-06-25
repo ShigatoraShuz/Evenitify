@@ -24,6 +24,11 @@ export interface VendorRequest {
   status: VendorRequestStatus
   quotedPrice: number | null
   packageName: string | null
+  requestedServices: Array<{
+    id: string
+    serviceName: string
+    category: string | null
+  }>
   lastMessage: string
   lastUpdatedAt: string
   createdAt: string

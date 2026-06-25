@@ -11,10 +11,8 @@ interface VendorDetailModalProps {
   selectedTimeSlot: TimeSlotType | null
   currentAvailability: VendorAvailability | null
   requestForm: RequestFormData
-  eventFilterActive: boolean
   isInCompare: (id: string) => boolean
   isSaved: (id: string) => boolean
-  requestStatus: string | null
   onClose: () => void
   onSelectDate: (date: string) => void
   onSelectTimeSlot: (slot: TimeSlotType) => void
@@ -60,10 +58,8 @@ export function VendorDetailModal({
   selectedTimeSlot,
   currentAvailability,
   requestForm,
-  eventFilterActive,
   isInCompare,
   isSaved,
-  requestStatus,
   onClose,
   onSelectDate,
   onSelectTimeSlot,
@@ -79,18 +75,6 @@ export function VendorDetailModal({
       return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     } catch { return d }
   }
-
-  const availabilityColor = {
-    available: 'bg-emerald-100 text-emerald-700',
-    limited: 'bg-amber-100 text-amber-700',
-    unavailable: 'bg-red-100 text-red-700',
-  }[vendor.availabilityStatus]
-
-  const availabilityLabel = {
-    available: 'Available',
-    limited: 'Limited',
-    unavailable: 'Unavailable',
-  }[vendor.availabilityStatus]
 
   const vendorAvailability = currentAvailability?.vendorId === vendor.id ? currentAvailability : null
   const selectedServiceIds = requestForm.vendorId === vendor.id ? requestForm.selectedServiceIds : []
@@ -250,49 +234,6 @@ export function VendorDetailModal({
                       </p>
                     </div>
                   </button>
-                )
-              })}
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-700">Overview</h3>
-            <div className="flex flex-wrap gap-2">
-            {requestStatus && <StatusBadge status={requestStatus} size="sm" />}
-              <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${availabilityColor}`}>
-              {availabilityLabel}
-            </span>
-            {vendor.serviceCategory.map((cat) => (
-                <span key={cat} className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                {cat}
-              </span>
-            ))}
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-700">Packages & Pricing</h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              {vendor.packageTiers.map((tier) => {
-                const parsedDesc = parseServiceContent(tier.description)
-
-                return (
-                  <div key={tier.name} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    {parsedDesc.image ? (
-                      <div className="h-36 w-full bg-slate-100">
-                        <img src={parsedDesc.image} alt={tier.name} className="h-full w-full object-cover" />
-                      </div>
-                    ) : (
-                      <div className="flex h-36 w-full items-center justify-center bg-slate-50">
-                        <Package className="h-10 w-10 text-slate-300" />
-                      </div>
-                    )}
-                    <div className="flex min-h-[148px] flex-col p-4">
-                      <h4 className="text-sm font-bold text-slate-900">{tier.name}</h4>
-                      <p className="mt-1 text-lg font-bold text-brand-600">${tier.price.toLocaleString()}</p>
-                      <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{parsedDesc.text || 'No description provided.'}</p>
-                    </div>
-                  </div>
                 )
               })}
             </div>

@@ -15,7 +15,6 @@ import type {
   VendorMarketplaceVendor,
   VendorFilterState,
   RequestFormData,
-  ProcurementStatus,
   VendorAvailability,
   TimeSlotType,
   EventBriefReference,
@@ -45,7 +44,6 @@ interface VendorMarketplaceViewProps {
   savedVendorIds: string[]
   isInCompare: (id: string) => boolean
   isSaved: (id: string) => boolean
-  getRequestStatus: (vendorId: string) => ProcurementStatus | null
   onVendorClick: (vendor: VendorMarketplaceVendor) => void
   onToggleCompare: (id: string) => void
   onToggleSave: (id: string) => void
@@ -95,7 +93,6 @@ export function VendorMarketplaceView({
   currentAvailability,
   isInCompare,
   isSaved,
-  getRequestStatus,
   onVendorClick,
   onToggleCompare,
   onToggleSave,
@@ -231,10 +228,8 @@ export function VendorMarketplaceView({
         selectedTimeSlot={selectedTimeSlot}
         currentAvailability={currentAvailability}
         requestForm={requestForm}
-        eventFilterActive={eventFilterActive}
         isInCompare={isInCompare}
         isSaved={isSaved}
-        requestStatus={selectedVendor ? getRequestStatus(selectedVendor.id) : null}
         onClose={onCloseVendorDetail}
         onSelectDate={onSelectDate}
         onSelectTimeSlot={onSelectTimeSlot}

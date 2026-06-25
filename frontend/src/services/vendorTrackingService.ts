@@ -10,6 +10,11 @@ export interface VendorTrackingRequest {
   status: string
   quotedPrice: number | null
   packageName: string | null
+  requestedServices?: Array<{
+    id: string
+    serviceName: string
+    category: string | null
+  }>
   selectedDate: string | null
   selectedTimeSlot: string | null
   lastMessage: string

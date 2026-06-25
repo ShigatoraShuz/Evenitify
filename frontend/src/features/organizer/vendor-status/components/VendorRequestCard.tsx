@@ -8,6 +8,11 @@ interface Props {
 
 export function VendorRequestCard({ request, onClick }: Props) {
   const statusColor = STATUS_COLORS_VENDOR[request.status] || STATUS_COLORS_VENDOR.pending
+  const requestedServices = request.requestedServices.length > 0
+    ? request.requestedServices
+    : request.packageName
+      ? [{ id: request.packageName, serviceName: request.packageName, category: request.vendorCategory }]
+      : []
 
   return (
     <button
@@ -48,6 +53,19 @@ export function VendorRequestCard({ request, onClick }: Props) {
           </div>
 
           <p className="text-sm text-slate-500 mt-2 line-clamp-1">{request.lastMessage}</p>
+
+          {requestedServices.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {requestedServices.map((service) => (
+                <span
+                  key={service.id}
+                  className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700"
+                >
+                  {service.serviceName}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col items-end gap-2 flex-shrink-0">

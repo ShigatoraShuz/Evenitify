@@ -54,6 +54,11 @@ interface RequestCard {
   venue: string
   guests: number
   category: string
+  requestedServices: Array<{
+    id: string
+    serviceName: string
+    category: string | null
+  }>
   booking: BookingRequest
 }
 
@@ -117,6 +122,7 @@ export function VendorBookingsView({
     venue: booking.large_events?.venue || 'Venue pending',
     guests: booking.large_events?.expected_guests || 0,
     category: booking.event_requirements?.category || booking.booking_type || 'Request',
+    requestedServices: booking.requestedServices || [],
     booking
   })), [bookings])
 
@@ -302,6 +308,18 @@ export function VendorBookingsView({
                           <BookingChip label="Date" value={formatDate(card.eventDate)} />
                           <BookingChip label="Budget" value={card.budget ? `$${card.budget.toLocaleString()}` : 'N/A'} />
                         </div>
+                        {card.requestedServices.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {card.requestedServices.map((service) => (
+                              <span
+                                key={service.id}
+                                className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700"
+                              >
+                                {service.serviceName}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         {isSelected && (card.booking.status === 'pending' || card.booking.status === 'sent' || card.booking.status === 'viewed') && (
                           <div className="grid gap-2 sm:grid-cols-3 pt-1">
                             <Button
@@ -375,6 +393,27 @@ export function VendorBookingsView({
                   <BookingChip label="Venue" value={selectedBooking.large_events?.venue || 'N/A'} />
                   <BookingChip label="Expected Guests" value={selectedBooking.large_events?.expected_guests ? selectedBooking.large_events.expected_guests.toLocaleString() : 'N/A'} />
                 </div>
+
+                {selectedBooking.requestedServices && selectedBooking.requestedServices.length > 0 && (
+                  <div className="rounded-[24px] border border-slate-100 bg-slate-50/70 p-5">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <h4 className="font-bold text-slate-900">Requested Services</h4>
+                      <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                        {selectedBooking.requestedServices.length} selected
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedBooking.requestedServices.map((service) => (
+                        <span
+                          key={service.id}
+                          className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700"
+                        >
+                          {service.serviceName}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="rounded-[24px] border border-slate-100 bg-slate-50/70 p-5">
                   <div className="flex items-center justify-between gap-3 mb-4">

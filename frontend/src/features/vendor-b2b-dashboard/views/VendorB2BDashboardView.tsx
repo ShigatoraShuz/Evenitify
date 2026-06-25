@@ -60,6 +60,11 @@ interface RequestCard {
   venue: string
   guests: number
   category: string
+  requestedServices: Array<{
+    id: string
+    serviceName: string
+    category: string | null
+  }>
   booking: BookingRequest
 }
 
@@ -124,6 +129,7 @@ export function VendorB2BDashboardView({
         venue: booking.large_events?.venue || 'Venue pending',
         guests: booking.large_events?.expected_guests || 0,
         category: booking.event_requirements?.category || booking.booking_type || 'Request',
+        requestedServices: booking.requestedServices || [],
         booking,
       })),
     [bookings]
@@ -412,6 +418,18 @@ export function VendorB2BDashboardView({
                           <span className="mt-0.5 font-semibold text-slate-900">{formatDate(card.eventDate)}</span>
                         </div>
                       </div>
+                      {card.requestedServices.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {card.requestedServices.map((service) => (
+                            <span
+                              key={service.id}
+                              className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700"
+                            >
+                              {service.serviceName}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </button>
                   )
                 })
@@ -511,6 +529,18 @@ export function VendorB2BDashboardView({
                           <BookingChip label="Venue" value={card.venue} />
                           <BookingChip label="Guests" value={card.guests ? card.guests.toLocaleString() : 'N/A'} />
                         </div>
+                        {card.requestedServices.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {card.requestedServices.map((service) => (
+                              <span
+                                key={service.id}
+                                className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700"
+                              >
+                                {service.serviceName}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         <span className="inline-flex items-center gap-1 text-sm font-semibold text-slate-900">
                           Open request
                           <ArrowRight className="h-4 w-4" />
