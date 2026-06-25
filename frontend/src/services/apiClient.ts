@@ -54,7 +54,11 @@ async function request<T>(
   const json: ApiResponse<T> = await res.json()
 
   if (!json.success) {
-    throw new ApiError(json.error?.message || 'Request failed', res.status, json.error?.code)
+    const msg = json.error?.message || 'Request failed'
+    if (!res.ok) {
+      console.warn(`[API] ${options.method || 'GET'} ${endpoint} ${res.status}: ${msg}`)
+    }
+    throw new ApiError(msg, res.status, json.error?.code)
   }
 
   return json.data

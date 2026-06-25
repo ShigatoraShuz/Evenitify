@@ -1,4 +1,4 @@
-import { BadgeCheck, CalendarCheck, DollarSign, Eye, GitCompare, Heart, MapPin, Star, Users } from 'lucide-react'
+import { BadgeCheck, CalendarCheck, DollarSign, Eye, GitCompare, Heart, MapPin, Star } from 'lucide-react'
 import type { VendorMarketplaceVendor } from '../models/vendorMarketplace.model'
 
 interface VendorCardProps {
@@ -108,10 +108,6 @@ export function VendorCard({
             <DollarSign className="h-3.5 w-3.5 text-slate-400" />
             {vendor.startingPrice.toLocaleString()}+
           </span>
-          <span className="flex items-center gap-1">
-            <Users className="h-3.5 w-3.5 text-slate-400" />
-            {vendor.capacity.toLocaleString()}
-          </span>
         </div>
 
         <p className="mb-3 line-clamp-2 text-xs leading-5 text-slate-500">{vendor.description}</p>
@@ -120,8 +116,6 @@ export function VendorCard({
           <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${availabilityClasses}`}>
             {availabilityLabel}
           </span>
-          <span className="text-[11px] text-slate-400">{vendor.completedBookings} bookings</span>
-          <span className="text-[11px] text-slate-400">Responds {vendor.responseTime}</span>
         </div>
       </button>
 

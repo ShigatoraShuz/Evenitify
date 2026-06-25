@@ -3,7 +3,7 @@ import { api } from './apiClient'
 export interface VendorRequestPayload {
   eventBriefId: string
   vendorId: string
-  vendorServiceId?: string
+  vendorServiceIds: string[]
   packageName?: string
   selectedDate?: string
   selectedTimeSlot?: string

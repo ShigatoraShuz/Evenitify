@@ -61,7 +61,9 @@ async function createService(vendorId, input) {
       service_name: input.serviceName,
       description: input.description || null,
       base_price: input.basePrice,
-      availability_status: input.availabilityStatus || 'available'
+      availability_status: input.availabilityStatus || 'available',
+      capacity: input.capacity || null,
+      service_address: input.serviceAddress || null
     })
     .select('*')
     .single();
@@ -77,6 +79,8 @@ async function updateService(serviceId, vendorId, input) {
   if (input.description !== undefined) updates.description = input.description;
   if (input.basePrice !== undefined) updates.base_price = input.basePrice;
   if (input.availabilityStatus !== undefined) updates.availability_status = input.availabilityStatus;
+  if (input.capacity !== undefined) updates.capacity = input.capacity;
+  if (input.serviceAddress !== undefined) updates.service_address = input.serviceAddress;
 
   const { data, error } = await supabase
     .from('vendor_services')

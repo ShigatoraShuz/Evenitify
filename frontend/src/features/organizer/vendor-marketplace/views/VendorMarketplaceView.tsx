@@ -3,6 +3,7 @@ import { DashboardShell } from '../../../../shared/components/DashboardShell'
 import { Button } from '../../../../shared/components/Button'
 import { OrganizerPage, OrganizerPageHeader } from '../../../../shared/components/OrganizerUI'
 import { VendorMarketplaceFilters } from '../components/VendorMarketplaceFilters'
+import { VendorMarketplaceFilterRow } from '../components/VendorMarketplaceFilterRow'
 import { VendorGrid } from '../components/VendorGrid'
 import { VendorCompareDrawer } from '../components/VendorCompareDrawer'
 import { VendorDetailModal } from '../components/VendorDetailModal'
@@ -36,7 +37,6 @@ interface VendorMarketplaceViewProps {
   showGeneralInquiry: boolean
   requestForm: RequestFormData
   selectedVendor: VendorMarketplaceVendor | null
-  selectedGalleryImage: string
   selectedDate: string | null
   selectedTimeSlot: TimeSlotType | null
   generalInquiryMessage: string
@@ -53,7 +53,6 @@ interface VendorMarketplaceViewProps {
   onUpdateFilters: (next: Partial<VendorFilterState>) => void
   onResetFilters: () => void
   onCloseVendorDetail: () => void
-  onSelectGalleryImage: (url: string) => void
   onSelectDate: (date: string) => void
   onSelectTimeSlot: (slot: TimeSlotType) => void
   onCloseRequestModal: () => void
@@ -89,7 +88,6 @@ export function VendorMarketplaceView({
   showGeneralInquiry,
   requestForm,
   selectedVendor,
-  selectedGalleryImage,
   selectedDate,
   selectedTimeSlot,
   generalInquiryMessage,
@@ -105,7 +103,6 @@ export function VendorMarketplaceView({
   onUpdateFilters,
   onResetFilters,
   onCloseVendorDetail,
-  onSelectGalleryImage,
   onSelectDate,
   onSelectTimeSlot,
   onCloseRequestModal,
@@ -142,7 +139,28 @@ export function VendorMarketplaceView({
               </Button>
             )
           }
-        />
+        >
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-slate-900">Marketplace Filters</span>
+              <p className="text-xs text-slate-500">Use real vendor fields to narrow category, area, price, capacity, and availability.</p>
+            </div>
+            <div className="mt-3">
+              <VendorMarketplaceFilterRow
+                filters={filters}
+                onUpdateFilters={onUpdateFilters}
+              />
+            </div>
+            <div className="mt-4">
+              <VendorMarketplaceFilters
+                filters={filters}
+                hasActiveFilters={hasActiveFilters}
+                onUpdateFilters={onUpdateFilters}
+                onResetFilters={onResetFilters}
+              />
+            </div>
+          </div>
+        </OrganizerPageHeader>
 
         {eventFilterActive && brief && (
           <div className="rounded-2xl border border-brand-200 bg-gradient-to-r from-brand-600 to-brand-700 px-5 py-4 shadow-md">
@@ -186,15 +204,6 @@ export function VendorMarketplaceView({
           </div>
         )}
 
-        <div className="rounded-[24px] border border-slate-200/80 bg-white/95 p-4 shadow-[0_14px_42px_rgba(15,23,42,0.05)]">
-          <VendorMarketplaceFilters
-            filters={filters}
-            hasActiveFilters={hasActiveFilters}
-            onUpdateFilters={onUpdateFilters}
-            onResetFilters={onResetFilters}
-          />
-        </div>
-
         <div className="text-sm text-slate-500 mb-2">
           Showing {filteredVendors.length} of {vendorCount} vendors
           {eventFilterActive && brief && ` · Matched for ${brief.eventName}`}
@@ -218,18 +227,18 @@ export function VendorMarketplaceView({
       <VendorDetailModal
         open={showVendorDetail}
         vendor={selectedVendor}
-        selectedGalleryImage={selectedGalleryImage}
         selectedDate={selectedDate}
         selectedTimeSlot={selectedTimeSlot}
         currentAvailability={currentAvailability}
+        requestForm={requestForm}
         eventFilterActive={eventFilterActive}
         isInCompare={isInCompare}
         isSaved={isSaved}
         requestStatus={selectedVendor ? getRequestStatus(selectedVendor.id) : null}
         onClose={onCloseVendorDetail}
-        onSelectGalleryImage={onSelectGalleryImage}
         onSelectDate={onSelectDate}
         onSelectTimeSlot={onSelectTimeSlot}
+        onUpdateRequestForm={onUpdateRequestForm}
         onSendRequest={onSendRequest}
         onToggleCompare={onToggleCompare}
         onToggleSave={onToggleSave}

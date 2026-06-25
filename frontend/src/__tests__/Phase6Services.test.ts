@@ -43,7 +43,9 @@ describe('Phase 6 frontend helpers', () => {
         service_name: 'Buffet',
         description: null,
         base_price: 900,
-        availability_status: 'available'
+        availability_status: 'available',
+        capacity: null,
+        service_address: null
       }]
     }]
 

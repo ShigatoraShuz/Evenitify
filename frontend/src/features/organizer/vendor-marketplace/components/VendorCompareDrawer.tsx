@@ -1,4 +1,4 @@
-import { X, Star, CheckCircle, MapPin, DollarSign } from 'lucide-react'
+import { X, Star, MapPin, DollarSign } from 'lucide-react'
 import { Button } from '../../../../shared/components/Button'
 import { StatusBadge } from '../../../../shared/components/StatusBadge'
 import type { VendorMarketplaceVendor } from '../models/vendorMarketplace.model'
@@ -73,21 +73,12 @@ export function VendorCompareDrawer({
                         <span className="text-slate-400">Rating</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-emerald-500" />
-                        <span className="font-medium">{vendor.completedBookings}</span>
-                        <span className="text-slate-400">Bookings</span>
-                      </div>
-                      <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-slate-400" />
                         <span>{vendor.location}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-slate-400" />
                         <span className="font-medium">${vendor.startingPrice.toLocaleString()}+</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 text-xs">Capacity:</span>
-                        <span className="ml-1 font-medium">{vendor.capacity}</span>
                       </div>
                     </div>
 

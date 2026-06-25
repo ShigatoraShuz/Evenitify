@@ -218,7 +218,7 @@ export function useVendorB2BDashboard() {
     }
   }, [])
 
-  const createServicePackage = useCallback(async (data: { category: string; serviceName: string; description: string; basePrice: number; availabilityStatus: string }, imageFile?: File) => {
+  const createServicePackage = useCallback(async (data: { category: string; serviceName: string; description: string; basePrice: number; availabilityStatus: string; capacity?: number; serviceAddress?: string }, imageFile?: File) => {
     if (submittingRef.current) return
     submittingRef.current = true
     setState((s) => ({ ...s, submitting: true, error: null }))
@@ -242,7 +242,9 @@ export function useVendorB2BDashboard() {
         serviceName: data.serviceName,
         description: finalDescription,
         basePrice: data.basePrice,
-        availabilityStatus: data.availabilityStatus
+        availabilityStatus: data.availabilityStatus,
+        capacity: data.capacity,
+        serviceAddress: data.serviceAddress
       })
 
       const services = await vendorService.listServices()

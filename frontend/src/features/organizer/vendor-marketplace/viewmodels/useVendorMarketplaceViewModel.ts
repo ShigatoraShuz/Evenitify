@@ -39,7 +39,6 @@ interface VendorMarketplaceViewModelState {
   showCompareDrawer: boolean
   showRequestModal: boolean
   showVendorDetail: boolean
-  selectedGalleryImage: string
   requestForm: RequestFormData
   selectedDate: string | null
   selectedTimeSlot: TimeSlotType | null
@@ -73,18 +72,13 @@ function mapVendorItemToModel(item: VendorMarketplaceItem): VendorMarketplaceVen
     serviceArea: item.serviceArea,
     startingPrice: item.startingPrice,
     rating: item.rating,
-    completedBookings: item.completedBookings,
-    capacity: item.capacity,
     availabilityStatus: item.availabilityStatus as 'available' | 'limited' | 'unavailable',
     matchScore: 0,
     matchLevel: 'none',
-    eventTypeExperience: item.eventTypeExperience as VendorMarketplaceVendor['eventTypeExperience'],
     packageHighlights: item.packageHighlights,
     packageTiers: item.packageTiers,
     verified: item.verified,
-    responseTime: item.responseTime,
     description: item.description,
-    galleryImages: item.galleryImages.map((g) => ({ url: g.url, label: g.label })),
     services: item.services.map((service) => ({
       id: service.id,
       category: service.category,
@@ -93,22 +87,7 @@ function mapVendorItemToModel(item: VendorMarketplaceItem): VendorMarketplaceVen
       basePrice: service.basePrice,
       availabilityStatus: service.availabilityStatus,
     })),
-    reviews: item.reviews.map((r) => ({
-      id: r.id,
-      authorName: r.authorName,
-      authorAvatar: '',
-      rating: r.rating,
-      date: r.date,
-      text: r.text,
-      eventType: r.eventType,
-    })),
-    inclusions: item.inclusions,
-    addOns: item.addOns,
-    cancellationPolicy: item.cancellationPolicy,
-    bookingNotes: item.bookingNotes,
     memberSince: item.memberSince,
-    responseRate: item.responseRate,
-    totalReviews: item.totalReviews,
   }
 }
 
@@ -198,6 +177,25 @@ function normalizeSetupMode(value: string | null | undefined): SetupMode {
   return 'hybrid'
 }
 
+function getDefaultSelectedServiceIds(
+  vendor: VendorMarketplaceVendor,
+  brief: EventBrief | null,
+): string[] {
+  if (vendor.services.length === 0) return []
+
+  if (!brief || brief.selectedVendorServices.length === 0) {
+    return [vendor.services[0].id]
+  }
+
+  const selected = vendor.services
+    .filter((service) =>
+      brief.selectedVendorServices.some((serviceName) => categoriesMatch(service.category, serviceName)),
+    )
+    .map((service) => service.id)
+
+  return selected.length > 0 ? selected : [vendor.services[0].id]
+}
+
 export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
   const navigate = useNavigate()
   const storedBrief = useMemo(() => {
@@ -221,8 +219,8 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     showCompareDrawer: false,
     showRequestModal: false,
     showVendorDetail: false,
-    selectedGalleryImage: '',
-    requestForm: { vendorId: '', vendorName: '', serviceCategory: '', requestedBudget: '', notes: '' },
+
+    requestForm: { vendorId: '', vendorName: '', serviceCategory: '', requestedBudget: '', notes: '', selectedServiceIds: [] },
     selectedDate: null,
     selectedTimeSlot: null,
     showSelectBriefModal: false,
@@ -328,22 +326,12 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       result = result.filter((v) => f.availability.includes(v.availabilityStatus))
     }
 
-    if (f.capacityMin !== null) {
-      result = result.filter((v) => v.capacity >= f.capacityMin!)
-    }
-
     if (f.ratingMin !== null) {
       result = result.filter((v) => v.rating >= f.ratingMin!)
     }
 
     if (f.matchLevel) {
       result = result.filter((v) => v.matchLevel === f.matchLevel)
-    }
-
-    if (f.eventTypeExperience.length > 0) {
-      result = result.filter((v) =>
-        v.eventTypeExperience.some((et) => f.eventTypeExperience.includes(et))
-      )
     }
 
     return result
@@ -471,10 +459,8 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       f.budgetMin !== null ||
       f.budgetMax !== null ||
       f.availability.length > 0 ||
-      f.capacityMin !== null ||
       f.ratingMin !== null ||
-      f.matchLevel !== null ||
-      f.eventTypeExperience.length > 0
+      f.matchLevel !== null
     )
   }, [state.filters])
 
@@ -521,6 +507,10 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
         serviceCategory: vendor.serviceCategory[0] || '',
         requestedBudget: s.brief ? String(Math.round(s.brief.budget / Math.max(s.brief.selectedVendorServices.length, 1))) : '',
         notes: '',
+        selectedServiceIds:
+          s.requestForm.vendorId === vendor.id && s.requestForm.selectedServiceIds.length > 0
+            ? s.requestForm.selectedServiceIds
+            : getDefaultSelectedServiceIds(vendor, s.brief),
       },
     }))
   }, [])
@@ -536,7 +526,7 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       ...s,
       selectedVendor: vendor,
       showVendorDetail: true,
-      selectedGalleryImage: vendor.galleryImages[0]?.url || '',
+
       selectedDate: null,
       selectedTimeSlot: null,
       currentAvailability: null,
@@ -568,10 +558,6 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
 
   const closeVendorDetail = useCallback(() => {
     setState((s) => ({ ...s, showVendorDetail: false, selectedVendor: null, currentAvailability: null }))
-  }, [])
-
-  const selectGalleryImage = useCallback((url: string) => {
-    setState((s) => ({ ...s, selectedGalleryImage: url }))
   }, [])
 
   const selectDate = useCallback((date: string) => {
@@ -622,7 +608,11 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     if (!req.vendorId || !state.brief) return
 
     const requestedBudget = req.requestedBudget ? Number(req.requestedBudget) : null
-    const selectedService = state.selectedVendor?.services.find((service) => service.category === req.serviceCategory)
+    const selectedServiceIds = req.selectedServiceIds.length > 0
+      ? req.selectedServiceIds
+      : state.selectedVendor?.services[0]
+        ? [state.selectedVendor.services[0].id]
+        : []
 
     setState((s) => ({ ...s, submitting: true, error: null }))
 
@@ -630,7 +620,7 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
       const createdRequest = await vendorRequestService.sendBookingRequest({
         eventBriefId: state.brief.eventId,
         vendorId: req.vendorId,
-        vendorServiceId: selectedService?.id,
+        vendorServiceIds: selectedServiceIds,
         packageName: state.selectedTimeSlot || req.serviceCategory || undefined,
         selectedDate: state.selectedDate || undefined,
         selectedTimeSlot: state.selectedTimeSlot || undefined,
@@ -738,7 +728,7 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     showCompareDrawer: state.showCompareDrawer,
     showRequestModal: state.showRequestModal,
     showVendorDetail: state.showVendorDetail,
-    selectedGalleryImage: state.selectedGalleryImage,
+
     requestForm: state.requestForm,
     selectedDate: state.selectedDate,
     selectedTimeSlot: state.selectedTimeSlot,
@@ -766,7 +756,6 @@ export function useVendorMarketplaceViewModel(eventIdFromUrl: string | null) {
     closeRequestModal,
     openVendorDetail,
     closeVendorDetail,
-    selectGalleryImage,
     selectDate,
     selectTimeSlot,
     getSelectedDateSlots,

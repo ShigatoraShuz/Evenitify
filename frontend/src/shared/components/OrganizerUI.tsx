@@ -19,24 +19,27 @@ interface OrganizerPageHeaderProps {
   title: string
   description?: string
   action?: React.ReactNode
+  children?: React.ReactNode
 }
 
-export function OrganizerPageHeader({ title, description, action }: OrganizerPageHeaderProps) {
+export function OrganizerPageHeader({ title, description, action, children }: OrganizerPageHeaderProps) {
   return (
     <section className={[
-        'relative overflow-hidden rounded-[28px] border',
+        'relative rounded-[28px] border',
         'border-slate-200/80 px-5 py-5 md:px-6 md:py-6',
-        'lg:flex-row lg:items-end lg:justify-between',
         'bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(241,248,255,0.94)_46%,rgba(231,244,255,0.9)_100%)]',
         'shadow-[0_18px_55px_rgba(15,23,42,0.07)]',
       ].join(' ')}>
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 via-sky-400 to-cyan-300" aria-hidden="true" />
-      <div className="max-w-3xl">
-        <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-brand-600">Eventify</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">{title}</h1>
-        {description && <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">{description}</p>}
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 via-sky-400 to-cyan-300 rounded-t-[28px]" aria-hidden="true" />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="max-w-3xl">
+          <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-brand-600">Eventify</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">{title}</h1>
+          {description && <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 md:text-base">{description}</p>}
+        </div>
+        {action && <div className="flex flex-wrap gap-2 shrink-0">{action}</div>}
       </div>
-      {action && <div className="flex flex-wrap gap-2">{action}</div>}
+      {children && <div className="mt-5">{children}</div>}
     </section>
   )
 }

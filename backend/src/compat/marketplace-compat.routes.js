@@ -125,10 +125,7 @@ function mapVendorToMarketplaceItem(vendor) {
     serviceArea: vendor.service_area || '',
     startingPrice,
     rating: Number(vendor.rating || 0),
-    completedBookings: 0,
-    capacity: 0,
     availabilityStatus: services[0]?.availability_status || 'available',
-    eventTypeExperience: [],
     packageHighlights: services.map((s) => s.service_name).filter(Boolean),
     packageTiers: services.map((s) => ({
       name: s.service_name,
@@ -136,17 +133,8 @@ function mapVendorToMarketplaceItem(vendor) {
       description: s.description || ''
     })),
     verified: vendor.verification_status === 'verified',
-    responseTime: 'Usually responds within 24 hours',
-    responseRate: '-',
     description: vendor.business_description || services.map((s) => s.description).filter(Boolean).join(' '),
-    galleryImages: [],
-    reviews: [],
-    inclusions: [],
-    addOns: [],
-    cancellationPolicy: '',
-    bookingNotes: '',
     memberSince: vendor.created_at,
-    totalReviews: 0,
     services: services.map((s) => ({
       id: s.id,
       category: s.category,
@@ -309,6 +297,9 @@ router.post(
     }
 
     const title = `Request for ${event.title}`;
+    const vendorServiceIds = Array.isArray(req.body.vendorServiceIds)
+      ? req.body.vendorServiceIds
+      : (req.body.vendorServiceId ? [req.body.vendorServiceId] : []);
 
     const { data: pr, error: prError } = await supabaseAdmin
       .from('procurement_requests')
@@ -316,7 +307,8 @@ router.post(
         event_id: event.id,
         organizer_id: organizerId,
         vendor_id: req.body.vendorId,
-        vendor_service_id: req.body.vendorServiceId || null,
+        vendor_service_id: vendorServiceIds[0] || null,
+        vendor_service_ids: vendorServiceIds.length > 0 ? JSON.stringify(vendorServiceIds) : null,
         title,
         description: req.body.message || null,
         request_message: req.body.message || null,
@@ -335,7 +327,7 @@ router.post(
       .insert({
         request_id: pr.id,
         vendor_id: req.body.vendorId,
-        vendor_service_id: req.body.vendorServiceId || null,
+        vendor_service_id: vendorServiceIds[0] || null,
         status: 'pending'
       });
 
@@ -506,17 +498,58 @@ router.get(
   })
 );
 
+const TIME_SLOTS = [
+  { label: 'Morning (8AM - 12PM)', value: 'morning' },
+  { label: 'Afternoon (12PM - 5PM)', value: 'afternoon' },
+  { label: 'Evening (5PM - 10PM)', value: 'evening' },
+  { label: 'Full Day', value: 'full_day' },
+];
+
 router.get(
   '/vendor-marketplace/:vendorId/availability',
   asyncHandler(async (req, res) => {
     const year = Number(req.query.year) || new Date().getFullYear();
     const month = Number(req.query.month) || new Date().getMonth() + 1;
-    sendSuccess(res, {
-      vendorId: req.params.vendorId,
-      year,
-      month,
-      days: []
-    });
+    const vendorId = req.params.vendorId;
+
+    const { data: blockedDates } = await supabaseAdmin
+      .from('vendor_blocked_dates')
+      .select('date, reason')
+      .eq('vendor_id', vendorId);
+
+    const { data: bookings } = await supabaseAdmin
+      .from('bookings')
+      .select('large_events(event_date)')
+      .eq('vendor_id', vendorId)
+      .in('status', ['accepted', 'confirmed', 'completed']);
+
+    const blockedSet = new Set();
+    for (const b of blockedDates || []) {
+      blockedSet.add(new Date(b.date).toISOString().split('T')[0]);
+    }
+    for (const b of bookings || []) {
+      if (b.large_events?.event_date) {
+        blockedSet.add(new Date(b.large_events.event_date).toISOString().split('T')[0]);
+      }
+    }
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const days = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isBlocked = blockedSet.has(dateStr);
+      days.push({
+        date: dateStr,
+        status: isBlocked ? 'occupied' : 'available',
+        slots: TIME_SLOTS.map((sl) => ({
+          label: sl.label,
+          value: sl.value,
+          isOccupied: isBlocked,
+        })),
+      });
+    }
+
+    sendSuccess(res, { vendorId, year, month, days });
   })
 );
 
@@ -593,6 +626,9 @@ router.post(
     }
 
     const title = `Request for ${event.title}`;
+    const vendorServiceIds = Array.isArray(req.body.vendorServiceIds)
+      ? req.body.vendorServiceIds
+      : (req.body.vendorServiceId ? [req.body.vendorServiceId] : []);
 
     const { data: pr, error: prError } = await supabaseAdmin
       .from('procurement_requests')
@@ -600,7 +636,8 @@ router.post(
         event_id: event.id,
         organizer_id: organizerId,
         vendor_id: req.body.vendorId,
-        vendor_service_id: req.body.vendorServiceId || null,
+        vendor_service_id: vendorServiceIds[0] || null,
+        vendor_service_ids: vendorServiceIds.length > 0 ? JSON.stringify(vendorServiceIds) : null,
         title,
         description: req.body.message || null,
         request_message: req.body.message || null,
@@ -619,7 +656,7 @@ router.post(
       .insert({
         request_id: pr.id,
         vendor_id: req.body.vendorId,
-        vendor_service_id: req.body.vendorServiceId || null,
+        vendor_service_id: vendorServiceIds[0] || null,
         status: 'pending'
       });
 

@@ -19,6 +19,8 @@ export interface VendorService {
   description: string | null
   base_price: number
   availability_status: string
+  capacity: number | null
+  service_address: string | null
 }
 
 export interface VendorProfile {
@@ -84,6 +86,8 @@ export const vendorService = {
     description?: string | null
     basePrice: number
     availabilityStatus?: string
+    capacity?: number
+    serviceAddress?: string
   }) => api.post<VendorService>('/vendor/services', payload),
 
   uploadServiceImage: (formData: FormData) =>

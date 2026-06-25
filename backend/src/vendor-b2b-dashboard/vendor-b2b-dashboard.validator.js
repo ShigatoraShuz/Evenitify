@@ -12,15 +12,32 @@ const profileUpdateSchema = z.object({
   query: z.object({}).optional()
 });
 
+const SERVICE_CATEGORIES = Object.freeze([
+  'Catering',
+  'Lights and sounds',
+  'Event styling',
+  'Venue decoration',
+  'Photography',
+  'Videography',
+  'Entertainment',
+  'Security',
+  'Transportation',
+  'Equipment rental',
+  'Booth setup',
+  'Stage production',
+  'Event staff',
+  'Cleanup crew',
+])
+
 const createServiceSchema = z.object({
   body: z.object({
-    category: z.enum([
-      'Catering', 'Lights and Sounds', 'Venue', 'Photo/Video', 'Staff', 'Transport'
-    ], 'Invalid category'),
+    category: z.enum(SERVICE_CATEGORIES, 'Invalid category'),
     serviceName: z.string().min(1, 'Service name is required').max(200),
     description: z.string().max(1000).optional().nullable(),
     basePrice: z.number().min(0, 'Base price must be non-negative'),
-    availabilityStatus: z.enum(['available', 'limited', 'unavailable']).optional()
+    availabilityStatus: z.enum(['available', 'limited', 'unavailable']).optional(),
+    capacity: z.number().int().positive('Capacity must be a positive number').optional(),
+    serviceAddress: z.string().max(500).optional().nullable()
   }),
   params: z.object({}).optional(),
   query: z.object({}).optional()
@@ -28,13 +45,13 @@ const createServiceSchema = z.object({
 
 const updateServiceSchema = z.object({
   body: z.object({
-    category: z.enum([
-      'Catering', 'Lights and Sounds', 'Venue', 'Photo/Video', 'Staff', 'Transport'
-    ]).optional(),
+    category: z.enum(SERVICE_CATEGORIES).optional(),
     serviceName: z.string().min(1).max(200).optional(),
     description: z.string().max(1000).optional().nullable(),
     basePrice: z.number().min(0).optional(),
-    availabilityStatus: z.enum(['available', 'limited', 'unavailable']).optional()
+    availabilityStatus: z.enum(['available', 'limited', 'unavailable']).optional(),
+    capacity: z.number().int().positive('Capacity must be a positive number').optional(),
+    serviceAddress: z.string().max(500).optional().nullable()
   }),
   params: z.object({
     serviceId: z.string().uuid('Invalid service ID')

@@ -8,10 +8,7 @@ export interface VendorMarketplaceItem {
   serviceArea: string
   startingPrice: number
   rating: number
-  completedBookings: number
-  capacity: number
   availabilityStatus: string
-  eventTypeExperience: string[]
   packageHighlights: string[]
   packageTiers: Array<{
     name: string
@@ -19,10 +16,7 @@ export interface VendorMarketplaceItem {
     description: string
   }>
   verified: boolean
-  responseTime: string
-  responseRate: string
   description: string
-  galleryImages: Array<{ url: string; label: string }>
   services: Array<{
     id: string
     category: string
@@ -31,20 +25,7 @@ export interface VendorMarketplaceItem {
     basePrice: number
     availabilityStatus: string
   }>
-  reviews: Array<{
-    id: string
-    authorName: string
-    rating: number
-    date: string
-    text: string
-    eventType: string
-  }>
-  inclusions: string[]
-  addOns: string[]
-  cancellationPolicy: string
-  bookingNotes: string
   memberSince: string
-  totalReviews: number
 }
 
 export interface VendorMarketplaceFilters {
@@ -53,9 +34,7 @@ export interface VendorMarketplaceFilters {
   budgetMin?: number
   budgetMax?: number
   availability?: string[]
-  capacityMin?: number
   ratingMin?: number
-  eventTypeExperience?: string[]
 }
 
 export interface VendorAvailability {
@@ -81,9 +60,7 @@ export const vendorMarketplaceService = {
     if (filters?.budgetMin !== undefined) params.set('budgetMin', String(filters.budgetMin))
     if (filters?.budgetMax !== undefined) params.set('budgetMax', String(filters.budgetMax))
     if (filters?.availability?.length) params.set('availability', filters.availability.join(','))
-    if (filters?.capacityMin !== undefined) params.set('capacityMin', String(filters.capacityMin))
     if (filters?.ratingMin !== undefined) params.set('ratingMin', String(filters.ratingMin))
-    if (filters?.eventTypeExperience?.length) params.set('eventTypeExperience', filters.eventTypeExperience.join(','))
     const qs = params.toString()
     return api.get<VendorMarketplaceItem[]>(`/vendor-marketplace${qs ? `?${qs}` : ''}`)
   },

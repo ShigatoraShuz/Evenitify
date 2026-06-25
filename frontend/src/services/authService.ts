@@ -1,4 +1,4 @@
-import { api } from './apiClient'
+import { api, hasAuthToken } from './apiClient'
 
 export interface AuthResult {
   session: {
@@ -44,6 +44,8 @@ export const authService = {
   refreshSession: (refreshToken: string) =>
     api.post<AuthResult>('/auth/refresh', { refreshToken }),
 
-  logout: () =>
-    api.post<void>('/auth/logout', null),
+  logout: () => {
+    if (!hasAuthToken()) return Promise.resolve()
+    return api.post<void>('/auth/logout', {})
+  },
 }

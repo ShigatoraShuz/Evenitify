@@ -73,7 +73,6 @@ export default function VendorMarketplaceViewWrapper() {
       showGeneralInquiry={vm.showGeneralInquiry}
       requestForm={vm.requestForm}
       selectedVendor={vm.selectedVendor}
-      selectedGalleryImage={vm.selectedGalleryImage}
       selectedDate={vm.selectedDate}
       selectedTimeSlot={vm.selectedTimeSlot}
       generalInquiryMessage={vm.generalInquiryMessage}
@@ -90,7 +89,6 @@ export default function VendorMarketplaceViewWrapper() {
       onUpdateFilters={vm.updateFilters}
       onResetFilters={vm.resetFilters}
       onCloseVendorDetail={vm.closeVendorDetail}
-      onSelectGalleryImage={vm.selectGalleryImage}
       onSelectDate={vm.selectDate}
       onSelectTimeSlot={vm.selectTimeSlot}
       onCloseRequestModal={vm.closeRequestModal}

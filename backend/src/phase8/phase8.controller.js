@@ -981,22 +981,31 @@ const createOrganizerVendorRequest = asyncHandler(async (req, res) => {
     throw new AppError('Event not found', 404, 'EVENT_NOT_FOUND');
   }
 
-  const { data: vendorService } = await supabase
+  const vendorServiceIds = Array.isArray(req.body.vendorServiceIds)
+    ? req.body.vendorServiceIds
+    : (req.body.vendorServiceId ? [req.body.vendorServiceId] : []);
+
+  const { data: vendorServices } = await supabase
     .from('vendor_services')
     .select('id, service_name, category, vendor_id')
-    .eq('id', req.body.vendorServiceId || null)
-    .maybeSingle();
+    .in('id', vendorServiceIds.length > 0 ? vendorServiceIds : [null]);
 
-  if (!vendorService || vendorService.vendor_id !== req.body.vendorId) {
+  const validServices = (vendorServices || []).filter(
+    (s) => s.vendor_id === req.body.vendorId
+  );
+
+  if (validServices.length === 0 && vendorServiceIds.length > 0) {
     throw new AppError('Vendor service not found', 404, 'VENDOR_SERVICE_NOT_FOUND');
   }
+
+  const primaryService = validServices[0] || null;
 
   const { data: existing } = await supabase
     .from('procurement_requests')
     .select('id')
     .eq('event_id', event.id)
     .eq('vendor_id', req.body.vendorId)
-    .eq('vendor_service_id', vendorService.id)
+    .in('vendor_service_id', primaryService ? [primaryService.id] : [null])
     .in('status', ['open', 'pending'])
     .maybeSingle();
 
@@ -1015,8 +1024,9 @@ const createOrganizerVendorRequest = asyncHandler(async (req, res) => {
       event_id: event.id,
       organizer_id: organizerId || event.organizer_id,
       vendor_id: req.body.vendorId,
-      vendor_service_id: vendorService.id,
-      title: req.body.packageName || vendorService.service_name || 'Vendor request',
+      vendor_service_id: primaryService?.id || null,
+      vendor_service_ids: vendorServiceIds.length > 0 ? JSON.stringify(vendorServiceIds) : null,
+      title: req.body.packageName || primaryService?.service_name || 'Vendor request',
       description: requestMessage,
       request_message: requestMessage,
       budget_min: budgetMin,
@@ -1034,7 +1044,7 @@ const createOrganizerVendorRequest = asyncHandler(async (req, res) => {
     .insert({
       request_id: request.id,
       vendor_id: req.body.vendorId,
-      vendor_service_id: vendorService.id,
+      vendor_service_id: primaryService?.id || null,
       request_message: requestMessage,
       budget_min: budgetMin,
       budget_max: budgetMax,

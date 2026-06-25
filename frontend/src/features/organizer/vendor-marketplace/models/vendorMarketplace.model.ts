@@ -32,21 +32,6 @@ export interface EventBrief {
 
 export type MatchLevel = 'recommended' | 'partial' | 'none'
 
-export interface VendorGalleryImage {
-  url: string
-  label: string
-}
-
-export interface VendorReview {
-  id: string
-  authorName: string
-  authorAvatar: string
-  rating: number
-  date: string
-  text: string
-  eventType: string
-}
-
 export interface VendorMarketplaceVendor {
   id: string
   businessName: string
@@ -55,12 +40,9 @@ export interface VendorMarketplaceVendor {
   serviceArea: string
   startingPrice: number
   rating: number
-  completedBookings: number
-  capacity: number
   availabilityStatus: 'available' | 'limited' | 'unavailable'
   matchScore: number
   matchLevel: MatchLevel
-  eventTypeExperience: EventTypeId[]
   packageHighlights: string[]
   packageTiers: Array<{
     name: string
@@ -68,9 +50,7 @@ export interface VendorMarketplaceVendor {
     description: string
   }>
   verified: boolean
-  responseTime: string
   description: string
-  galleryImages: VendorGalleryImage[]
   services: Array<{
     id: string
     category: string
@@ -79,14 +59,7 @@ export interface VendorMarketplaceVendor {
     basePrice: number
     availabilityStatus: string
   }>
-  reviews: VendorReview[]
-  inclusions: string[]
-  addOns: string[]
-  cancellationPolicy: string
-  bookingNotes: string
   memberSince: string
-  responseRate: string
-  totalReviews: number
 }
 
 export type TimeSlotType = 'morning' | 'afternoon' | 'evening' | 'full_day'
@@ -133,10 +106,8 @@ export interface VendorFilterState {
   budgetMin: number | null
   budgetMax: number | null
   availability: string[]
-  capacityMin: number | null
   ratingMin: number | null
   matchLevel: MatchLevel | null
-  eventTypeExperience: EventTypeId[]
 }
 
 export const DEFAULT_VENDOR_FILTERS: VendorFilterState = {
@@ -145,10 +116,8 @@ export const DEFAULT_VENDOR_FILTERS: VendorFilterState = {
   budgetMin: null,
   budgetMax: null,
   availability: [],
-  capacityMin: null,
   ratingMin: null,
   matchLevel: null,
-  eventTypeExperience: [],
 }
 
 export type ProcurementStatus =
@@ -181,6 +150,7 @@ export interface RequestFormData {
   serviceCategory: string
   requestedBudget: string
   notes: string
+  selectedServiceIds: string[]
 }
 
 export interface CompareEntry {
@@ -205,7 +175,3 @@ export const SERVICE_OPTIONS = [
   'Cleanup crew',
 ]
 
-export const EVENT_TYPE_OPTIONS_FILTER: EventTypeId[] = [
-  'wedding', 'concert', 'corporate', 'conference', 'product-launch',
-  'festival', 'birthday', 'expo', 'private',
-]

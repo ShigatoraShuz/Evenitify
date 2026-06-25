@@ -10,16 +10,26 @@ export interface ServicePackageData {
   description: string
   basePrice: number
   availabilityStatus: string
+  capacity?: number
+  serviceAddress?: string
 }
 
 // Must match backend validator enum exactly
 const SERVICE_CATEGORIES = [
   'Catering',
-  'Lights and Sounds',
-  'Venue',
-  'Photo/Video',
-  'Staff',
-  'Transport',
+  'Lights and sounds',
+  'Event styling',
+  'Venue decoration',
+  'Photography',
+  'Videography',
+  'Entertainment',
+  'Security',
+  'Transportation',
+  'Equipment rental',
+  'Booth setup',
+  'Stage production',
+  'Event staff',
+  'Cleanup crew',
 ] as const
 
 interface ServicePackageFormProps {
@@ -34,7 +44,9 @@ export function ServicePackageForm({ onSubmit, loading, onCancel }: ServicePacka
     serviceName: '',
     description: '',
     basePrice: 0,
-    availabilityStatus: 'available'
+    availabilityStatus: 'available',
+    capacity: undefined,
+    serviceAddress: ''
   })
 
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -94,7 +106,9 @@ export function ServicePackageForm({ onSubmit, loading, onCancel }: ServicePacka
         serviceName: '',
         description: '',
         basePrice: 0,
-        availabilityStatus: 'available'
+        availabilityStatus: 'available',
+        capacity: undefined,
+        serviceAddress: ''
       })
       removeImage()
       setSuccess(true)
@@ -223,8 +237,8 @@ export function ServicePackageForm({ onSubmit, loading, onCancel }: ServicePacka
         />
       </div>
 
-      {/* Price and Status */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      {/* Price, Capacity, and Status */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <Input
           label="Base Price (₱) *"
           type="number"
@@ -232,6 +246,14 @@ export function ServicePackageForm({ onSubmit, loading, onCancel }: ServicePacka
           value={formData.basePrice || ''}
           onChange={(e) => setFormData(s => ({ ...s, basePrice: Number(e.target.value) }))}
           required
+        />
+        <Input
+          label="Max Guests"
+          type="number"
+          min="1"
+          placeholder="e.g. 100"
+          value={formData.capacity || ''}
+          onChange={(e) => setFormData(s => ({ ...s, capacity: e.target.value ? Number(e.target.value) : undefined }))}
         />
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">Availability Status</label>
@@ -248,6 +270,22 @@ export function ServicePackageForm({ onSubmit, loading, onCancel }: ServicePacka
             <option value="limited">Limited</option>
           </select>
         </div>
+      </div>
+
+      {/* Service Address */}
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-2">Service Location <span className="font-normal text-slate-400">(Optional)</span></label>
+        <textarea
+          className={[
+            'w-full px-4 py-2.5 rounded-xl border border-slate-200',
+            'focus:border-brand-500 focus:ring-brand-500/20 focus:outline-none',
+            'focus:ring-4 text-sm bg-white text-slate-900 shadow-sm transition-all resize-none',
+          ].join(' ')}
+          rows={2}
+          placeholder="e.g. 123 Main St, City"
+          value={formData.serviceAddress || ''}
+          onChange={(e) => setFormData(s => ({ ...s, serviceAddress: e.target.value }))}
+        />
       </div>
 
       {/* Action Buttons */}
