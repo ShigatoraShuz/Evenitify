@@ -2,6 +2,14 @@ const asyncHandler = require('../shared/utils/asyncHandler');
 const { sendSuccess, sendCreated } = require('../shared/utils/response');
 const vendorService = require('./vendor-b2b-dashboard.service');
 
+const uploadServiceImage = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ status: 'error', message: 'No image file provided' });
+  }
+  const imageUrl = await vendorService.uploadServiceImage(req.user, req.file);
+  return sendSuccess(res, { imageUrl });
+});
+
 const getProfile = asyncHandler(async (req, res) => {
   const profile = await vendorService.getProfile(req.user);
   return sendSuccess(res, profile);
@@ -59,4 +67,4 @@ const submitQuote = asyncHandler(async (req, res) => {
   return sendCreated(res, quote);
 });
 
-module.exports = { getProfile, updateProfile, listServices, createService, updateService, listB2BBookings, getBookingDetail, updateBookingStatus, submitQuote };
+module.exports = { getProfile, updateProfile, listServices, createService, uploadServiceImage, updateService, listB2BBookings, getBookingDetail, updateBookingStatus, submitQuote };

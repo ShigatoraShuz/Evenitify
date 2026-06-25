@@ -165,13 +165,29 @@ export function VendorDetailModal({
           <div>
             <h3 className="text-sm font-semibold text-slate-700 mb-3">Packages & Pricing</h3>
             <div className="grid gap-3 md:grid-cols-3">
-              {vendor.packageTiers.map((tier) => (
-                <div key={tier.name} className="rounded-xl border border-slate-200 p-4">
-                  <h4 className="text-sm font-bold text-slate-900">{tier.name}</h4>
-                  <p className="text-lg font-bold text-brand-600 mt-1">${tier.price.toLocaleString()}</p>
-                  <p className="text-xs text-slate-500 mt-1">{tier.description}</p>
-                </div>
-              ))}
+              {vendor.packageTiers.map((tier) => {
+                let parsedDesc: { text: string; image: string | null } = { text: tier.description || '', image: null }
+                try {
+                  if (tier.description?.startsWith('{')) {
+                    parsedDesc = JSON.parse(tier.description)
+                  }
+                } catch(e){}
+
+                return (
+                  <div key={tier.name} className="rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+                    {parsedDesc.image && (
+                      <div className="w-full h-32 bg-slate-100 border-b border-slate-100">
+                        <img src={parsedDesc.image} alt={tier.name} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="p-4 flex flex-col flex-1">
+                      <h4 className="text-sm font-bold text-slate-900">{tier.name}</h4>
+                      <p className="text-lg font-bold text-brand-600 mt-1">${tier.price.toLocaleString()}</p>
+                      <p className="text-xs text-slate-500 mt-2 flex-1">{parsedDesc.text}</p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
 

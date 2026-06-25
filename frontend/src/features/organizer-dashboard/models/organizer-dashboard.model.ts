@@ -1,13 +1,15 @@
+export type EventStatus = 'draft' | 'planning' | 'booking' | 'confirmed' | 'completed' | 'cancelled' | 'active'
+
 export interface DashboardEventPreview {
   id: string
   name: string
   eventType: string
+  status: EventStatus
+  progress: number
   date: string
   location: string
   guestCount: number
   budget: number
-  progress: number
-  status: 'draft' | 'planning' | 'active' | 'completed'
 }
 
 export interface DashboardDraft {
@@ -15,7 +17,7 @@ export interface DashboardDraft {
   name: string
   eventType: string
   lastEdited: string
-  lastCompletedStep: string
+  lastCompletedStep: number
   progress: number
 }
 
@@ -24,7 +26,9 @@ export interface DashboardVendorRequest {
   vendorName: string
   category: string
   eventName: string
-  status: 'sent' | 'pending' | 'viewed' | 'quoted' | 'negotiating' | 'accepted' | 'rejected' | 'confirmed' | 'contract_pending'
+  status: string
+  requestedBudget?: number
+  date?: string
   lastMessage: string
   lastUpdated: string
 }
@@ -36,7 +40,7 @@ export interface DashboardBooking {
   category: string
   date: string
   timeSlot: string
-  status: 'accepted' | 'confirmed' | 'contract_pending'
+  status: string
 }
 
 export interface RecommendedVendorPreview {
@@ -50,14 +54,14 @@ export interface RecommendedVendorPreview {
 
 export interface DashboardActivity {
   id: string
-  type: 'request_sent' | 'vendor_accepted' | 'vendor_rejected' | 'new_message' | 'draft_updated' | 'booking_confirmed' | 'contract_pending'
+  type: string
   description: string
   timestamp: string
 }
 
 export interface DashboardNotification {
   id: string
-  type: 'response_review' | 'confirm_booking' | 'unfinished_draft' | 'contract_pending'
+  type: string
   description: string
   linkTo: string
 }
@@ -72,6 +76,12 @@ export const STATUS_COLORS_DASHBOARD: Record<string, string> = {
   rejected: 'bg-red-100 text-red-700',
   confirmed: 'bg-green-100 text-green-700',
   contract_pending: 'bg-violet-100 text-violet-700',
+  draft: 'bg-slate-100 text-slate-700',
+  planning: 'bg-blue-100 text-blue-700',
+  booking: 'bg-purple-100 text-purple-700',
+  completed: 'bg-emerald-100 text-emerald-700',
+  cancelled: 'bg-red-100 text-red-700',
+  active: 'bg-teal-100 text-teal-700',
 }
 
 export const STATUS_LABELS_DASHBOARD: Record<string, string> = {
@@ -84,4 +94,10 @@ export const STATUS_LABELS_DASHBOARD: Record<string, string> = {
   rejected: 'Rejected',
   confirmed: 'Confirmed',
   contract_pending: 'Contract Pending',
+  draft: 'Draft',
+  planning: 'Planning',
+  booking: 'Booking',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  active: 'Active',
 }

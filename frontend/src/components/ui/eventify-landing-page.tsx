@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+﻿import { useState } from 'react'
+import { motion } from 'framer-motion'
 import {
   ShieldCheck,
   BarChart3,
@@ -13,46 +13,12 @@ import {
 import CircularTestimonials from './CircularTestimonials'
 import AnimatedMarqueeHero from './hero-3'
 import Footer7 from './footer-7'
+import { BackgroundCarousel } from '../../shared/components/BackgroundCarousel'
 
 interface SoftButtonProps {
   children: React.ReactNode
   variant?: 'primary' | 'outline'
   onClick?: () => void
-}
-
-const bgImages = [
-  'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2070&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=2070&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=2070&auto=format&fit=crop',
-]
-
-function BackgroundCarousel() {
-  const [currentIndex, setCurrentIndex] = useState(0)
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % bgImages.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [])
-
-  return (
-    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-      <div className="absolute inset-0 bg-slate-50/85 backdrop-blur-[1px] z-10" />
-      <AnimatePresence>
-        <motion.img
-          key={currentIndex}
-          src={bgImages[currentIndex]}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 0.6, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 1.5, ease: 'easeInOut' }}
-          className="absolute inset-0 w-full h-full object-cover"
-          alt="Event Background"
-        />
-      </AnimatePresence>
-    </div>
-  )
 }
 
 const navItems = [
@@ -250,14 +216,14 @@ export default function EventifyLandingPage({
 
       <main className="relative z-10">
         <AnimatedMarqueeHero
-          tagline="Eventify Organizer–Vendor Procurement Platform"
+          tagline="Eventify Organizer-Vendor Procurement Platform"
           title={
             <>
               Procure vendors for <span className="text-brand-600">Philippine events</span> with
               clarity and momentum.
             </>
           }
-          description="Eventify is a web-based Organizer–Vendor Procurement Platform that helps event organizers find, request, book, and manage vendors for large-scale events. It connects organizers, vendors, and admins in one workspace so event plans, service requests, schedules, booking statuses, and communication stay organized from planning to confirmation."
+          description="Eventify is a web-based Organizer-Vendor Procurement Platform that helps event organizers find, request, book, and manage vendors for large-scale events. It connects organizers, vendors, and admins in one workspace so event plans, service requests, schedules, booking statuses, and communication stay organized from planning to confirmation."
           ctaText="Start Planning"
           images={heroImages}
           onCtaClick={onStartPlanning}
@@ -445,7 +411,7 @@ export default function EventifyLandingPage({
                     Verified Workflow
                   </span>
                   <p className="text-sm text-brand-100/90 leading-relaxed">
-                  Secure vendor requests and organized procurement tracking for Philippine event teams.
+                    Secure vendor requests and organized procurement tracking for Philippine event teams.
                   </p>
                 </motion.div>
 
@@ -474,9 +440,7 @@ export default function EventifyLandingPage({
                     <BarChart3 size={18} className="text-brand-600" />
                   </div>
                   <AnimatedBars />
-                  <p className="text-xl font-bold text-gray-900 mt-2">
-                    ₱240,000
-                  </p>
+                  <p className="text-xl font-bold text-gray-900 mt-2">PHP 240,000</p>
                   <p className="text-xs text-slate-600">
                     Estimated event allocation for a PH event brief
                   </p>
@@ -493,17 +457,15 @@ export default function EventifyLandingPage({
                     Event Requirements
                   </span>
                   <ul className="space-y-2 mt-1">
-                    {['Catering', 'Lights & Sound', 'Venue', 'Fiesta Styling'].map(
-                      (item) => (
-                        <li
-                          key={item}
-                          className="flex items-center gap-2 text-sm text-slate-700 font-medium"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
-                          {item}
-                        </li>
-                      )
-                    )}
+                    {['Catering', 'Lights & Sound', 'Venue', 'Fiesta Styling'].map((item) => (
+                      <li
+                        key={item}
+                        className="flex items-center gap-2 text-sm text-slate-700 font-medium"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+                        {item}
+                      </li>
+                    ))}
                   </ul>
                 </motion.div>
               </div>
@@ -534,10 +496,7 @@ export default function EventifyLandingPage({
                     'Event plans stay attached to every vendor request',
                     'Shortlists stay easy to share with stakeholders',
                   ].map((item) => (
-                    <div
-                      key={item}
-                      className={sectionCard}
-                    >
+                    <div key={item} className={sectionCard}>
                       <Quote size={16} className="text-brand-600 mb-2" />
                       <p className={sectionBody}>{item}</p>
                     </div>
@@ -601,11 +560,10 @@ export default function EventifyLandingPage({
             </div>
           </div>
         </section>
-
       </main>
 
       <Footer7
-        description="Eventify is a web-based Organizer–Vendor Procurement Platform that helps organizers find, request, book, and manage vendors for large-scale events. Organizers, vendors, and admins work in one connected system for event planning, booking status tracking, scheduling, and communication."
+        description="Eventify is a web-based Organizer-Vendor Procurement Platform that helps organizers find, request, book, and manage vendors for large-scale events. Organizers, vendors, and admins work in one connected system for event planning, booking status tracking, scheduling, and communication."
         sections={[
           {
             title: 'Product',
@@ -635,7 +593,7 @@ export default function EventifyLandingPage({
             ],
           },
         ]}
-        copyright={`© ${currentYear} Eventify. Philippine event procurement platform.`}
+        copyright={`(c) ${currentYear} Eventify. Philippine event procurement platform.`}
         legalLinks={[
           { name: 'Terms and Conditions', href: '#' },
           { name: 'Privacy Policy', href: '#' },
@@ -644,3 +602,4 @@ export default function EventifyLandingPage({
     </div>
   )
 }
+

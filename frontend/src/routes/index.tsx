@@ -1,38 +1,48 @@
-import { lazy, Suspense } from 'react'
+import React, { lazy, Suspense, useState, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { NotFoundPage } from '../shared/components/NotFoundPage'
 import { UnauthorizedPage } from '../shared/components/UnauthorizedPage'
+import { FadingDots } from '../shared/components/LoadingStates'
 import type { UserProfile, UserRole } from '../services/authService'
 
-const LandingView = lazy(() => import('../features/landing/views/LandingView'))
-const LoginView = lazy(() => import('../features/auth/views/LoginViewWrapper'))
-const RegisterView = lazy(() => import('../features/auth/views/RegisterViewWrapper'))
-const ChooseRoleView = lazy(() => import('../features/auth/views/ChooseRoleViewWrapper'))
-const OrganizerDashboardView = lazy(() => import('../features/organizer-dashboard/views/OrganizerDashboardViewWrapper'))
-const OrganizerPlanEventView = lazy(() => import('../features/organizer/plan-event/views/OrganizerPlanEventViewWrapper'))
-const VendorMarketplaceView = lazy(() => import('../features/organizer/vendor-marketplace/views/VendorMarketplaceViewWrapper'))
-const VendorB2BDashboardView = lazy(() => import('../features/vendor-b2b-dashboard/views/VendorB2BDashboardViewWrapper'))
-const EventPortfolioView = lazy(() => import('../features/contract-booking/views/EventPortfolioViewWrapper'))
-const AdminDashboardView = lazy(() => import('../features/admin-operations/views/AdminDashboardViewWrapper'))
-const NotificationsView = lazy(() => import('../features/notifications/views/NotificationsViewWrapper'))
-const OnboardingView = lazy(() => import('../features/onboarding/views/OnboardingViewWrapper'))
-const VendorComparisonView = lazy(() => import('../features/vendor-comparison/views/VendorComparisonViewWrapper'))
-const OrganizerVendorStatusView = lazy(() => import('../features/organizer/vendor-status/views/OrganizerVendorStatusViewWrapper'))
-const OrganizerProfileView = lazy(() => import('../features/user-settings/views/OrganizerProfileViewWrapper'))
-const VendorProfileView = lazy(() => import('../features/user-settings/views/VendorProfileViewWrapper'))
-const AdminSettingsView = lazy(() => import('../features/user-settings/views/AdminSettingsViewWrapper'))
-const OrganizerReportsView = lazy(() => import('../features/reports/views/OrganizerReportsViewWrapper'))
-const VendorReportsView = lazy(() => import('../features/reports/views/VendorReportsViewWrapper'))
-const AdminReportsView = lazy(() => import('../features/reports/views/AdminReportsViewWrapper'))
+// Helper to enforce a minimum loading animation duration for lazy components
+function delayImport<T extends { default: React.ComponentType<any> }>(
+  importPromise: Promise<T>,
+  ms = 800
+): Promise<T> {
+  return Promise.all([
+    importPromise,
+    new Promise((resolve) => setTimeout(resolve, ms)),
+  ]).then(([moduleExports]) => moduleExports)
+}
+
+const LandingView = lazy(() => delayImport(import('../features/landing/views/LandingView')))
+const LoginView = lazy(() => delayImport(import('../features/auth/views/LoginViewWrapper')))
+const RegisterView = lazy(() => delayImport(import('../features/auth/views/RegisterViewWrapper')))
+const ChooseRoleView = lazy(() => delayImport(import('../features/auth/views/ChooseRoleViewWrapper')))
+const OrganizerDashboardView = lazy(() => delayImport(import('../features/organizer-dashboard/views/OrganizerDashboardViewWrapper')))
+const OrganizerPlanEventView = lazy(() => delayImport(import('../features/organizer/plan-event/views/OrganizerPlanEventViewWrapper')))
+const VendorMarketplaceView = lazy(() => delayImport(import('../features/organizer/vendor-marketplace/views/VendorMarketplaceViewWrapper')))
+const VendorB2BDashboardView = lazy(() => delayImport(import('../features/vendor-b2b-dashboard/views/VendorB2BDashboardViewWrapper')))
+const VendorServicesView = lazy(() => delayImport(import('../features/vendor-b2b-dashboard/views/VendorServicesViewWrapper')))
+const VendorBookingsView = lazy(() => delayImport(import('../features/vendor-b2b-dashboard/views/VendorBookingsViewWrapper')))
+const VendorAvailabilityView = lazy(() => delayImport(import('../features/vendor-b2b-dashboard/views/VendorAvailabilityViewWrapper')))
+const EventPortfolioView = lazy(() => delayImport(import('../features/contract-booking/views/EventPortfolioViewWrapper')))
+const AdminDashboardView = lazy(() => delayImport(import('../features/admin-operations/views/AdminDashboardViewWrapper')))
+const NotificationsView = lazy(() => delayImport(import('../features/notifications/views/NotificationsViewWrapper')))
+const OnboardingView = lazy(() => delayImport(import('../features/onboarding/views/OnboardingViewWrapper')))
+const VendorComparisonView = lazy(() => delayImport(import('../features/vendor-comparison/views/VendorComparisonViewWrapper')))
+const OrganizerVendorStatusView = lazy(() => delayImport(import('../features/organizer/vendor-status/views/OrganizerVendorStatusViewWrapper')))
+const OrganizerProfileView = lazy(() => delayImport(import('../features/user-settings/views/OrganizerProfileViewWrapper')))
+const VendorProfileView = lazy(() => delayImport(import('../features/user-settings/views/VendorProfileViewWrapper')))
+const AdminSettingsView = lazy(() => delayImport(import('../features/user-settings/views/AdminSettingsViewWrapper')))
+const OrganizerReportsView = lazy(() => delayImport(import('../features/reports/views/OrganizerReportsViewWrapper')))
+const VendorReportsView = lazy(() => delayImport(import('../features/reports/views/VendorReportsViewWrapper')))
+const AdminReportsView = lazy(() => delayImport(import('../features/reports/views/AdminReportsViewWrapper')))
 
 function LoadingFallback() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50" role="status" aria-live="polite">
-      <div className="animate-spin h-8 w-8 border-4 border-brand-500 border-t-transparent rounded-full" aria-hidden="true" />
-      <span className="sr-only">Loading...</span>
-    </div>
-  )
+  return <FadingDots />
 }
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
@@ -86,6 +96,24 @@ export function AppRoutes({
   const location = useLocation()
   const userRole = activeRole
   const publicAuthEntry = new URLSearchParams(location.search).get('entry') === 'landing'
+
+  const [delayedLoading, setDelayedLoading] = useState(loading)
+
+  useEffect(() => {
+    if (loading) {
+      setDelayedLoading(true)
+    } else {
+      const timer = setTimeout(() => {
+        setDelayedLoading(false)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [loading])
+
+  if (delayedLoading) {
+    return <FadingDots />
+  }
+
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
@@ -219,13 +247,34 @@ export function AppRoutes({
             </RouteGuard>
           </SuspenseWrapper>
         } />
+        <Route path="/vendor/services" element={
+          <SuspenseWrapper>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
+              <PageTransition><VendorServicesView /></PageTransition>
+            </RouteGuard>
+          </SuspenseWrapper>
+        } />
+        <Route path="/vendor/bookings" element={
+          <SuspenseWrapper>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
+              <PageTransition><VendorBookingsView /></PageTransition>
+            </RouteGuard>
+          </SuspenseWrapper>
+        } />
+        <Route path="/vendor/availability" element={
+          <SuspenseWrapper>
+            <RouteGuard authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
+              <PageTransition><VendorAvailabilityView /></PageTransition>
+            </RouteGuard>
+          </SuspenseWrapper>
+        } />
         <Route path="/404" element={
           <SuspenseWrapper>
             <PageTransition><NotFoundPage /></PageTransition>
           </SuspenseWrapper>
         } />
         <Route path="*" element={
-          loading ? <LoadingFallback /> : <PageTransition><NotFoundPage /></PageTransition>
+          loading ? <FadingDots /> : <PageTransition><NotFoundPage /></PageTransition>
         } />
       </Routes>
     </AnimatePresence>

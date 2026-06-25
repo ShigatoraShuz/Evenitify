@@ -1,5 +1,5 @@
 const AppError = require('../shared/utils/appError');
-const { supabase } = require('../config/supabase');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 const vendorRepository = require('./vendor-b2b-dashboard.repository');
 
 async function getProfile(actor) {
@@ -37,6 +37,33 @@ async function listServices(actor) {
   }
 
   return vendorRepository.listServices(profile.id);
+}
+
+async function uploadServiceImage(actor, file) {
+  const profile = await vendorRepository.findByUserId(actor.id);
+  if (!profile) {
+    throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
+  }
+
+  const fileName = `services/${profile.id}/${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+
+  const { data, error } = await supabaseAdmin.storage
+    .from('public-assets')
+    .upload(fileName, file.buffer, {
+      contentType: file.mimetype,
+      upsert: false
+    });
+
+  if (error) {
+    console.error('Supabase upload error:', error);
+    throw new AppError('Failed to upload image', 500, 'UPLOAD_FAILED');
+  }
+
+  const { data: publicData } = supabaseAdmin.storage
+    .from('public-assets')
+    .getPublicUrl(fileName);
+
+  return publicData.publicUrl;
 }
 
 async function createService(actor, payload) {
@@ -204,6 +231,7 @@ module.exports = {
   updateProfile,
   listServices,
   createService,
+  uploadServiceImage,
   updateService,
   searchVendors,
   getVendorProfile,

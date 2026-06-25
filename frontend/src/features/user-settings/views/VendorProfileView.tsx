@@ -53,7 +53,7 @@ export function VendorProfileView({
     <DashboardShell>
       <PageHeader
         title="Vendor Profile"
-        subtitle="Manage your business details"
+        subtitle="Manage your business details and service areas"
         action={
           <Button onClick={onSaveProfile} loading={submitting} disabled={!hasChanges}>
             Save Changes
@@ -61,56 +61,74 @@ export function VendorProfileView({
         }
       />
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex justify-between items-center">
-          <span>{error}</span>
-          <button onClick={onClearError} className="text-red-500 hover:text-red-700">&times;</button>
-        </div>
-      )}
+      <div className="mt-8 max-w-3xl space-y-6">
+        {error && (
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-700 flex justify-between items-center shadow-sm">
+            <span className="font-medium">{error}</span>
+            <button onClick={onClearError} className="text-rose-500 hover:text-rose-700">&times;</button>
+          </div>
+        )}
 
-      {saved && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-          Profile saved successfully.
-        </div>
-      )}
+        {saved && (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700 font-medium shadow-sm">
+            Profile saved successfully.
+          </div>
+        )}
 
-      {hasChanges && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700">
-          You have unsaved changes.
-        </div>
-      )}
+        {hasChanges && (
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700 font-medium shadow-sm">
+            You have unsaved changes. Don't forget to save!
+          </div>
+        )}
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 max-w-lg space-y-4">
-        <ValidationSummary errors={validationErrors} />
-        <Input
-          label="Business Name"
-          value={profile.businessName}
-          onChange={(e) => onUpdateProfile({ businessName: e.target.value })}
-          required
-        />
-        <Select
-          label="Service Area"
-          value={profile.serviceArea}
-          onChange={(e) => onUpdateProfile({ serviceArea: e.target.value })}
-          options={SERVICE_AREAS.map((a) => ({ value: a, label: a }))}
-          required
-        />
-        <Input
-          label="Phone"
-          type="tel"
-          value={profile.phone}
-          onChange={(e) => onUpdateProfile({ phone: e.target.value })}
-          required
-        />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Business Description</label>
-          <textarea
-            value={profile.businessDescription}
-            onChange={(e) => onUpdateProfile({ businessDescription: e.target.value })}
-            rows={4}
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm"
-          />
-        </div>
+        <section className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+          <div className="mb-6 pb-6 border-b border-slate-100">
+            <h3 className="text-lg font-semibold text-slate-900">Basic Information</h3>
+            <p className="text-sm text-slate-500 mt-1">This information will be displayed to organizers on the marketplace.</p>
+          </div>
+
+          <ValidationSummary errors={validationErrors} />
+          
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="col-span-2">
+              <Input
+                label="Business Name"
+                placeholder="e.g. Prestige Events Photography"
+                value={profile.businessName}
+                onChange={(e) => onUpdateProfile({ businessName: e.target.value })}
+                required
+              />
+            </div>
+            
+            <Select
+              label="Service Area"
+              value={profile.serviceArea}
+              onChange={(e) => onUpdateProfile({ serviceArea: e.target.value })}
+              options={SERVICE_AREAS.map((a) => ({ value: a, label: a }))}
+              required
+            />
+            
+            <Input
+              label="Contact Phone"
+              type="tel"
+              placeholder="+1 (555) 000-0000"
+              value={profile.phone}
+              onChange={(e) => onUpdateProfile({ phone: e.target.value })}
+              required
+            />
+            
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Business Description</label>
+              <textarea
+                value={profile.businessDescription}
+                onChange={(e) => onUpdateProfile({ businessDescription: e.target.value })}
+                rows={5}
+                placeholder="Tell organizers about your experience, your team, and what makes your services unique..."
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-brand-500/20 focus:border-brand-500 text-sm transition-all shadow-sm resize-none bg-white placeholder:text-slate-400 text-slate-900"
+              />
+            </div>
+          </div>
+        </section>
       </div>
     </DashboardShell>
   )

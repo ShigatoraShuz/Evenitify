@@ -52,13 +52,6 @@ const OPTIONS: RoleOption[] = [
     icon: Store,
     image: createPlaceholderImage('Vendor', '#0f766e', 'Manage services and B2B requests'),
     imageAlt: 'Vendor role illustration'
-  },
-  {
-    label: 'Organizer + Vendor',
-    roles: ['organizer', 'vendor'],
-    icon: Repeat2,
-    image: createPlaceholderImage('Dual Role', '#7c3aed', 'Switch between organizer and vendor'),
-    imageAlt: 'Dual role illustration'
   }
 ]
 
@@ -70,7 +63,7 @@ export function ChooseRoleView({ loading, onChoose, onBack }: ChooseRoleViewProp
           <h1 className="text-3xl font-bold text-slate-900">Choose your role</h1>
           <p className="mt-2 text-sm text-slate-500">Select how you want to use Eventify.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
           {OPTIONS.map((option) => {
             const Icon = option.icon
             return (

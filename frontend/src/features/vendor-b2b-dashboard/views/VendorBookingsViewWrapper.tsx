@@ -1,30 +1,39 @@
+import { useEffect } from 'react'
 import { useVendorB2BDashboard } from '../viewmodels/useVendorB2BDashboard'
-import { VendorB2BDashboardView } from './VendorB2BDashboardView'
+import { VendorBookingsView } from './VendorBookingsView'
+import type { VendorB2BBookingStatus } from '../models/vendor-b2b-dashboard.model'
 import { useRealtimeSnapshot } from '../../../shared/hooks/useRealtimeSnapshot'
 
-export default function VendorB2BDashboardViewWrapper() {
+export default function VendorBookingsViewWrapper() {
   const vm = useVendorB2BDashboard()
   const realtime = useRealtimeSnapshot('vendor:bookings')
 
+  useEffect(() => {
+    void vm.loadBookings()
+  }, [vm.loadBookings])
+
   return (
-    <VendorB2BDashboardView
+    <VendorBookingsView
       bookings={vm.bookings}
       selectedBooking={vm.selectedBooking}
       activeTab={vm.activeTab}
-      activeTypeTab={vm.activeTypeTab}
       loading={vm.loading}
       submitting={vm.submitting}
       error={vm.error}
+      contract={vm.contract}
+      contractLoading={vm.contractLoading}
+      auditActivities={vm.auditActivities}
+      bookingMessages={vm.bookingMessages}
       realtimeSnapshot={realtime.snapshot}
       realtimeRefreshing={realtime.refreshing}
-      onLoadBookings={vm.loadBookings}
       onRefreshRealtime={realtime.refresh}
-      onSetTab={vm.setTab}
-      onSetTypeTab={vm.setTypeTab}
+      onLoadBookings={vm.loadBookings}
+      onSetTab={(tab: string) => vm.setTab(tab as VendorB2BBookingStatus | 'all')}
       onSelectBooking={vm.selectBooking}
       onUpdateStatus={vm.updateStatus}
-      onSubmitQuote={vm.submitQuote}
       onClearError={vm.clearError}
+      onLoadContract={vm.loadContract}
+      onSignVendorContract={vm.signVendorContract}
     />
   )
 }

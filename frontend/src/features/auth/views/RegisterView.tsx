@@ -4,6 +4,7 @@ import { ClipboardCheck } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { Input } from '../../../shared/components/Input'
 import { ValidationSummary } from '../../../shared/components/ValidationSummary'
+import { BackgroundCarousel } from '../../../shared/components/BackgroundCarousel'
 
 interface RegisterViewProps {
   onRegister: (email: string, password: string, displayName: string) => Promise<void>
@@ -32,137 +33,146 @@ export function RegisterView({ onRegister, onSwitchToLogin, loading, error }: Re
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
-      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-12 relative overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: 'radial-gradient(circle at 25% 50%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }}
-        />
-        <div className="relative z-10 flex flex-col justify-between h-full">
-          <div>
-            <div className="flex items-center gap-2 mb-10">
-              <span className="text-2xl font-bold text-white">Eventify</span>
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-300 border border-brand-400/30 rounded px-1.5 py-0.5">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-8 relative overflow-hidden bg-transparent">
+      <BackgroundCarousel />
+      <div className="absolute top-20 left-1/4 w-96 h-96 bg-brand-500/15 rounded-full blur-[100px] pointer-events-none z-0" />
+      <div className="absolute top-40 right-1/4 w-96 h-96 bg-teal-500/15 rounded-full blur-[100px] pointer-events-none z-0" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative z-10 w-full max-w-[1000px] min-h-[600px] flex flex-col lg:flex-row rounded-3xl overflow-hidden bg-white/90 backdrop-blur-sm shadow-xl border border-slate-100"
+      >
+        <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-brand-50 to-white p-12 relative overflow-hidden border-r border-slate-100">
+          <div
+            className="absolute inset-0 opacity-[0.4]"
+            style={{ backgroundImage: 'radial-gradient(circle at 25% 50%, #e2e8f0 1px, transparent 1px)', backgroundSize: '40px 40px' }}
+          />
+          <div className="relative z-10 flex flex-col justify-between h-full">
+            <div>
+              <div className="flex items-center gap-2 mb-10">
+                <span className="text-2xl font-bold text-brand-600">Eventify</span>
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-500 border border-brand-200 bg-brand-50 rounded px-1.5 py-0.5">
+                  B2B
+                </span>
+              </div>
+              <div className="space-y-5">
+                <div className="w-14 h-14 rounded-2xl bg-brand-100 flex items-center justify-center border border-brand-200">
+                  <ClipboardCheck className="text-brand-600" size={26} />
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900 leading-tight">
+                  Join the Eventify network
+                </h2>
+                <p className="text-slate-600 text-base leading-relaxed max-w-sm">
+                  Connect with verified vendors or manage your event procurement — all in one organized workspace.
+                </p>
+              </div>
+            </div>
+            <div className="border-t border-slate-200 pt-6">
+              <p className="text-slate-500 text-sm font-medium">Trusted by 40+ vendor categories</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full max-w-md">
+            <div className="lg:hidden flex items-center gap-2 mb-8">
+              <span className="text-xl font-bold text-slate-900">Eventify</span>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-600 border border-brand-200 bg-brand-50 rounded px-1.5 py-0.5">
                 B2B
               </span>
             </div>
-            <div className="space-y-5">
-              <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center">
-                <ClipboardCheck className="text-brand-300" size={26} />
-              </div>
-              <h2 className="text-3xl font-bold text-white leading-tight">
-                Join the Eventify network
-              </h2>
-              <p className="text-brand-200 text-base leading-relaxed max-w-sm">
-                Connect with verified vendors or manage your event procurement — all in one organized workspace.
-              </p>
-            </div>
-          </div>
-          <div className="border-t border-white/10 pt-6">
-            <p className="text-brand-300 text-sm">Trusted by 40+ vendor categories</p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <h1 className="text-3xl font-semibold text-slate-900 tracking-tight">Create your account</h1>
+              <p className="text-slate-500 mt-2 mb-8">Get started with Eventify</p>
+            </motion.div>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600"
+              >
+                {error}
+              </motion.div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <ValidationSummary errors={validationErrors} />
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+              >
+                <Input
+                  label="Email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.13 }}
+              >
+                <Input
+                  label="Password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  minLength={6}
+                  required
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.16 }}
+              >
+                <Input
+                  label="Organization / Business Name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Your company name"
+                  required
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.19 }}
+              >
+                <Button type="submit" loading={loading} fullWidth>
+                  Create account
+                </Button>
+              </motion.div>
+            </form>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="mt-8 text-center text-sm text-slate-500"
+            >
+              Already have an account?{' '}
+              <button
+                onClick={onSwitchToLogin}
+                className="text-brand-600 hover:text-brand-700 font-medium transition-colors"
+              >
+                Sign in
+              </button>
+            </motion.p>
           </div>
         </div>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <span className="text-xl font-bold text-brand-600">Eventify</span>
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-brand-500 border border-brand-200 rounded px-1.5 py-0.5">
-              B2B
-            </span>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <h1 className="text-2xl font-semibold text-gray-900">Create your account</h1>
-            <p className="text-gray-500 mt-1 mb-8">Get started with Eventify</p>
-          </motion.div>
-
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"
-            >
-              {error}
-            </motion.div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <ValidationSummary errors={validationErrors} />
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-            >
-              <Input
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.13 }}
-            >
-              <Input
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
-                minLength={6}
-                required
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.16 }}
-            >
-              <Input
-                label="Organization / Business Name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your company name"
-                required
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.19 }}
-            >
-              <Button type="submit" loading={loading} fullWidth>
-                Create account
-              </Button>
-            </motion.div>
-          </form>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="mt-8 text-center text-sm text-gray-500"
-          >
-            Already have an account?{' '}
-            <button
-              onClick={onSwitchToLogin}
-              className="text-brand-600 hover:text-brand-700 font-medium"
-            >
-              Sign in
-            </button>
-          </motion.p>
-        </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
