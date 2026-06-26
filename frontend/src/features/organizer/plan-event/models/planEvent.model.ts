@@ -92,7 +92,7 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   {
     id: 'wedding',
     label: 'Wedding',
-    description: 'Ceremony, reception, flowers, photography, and guest flow.',
+    description: 'Ceremony, reception, florals, photos, and guest flow.',
     recommendedServices: ['Catering', 'Venue decoration', 'Photography', 'Videography', 'Entertainment', 'Florist'],
     defaultTheme: 'Romantic ivory',
     mood: 'Warm, elegant, and celebratory'
@@ -100,7 +100,7 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   {
     id: 'concert',
     label: 'Concert',
-    description: 'Large crowd movement, staging, AV, and security planning.',
+    description: 'Crowd movement, staging, AV, and security.',
     recommendedServices: ['Lights and sounds', 'Stage production', 'Security', 'Entertainment', 'Equipment rental', 'Event staff'],
     defaultTheme: 'High contrast performance',
     mood: 'Energetic, immersive, and bold'
@@ -108,7 +108,7 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   {
     id: 'corporate',
     label: 'Corporate event',
-    description: 'Brand-forward business gatherings, awards, and team events.',
+    description: 'Brand-led gatherings, awards, and team events.',
     recommendedServices: ['Catering', 'Event styling', 'Booth setup', 'Photography', 'Event staff', 'Transportation'],
     defaultTheme: 'Clean corporate slate',
     mood: 'Professional, polished, and efficient'
@@ -116,7 +116,7 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   {
     id: 'conference',
     label: 'Conference',
-    description: 'Multi-session agenda, breakout spaces, and speaker logistics.',
+    description: 'Breakout sessions, speakers, and room logistics.',
     recommendedServices: ['Lights and sounds', 'Stage production', 'Booth setup', 'Event staff', 'Security', 'Transportation'],
     defaultTheme: 'Editorial conference grid',
     mood: 'Focused, informed, and structured'
@@ -124,7 +124,7 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   {
     id: 'product-launch',
     label: 'Product launch',
-    description: 'Reveal moments, branded staging, media coverage, and demos.',
+    description: 'Reveal moments, demos, and media coverage.',
     recommendedServices: ['Stage production', 'Lights and sounds', 'Event styling', 'Photography', 'Videography', 'Booth setup'],
     defaultTheme: 'Launch-night chrome',
     mood: 'Fresh, premium, and media ready'
@@ -132,7 +132,7 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   {
     id: 'festival',
     label: 'Festival',
-    description: 'Zones, queues, multiple vendors, and atmosphere across the site.',
+    description: 'Zones, queues, vendors, and atmosphere.',
     recommendedServices: ['Security', 'Lights and sounds', 'Booth setup', 'Event staff', 'Transportation', 'Cleanup crew'],
     defaultTheme: 'Outdoor festival layers',
     mood: 'Alive, social, and high-energy'
@@ -140,7 +140,7 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   {
     id: 'birthday',
     label: 'Birthday',
-    description: 'Personal celebration with flexible decor and dining choices.',
+    description: 'Personal celebration with flexible decor and dining.',
     recommendedServices: ['Catering', 'Venue decoration', 'Photography', 'Entertainment', 'Event styling'],
     defaultTheme: 'Playful celebration',
     mood: 'Joyful, casual, and expressive'
@@ -148,7 +148,7 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   {
     id: 'expo',
     label: 'Expo',
-    description: 'Exhibitor traffic, booth planning, demos, and logistics.',
+    description: 'Exhibitor traffic, booths, demos, and logistics.',
     recommendedServices: ['Booth setup', 'Equipment rental', 'Event staff', 'Security', 'Transportation', 'Lights and sounds'],
     defaultTheme: 'Exhibition hall grid',
     mood: 'Commercial, clear, and scalable'
@@ -156,7 +156,7 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   {
     id: 'private',
     label: 'Private event',
-    description: 'Invite-only gathering with tailored guest experience.',
+    description: 'Invite-only gathering with tailored guest flow.',
     recommendedServices: ['Catering', 'Venue decoration', 'Photography', 'Event styling', 'Security'],
     defaultTheme: 'Intimate lounge',
     mood: 'Exclusive, calm, and refined'
@@ -164,7 +164,7 @@ export const EVENT_TYPE_OPTIONS: EventTypeOption[] = [
   {
     id: 'custom',
     label: 'Custom event',
-    description: 'Build a tailored setup from the ground up.',
+    description: 'Build a tailored event from the ground up.',
     recommendedServices: ['Catering', 'Event styling', 'Lights and sounds', 'Security', 'Event staff'],
     defaultTheme: 'Custom planning system',
     mood: 'Flexible, curated, and adaptable'
