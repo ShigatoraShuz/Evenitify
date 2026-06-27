@@ -39,10 +39,10 @@ export function NotificationDropdown({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        className="relative rounded-full border border-white/10 bg-white/5 p-2.5 text-slate-200 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
         aria-label="Notifications"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -51,19 +51,19 @@ export function NotificationDropdown({
           />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-xs font-medium text-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl border border-gray-200 shadow-lg z-50 max-h-96 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b">
-            <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+        <div className="absolute right-0 z-50 mt-2 max-h-96 w-80 overflow-hidden rounded-[24px] border border-white/10 bg-slate-950/95 shadow-[0_24px_60px_rgba(2,6,23,0.45)] backdrop-blur-xl">
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <h3 className="text-sm font-semibold text-white">Notifications</h3>
             <button
               onClick={() => navigate('/notifications')}
-              className="text-xs text-brand-600 hover:text-brand-700"
+              className="text-xs font-semibold text-cyan-200 hover:text-cyan-100"
             >
               View All
             </button>
@@ -73,34 +73,34 @@ export function NotificationDropdown({
             {loading ? (
               <div className="p-4 space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />
+                  <div key={i} className="h-12 rounded-2xl bg-white/5 animate-pulse" />
                 ))}
               </div>
             ) : notifications.length === 0 ? (
-              <div className="p-6 text-center text-sm text-gray-500">
+              <div className="p-6 text-center text-sm text-slate-400">
                 No new notifications
               </div>
             ) : (
-              <div className="divide-y">
+              <div className="divide-y divide-white/[0.08]">
                 {notifications.slice(0, 5).map((notification) => (
                   <div
                     key={notification.id}
-                    className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${
-                      !notification.is_read ? 'bg-brand-50/30' : ''
+                    className={`cursor-pointer px-4 py-3 transition-colors hover:bg-white/[0.06] ${
+                      !notification.is_read ? 'bg-cyan-500/10' : ''
                     }`}
                     onClick={() => {
                       if (notification.action_url) navigate(notification.action_url)
                       if (!notification.is_read) onMarkAsRead(notification.id)
                       setOpen(false)
                     }}
-                  >
+                    >
                     <div className="flex items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{notification.title}</p>
-                        <p className="text-xs text-gray-500 line-clamp-1">{notification.message}</p>
+                        <p className="truncate text-sm font-medium text-white">{notification.title}</p>
+                        <p className="line-clamp-1 text-xs text-slate-400">{notification.message}</p>
                       </div>
                       {!notification.is_read && (
-                        <span className="w-2 h-2 bg-brand-500 rounded-full flex-shrink-0 mt-1" />
+                        <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-cyan-300" />
                       )}
                     </div>
                   </div>

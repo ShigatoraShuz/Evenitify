@@ -27,13 +27,14 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
     >
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-        <p className="text-sm text-gray-600 mb-6">{message}</p>
-        <div className="flex justify-end gap-3">
+      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-slate-950 p-6 text-slate-100 shadow-[0_30px_90px_rgba(2,6,23,0.55)]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-rose-200/80">Confirm action</p>
+        <h3 className="mt-2 text-xl font-semibold text-white">{title}</h3>
+        <p className="mt-2 text-sm leading-6 text-slate-300">{message}</p>
+        <div className="mt-6 flex justify-end gap-3">
           <Button variant="secondary" onClick={onCancel} disabled={loading}>
             {cancelLabel}
           </Button>

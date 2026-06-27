@@ -35,22 +35,21 @@ function ToastItem({ toast, onRemove }: { toast: ToastData; onRemove: (id: strin
   }, [toast.id, onRemove])
 
   const colors = {
-    success: 'bg-green-50 border-green-200 text-green-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
-    info: 'bg-blue-50 border-blue-200 text-blue-800'
+    success: 'border-emerald-200/60 bg-emerald-50/95 text-emerald-900',
+    error: 'border-rose-200/60 bg-rose-50/95 text-rose-900',
+    info: 'border-cyan-200/60 bg-cyan-50/95 text-cyan-900'
   }
 
   return (
     <div
       className={[
-        'flex items-center gap-2 px-4 py-3 rounded-lg border shadow-lg',
-        'text-sm min-w-[280px] transition-all duration-300',
+        'flex min-w-[280px] items-center gap-3 rounded-2xl border px-4 py-3 text-sm shadow-[0_18px_45px_rgba(2,6,23,0.18)] backdrop-blur-xl transition-all duration-300',
         colors[toast.type],
         exiting ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0',
       ].join(' ')}
     >
-      <span className="flex-1">{toast.message}</span>
-      <button onClick={() => onRemove(toast.id)} className="text-current opacity-50 hover:opacity-100">&times;</button>
+      <span className="flex-1 leading-5">{toast.message}</span>
+      <button onClick={() => onRemove(toast.id)} className="rounded-full border border-current/10 bg-white/60 px-2 py-1 text-current/70 transition-opacity hover:text-current">&times;</button>
     </div>
   )
 }

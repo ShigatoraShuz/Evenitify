@@ -8,10 +8,14 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
   const colorClass = STATUS_COLORS[status] || 'bg-slate-100 text-slate-600 border-slate-200'
   const label = status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-  const sizeClass = size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs'
+  const sizeClass = size === 'sm' ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'
 
   return (
-    <span className={`inline-flex items-center rounded-full border border-current/10 font-semibold shadow-sm transition-all duration-200 ${colorClass} ${sizeClass}`}>
+    <span className={[
+      'inline-flex items-center rounded-full border border-current/10 font-semibold shadow-[0_8px_20px_rgba(15,23,42,0.06)] transition-all duration-200',
+      colorClass,
+      sizeClass,
+    ].join(' ')}>
       <span className="mr-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
       {label}
     </span>

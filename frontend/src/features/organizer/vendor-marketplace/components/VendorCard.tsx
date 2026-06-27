@@ -38,11 +38,13 @@ export function VendorCard({
 
   return (
     <article className={[
-        'group relative rounded-[24px] border border-slate-200/80',
-        'bg-white/95 p-5 shadow-[0_14px_42px_rgba(15,23,42,0.05)]',
+        'group relative overflow-hidden rounded-[26px] border border-slate-200/80',
+        'bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(247,250,252,0.95)_100%)] p-5',
+        'shadow-[0_14px_42px_rgba(15,23,42,0.05)]',
         'transition-all hover:-translate-y-0.5 hover:border-brand-200',
         'hover:shadow-[0_22px_60px_rgba(15,23,42,0.09)]',
       ].join(' ')}>
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 via-cyan-400 to-emerald-400" aria-hidden="true" />
       <div className="absolute right-4 top-4 flex items-center gap-1.5">
         <button
           onClick={(event) => { event.stopPropagation(); onToggleSave(vendor.id) }}
@@ -70,7 +72,7 @@ export function VendorCard({
 
       <button type="button" onClick={() => onCardClick(vendor)} className="block w-full cursor-pointer text-left focus:outline-none">
         <div className="mb-4 flex items-start gap-3 pr-16">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-brand-50 text-sm font-bold text-brand-700">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-brand-100 bg-[linear-gradient(135deg,rgba(8,145,178,0.14),rgba(16,185,129,0.14))] text-sm font-bold text-brand-700 shadow-sm">
             {vendor.businessName.slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
@@ -123,8 +125,8 @@ export function VendorCard({
         <button
           onClick={() => onCardClick(vendor)}
           className={[
-            'inline-flex items-center justify-center gap-1.5 rounded-xl',
-            'bg-brand-600 px-3 py-2 text-xs font-semibold text-white',
+            'inline-flex items-center justify-center gap-1.5 rounded-xl border border-brand-600/20',
+            'bg-brand-600 px-3 py-2 text-xs font-semibold text-white shadow-sm',
             'transition-colors hover:bg-brand-700 focus:outline-none',
             'focus:ring-2 focus:ring-brand-200',
           ].join(' ')}

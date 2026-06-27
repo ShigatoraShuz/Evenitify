@@ -374,7 +374,7 @@ export function OrganizerDashboardView({
                   return (
                     <div key={activity.id} className="flex items-start gap-3 bg-slate-50 rounded-xl border border-slate-200 p-3.5 transition-shadow hover:shadow-sm">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-                        <Icon className="w-4.5 h-4.5" />
+                        <Icon className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm text-slate-700">{activity.description}</p>
@@ -403,7 +403,7 @@ export function OrganizerDashboardView({
                       className="w-full text-left flex items-start gap-3 bg-slate-50 rounded-xl border border-slate-200 p-3.5 hover:border-brand-200 transition-all shadow-sm"
                     >
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-                        <Icon className="w-4.5 h-4.5" />
+                        <Icon className="h-4 w-4" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm text-slate-700">{notification.description}</p>

@@ -28,7 +28,7 @@ export function PlaceholderMedia({
   chips = []
 }: PlaceholderMediaProps) {
   return (
-    <div className={`overflow-hidden rounded-[22px] border bg-white shadow-sm ${toneClasses[tone]} ${compact ? 'max-w-full' : ''}`}>
+    <div className={`overflow-hidden rounded-[26px] border bg-white shadow-[0_16px_45px_rgba(15,23,42,0.07)] ${toneClasses[tone]} ${compact ? 'max-w-full' : ''}`}>
       <div className={`relative overflow-hidden ${compact ? 'aspect-[16/11]' : 'aspect-[4/3]'}`}>
         {imageUrl ? (
           <img
@@ -41,7 +41,7 @@ export function PlaceholderMedia({
         ) : (
           <div className="h-full w-full bg-[linear-gradient(135deg,rgba(255,255,255,0.95)_0%,rgba(241,248,255,0.9)_50%,rgba(224,242,254,0.9)_100%)]" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-slate-950/0 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-slate-950/0 to-transparent" />
         <div className="absolute left-3 top-3 flex items-start gap-2">
           <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-700 shadow-sm">
             {title}
@@ -50,7 +50,7 @@ export function PlaceholderMedia({
         </div>
       </div>
       <div className={`space-y-3 ${compact ? 'p-3' : 'p-4'}`}>
-        {subtitle && <p className="text-sm leading-5 text-slate-600">{subtitle}</p>}
+        {subtitle && <p className="text-sm leading-6 text-slate-600">{subtitle}</p>}
         {chips.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {chips.map((chip) => (

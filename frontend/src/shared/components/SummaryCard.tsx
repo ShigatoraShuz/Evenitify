@@ -18,12 +18,15 @@ export function SummaryCard({ label, value, color = 'text-slate-900', sub }: Sum
   else if (color.includes('text-cyan-')) borderAccent = 'border-l-cyan-500'
 
   return (
-    <div className={`rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 ${borderAccent}`}>
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">{label}</p>
-        <p className={`mt-2 text-3xl font-semibold tracking-tight ${color}`}>{value}</p>
+    <div className={`relative overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(245,248,252,0.93)_100%)] p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_26px_65px_rgba(15,23,42,0.12)] border-l-4 ${borderAccent}`}>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.08),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.08),transparent_26%)]" aria-hidden="true" />
+      <div className="relative flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">{label}</p>
+          <p className={`mt-2 text-3xl font-semibold tracking-tight ${color}`}>{value}</p>
+        </div>
       </div>
-      {sub && <p className="mt-3 border-t border-slate-100 pt-3 text-xs font-medium text-slate-500">{sub}</p>}
+      {sub && <p className="relative mt-4 border-t border-slate-100 pt-3 text-xs font-medium leading-5 text-slate-500">{sub}</p>}
     </div>
   )
 }

@@ -18,33 +18,34 @@ export function VendorRequestCard({ request, onClick }: Props) {
     <button
       onClick={onClick}
       className={[
-        'group w-full rounded-[22px] border border-slate-200 bg-white',
+        'group relative w-full overflow-hidden rounded-[24px] border border-slate-200/80 bg-white',
         'p-4 text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)]',
         'transition-all hover:-translate-y-0.5 hover:border-brand-200',
         'hover:shadow-[0_18px_45px_rgba(15,23,42,0.08)]',
         'focus:outline-none focus:ring-2 focus:ring-brand-200',
       ].join(' ')}
     >
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 via-brand-500 to-cyan-400" aria-hidden="true" />
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-slate-900 truncate">{request.vendorName}</span>
-            <span className="text-xs text-slate-400">•</span>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="truncate font-semibold text-slate-900">{request.vendorName}</span>
+            <span className="text-xs text-slate-400">·</span>
             <span className="text-sm text-slate-500">{request.vendorCategory}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-brand-600 mb-2">
-            <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
+          <div className="mb-2 flex items-center gap-2 text-sm text-brand-600">
+            <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="truncate">{request.eventName}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
             <span className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5" />
+              <Calendar className="h-3.5 w-3.5" />
               {new Date(request.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
             <span className="flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5" />
+              <MapPin className="h-3.5 w-3.5" />
               {request.location}
             </span>
             {request.quotedPrice != null && (
@@ -52,7 +53,7 @@ export function VendorRequestCard({ request, onClick }: Props) {
             )}
           </div>
 
-          <p className="text-sm text-slate-500 mt-2 line-clamp-1">{request.lastMessage}</p>
+          <p className="mt-2 line-clamp-1 text-sm text-slate-500">{request.lastMessage}</p>
 
           {requestedServices.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -68,11 +69,11 @@ export function VendorRequestCard({ request, onClick }: Props) {
           )}
         </div>
 
-        <div className="flex flex-col items-end gap-2 flex-shrink-0">
-          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColor}`}>
+        <div className="flex flex-shrink-0 flex-col items-end gap-2">
+          <span className={`rounded-full px-2.5 py-1 text-xs font-medium shadow-sm ${statusColor}`}>
             {STATUS_LABELS[request.status]}
           </span>
-          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-400 transition-colors" />
+          <ChevronRight className="h-4 w-4 text-slate-300 transition-colors group-hover:text-brand-400" />
         </div>
       </div>
     </button>

@@ -324,7 +324,7 @@ export function VendorProcurementView({
 
       {currentStep === 'vendors' && (
         !selectedRequirement ? (
-          <div className="rounded-xl border border-dashed border-slate-350 bg-slate-50/50 p-8 text-center">
+          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center">
             <div className="max-w-md mx-auto py-6">
               <h3 className="text-lg font-bold text-slate-900 mb-2">No Requirement Selected</h3>
               <p className="text-slate-500 text-sm mb-6">Select a requirement in the first step to search and discover matching verified vendors.</p>

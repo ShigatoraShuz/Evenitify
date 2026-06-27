@@ -12,10 +12,10 @@ export function ReportMetricGrid({ metrics }: { metrics: ReportMetric[] }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {metrics.map((metric) => (
-        <div key={metric.label} className={`rounded-lg border bg-white p-4 ${toneClasses[metric.tone || 'neutral']}`}>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{metric.label}</p>
-          <p className="mt-2 text-2xl font-semibold">{metric.value}</p>
-          {metric.helper && <p className="mt-1 text-xs text-slate-500">{metric.helper}</p>}
+        <div key={metric.label} className={`rounded-[28px] border bg-white/95 p-4 shadow-[0_16px_45px_rgba(15,23,42,0.06)] ${toneClasses[metric.tone || 'neutral']}`}>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{metric.label}</p>
+          <p className="mt-2 text-2xl font-semibold tracking-tight">{metric.value}</p>
+          {metric.helper && <p className="mt-1 text-xs leading-5 text-slate-500">{metric.helper}</p>}
         </div>
       ))}
     </div>
@@ -36,14 +36,14 @@ export function ReportTables({ report }: { report: ReportBundle }) {
   return (
     <div className="space-y-4">
       {report.tables.map((table) => (
-        <div key={table.title} className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <div key={table.title} className="overflow-hidden rounded-[28px] border border-white/10 bg-white/95 shadow-[0_16px_45px_rgba(15,23,42,0.06)]">
           <div className="border-b border-slate-100 px-4 py-3">
-            <h3 className="font-semibold text-slate-900">{table.title}</h3>
+            <h3 className="font-semibold text-slate-950">{table.title}</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-100 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
-                <tr>{table.columns.map((column) => <th key={column} className="px-4 py-3 font-medium">{column}</th>)}</tr>
+              <thead className="bg-slate-50/95 text-left text-xs uppercase tracking-[0.12em] text-slate-500">
+                <tr>{table.columns.map((column) => <th key={column} className="px-4 py-3 font-semibold">{column}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {table.rows.map((row, index) => (
