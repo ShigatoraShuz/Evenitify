@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowRight, CalendarDays, Music4, Camera, ShieldCheck, Truck, LayoutPanelTop, Mail, Wallet } from 'lucide-react'
+import { CalendarDays, Music4, Camera, ShieldCheck, Truck, LayoutPanelTop, Mail, Wallet } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { EmptyState } from '../../../shared/components/EmptyState'
@@ -10,7 +10,6 @@ import { ContractTimeline, buildContractTimeline } from '../../contract-booking/
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { AuditTimeline } from '../../../shared/components/AuditTimeline'
 import { BookingMessageThread } from '../../../shared/components/CommunicationComponents'
-import { PlaceholderMedia } from '../../../shared/components/PlaceholderMedia'
 import { Modal } from '../../../shared/components/Modal'
 import { B2B_TABS, REQUEST_TYPE_TABS, type RequestType } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
@@ -62,6 +61,123 @@ interface RequestCard {
   booking: BookingRequest
 }
 
+interface BookingRequestVendorMeta {
+  id?: string
+  status?: string
+  request_message?: string | null
+  budget_min?: number | null
+  budget_max?: number | null
+  deadline?: string | null
+  viewed_at?: string | null
+  accepted_at?: string | null
+  rejected_at?: string | null
+  changes_requested_at?: string | null
+  responded_at?: string | null
+}
+
+interface ParsedNoteField {
+  rawLabel: string
+  value: string
+}
+
+interface OrganizerBriefField {
+  label: string
+  value: string
+  wide: boolean
+}
+
+interface OrganizerBriefSection {
+  title: string
+  subtitle: string
+  fields: OrganizerBriefField[]
+}
+
+const ORGANIZER_NOTE_LABEL_ALIASES: Record<string, string> = {
+  setup: 'Setup mode',
+  'setup mode': 'Setup mode',
+  schedule: 'Schedule',
+  'event type': 'Event type',
+  type: 'Event type',
+  description: 'Description',
+  theme: 'Theme',
+  'color palette': 'Color palette',
+  mood: 'Mood',
+  'event date': 'Event date',
+  'event time': 'Event time',
+  duration: 'Duration',
+  days: 'Days',
+  seating: 'Seating',
+  'stage setup': 'Stage setup',
+  'booth setup': 'Booth setup',
+  services: 'Services',
+  'selected services': 'Services',
+  'services requested': 'Services',
+  'service focus': 'Service focus',
+  'catering needs': 'Catering needs',
+  'lighting needs': 'Lighting needs',
+  'sound needs': 'Sound needs',
+  'decoration needs': 'Decoration needs',
+  'photography needs': 'Photography needs',
+  'photography / videography': 'Photography needs',
+  'photo/video': 'Photography needs',
+  'security needs': 'Security needs',
+  'transportation needs': 'Transportation needs',
+  'equipment rental needs': 'Equipment rental needs',
+  'special requirements': 'Special requirements',
+  'vendor notes': 'Vendor notes',
+  notes: 'Vendor notes',
+  'notes for vendors': 'Vendor notes',
+}
+
+const ORGANIZER_BRIEF_SECTION_DEFS: Array<{
+  title: string
+  subtitle: string
+  labels: string[]
+  wideLabels?: string[]
+}> = [
+  {
+    title: 'Core Brief',
+    subtitle: 'Organizer choices',
+    labels: ['Event type', 'Description', 'Theme', 'Color palette', 'Mood'],
+    wideLabels: ['Description']
+  },
+  {
+    title: 'Timing & Setup',
+    subtitle: 'Schedule and layout',
+    labels: ['Setup mode', 'Event date', 'Event time', 'Duration', 'Days', 'Schedule'],
+    wideLabels: ['Schedule']
+  },
+  {
+    title: 'Production Needs',
+    subtitle: 'Venue and technical setup',
+    labels: [
+      'Seating',
+      'Stage setup',
+      'Booth setup',
+      'Lighting needs',
+      'Sound needs',
+      'Decoration needs',
+      'Photography needs',
+      'Security needs',
+      'Transportation needs',
+      'Equipment rental needs'
+    ],
+    wideLabels: ['Seating']
+  },
+  {
+    title: 'Vendor Brief',
+    subtitle: 'Selected services and constraints',
+    labels: ['Services', 'Service focus', 'Catering needs', 'Special requirements', 'Vendor notes'],
+    wideLabels: ['Services', 'Special requirements', 'Vendor notes']
+  }
+]
+
+function normalizeOrganizerNoteLabel(label: string) {
+  const compact = label.trim().replace(/\s+/g, ' ')
+  const normalized = compact.toLowerCase()
+  return ORGANIZER_NOTE_LABEL_ALIASES[normalized] || compact
+}
+
 const bookingIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Catering: CalendarDays,
   'Lights and sounds': Music4,
@@ -75,11 +191,109 @@ function formatDate(date: string) {
   return new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function BookingChip({ label, value }: { label: string; value: string }) {
+function formatMoney(value: number | null | undefined) {
+  if (value == null || Number.isNaN(Number(value))) return 'N/A'
+  return `$${Number(value).toLocaleString()}`
+}
+
+function formatDeadline(value?: string | null) {
+  if (!value) return 'Not set'
+  return formatDate(value)
+}
+
+function formatBudgetRange(meta: BookingRequestVendorMeta | null, requestedBudget: number | null) {
+  if (meta?.budget_min != null && meta?.budget_max != null) {
+    if (meta.budget_min === meta.budget_max) return formatMoney(meta.budget_min)
+    return `${formatMoney(meta.budget_min)} - ${formatMoney(meta.budget_max)}`
+  }
+
+  return formatMoney(requestedBudget)
+}
+
+function getRequestVendorMeta(booking: BookingRequest | null): BookingRequestVendorMeta | null {
+  if (!booking?.request_vendors) return null
+  return Array.isArray(booking.request_vendors) ? booking.request_vendors[0] || null : booking.request_vendors
+}
+
+function parseStructuredNotes(notes?: string | null): ParsedNoteField[] {
+  if (!notes) return []
+
+  return notes
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const separatorIndex = line.indexOf(':')
+      if (separatorIndex <= 0) {
+        return { rawLabel: 'Notes', value: line }
+      }
+
+      return {
+        rawLabel: line.slice(0, separatorIndex).trim(),
+        value: line.slice(separatorIndex + 1).trim() || 'Not provided',
+      }
+    })
+}
+
+function buildOrganizerBriefSections(fields: ParsedNoteField[]) {
+  const lookup = new Map<string, ParsedNoteField>()
+
+  fields.forEach((field) => {
+    const normalizedLabel = normalizeOrganizerNoteLabel(field.rawLabel).toLowerCase()
+    if (!lookup.has(normalizedLabel)) {
+      lookup.set(normalizedLabel, field)
+    }
+  })
+
+  const used = new Set<string>()
+
+  const sections = ORGANIZER_BRIEF_SECTION_DEFS.map((section) => {
+    const sectionFields = section.labels
+      .map((label) => {
+        const normalizedLabel = normalizeOrganizerNoteLabel(label)
+        const field = lookup.get(normalizedLabel.toLowerCase())
+        if (!field) return null
+
+        used.add(normalizeOrganizerNoteLabel(field.rawLabel).toLowerCase())
+        return {
+          label: normalizedLabel,
+          value: field.value,
+          wide: section.wideLabels?.some((wideLabel) => normalizeOrganizerNoteLabel(wideLabel).toLowerCase() === normalizedLabel.toLowerCase()) ?? false,
+        }
+      })
+      .filter(Boolean) as OrganizerBriefField[]
+
+    return {
+      ...section,
+      fields: sectionFields,
+    }
+  }).filter((section) => section.fields.length > 0)
+
+  const fallbackFields = fields
+    .filter((field) => !used.has(normalizeOrganizerNoteLabel(field.rawLabel).toLowerCase()))
+    .map((field) => ({
+      label: normalizeOrganizerNoteLabel(field.rawLabel),
+      value: field.value,
+      wide: true,
+    }))
+
+  return { sections, fallbackFields }
+}
+
+function BookingChip({ label, value, className = '' }: { label: string; value: string; className?: string }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50/50 px-4 py-3">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
+    <div className={`rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2 ${className}`}>
+      <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-slate-400">{label}</p>
+      <p className="mt-1 text-sm font-semibold leading-snug text-slate-900 break-words">{value}</p>
+    </div>
+  )
+}
+
+function DetailTile({ label, value, className = '' }: { label: string; value: string; className?: string }) {
+  return (
+    <div className={`rounded-2xl border border-slate-100 bg-white px-3 py-2.5 shadow-[0_6px_18px_rgba(15,23,42,0.03)] ${className}`}>
+      <p className="text-[9px] font-bold uppercase tracking-[0.24em] text-slate-400">{label}</p>
+      <p className="mt-1 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap break-words">{value}</p>
     </div>
   )
 }
@@ -145,6 +359,10 @@ export function VendorBookingsView({
   const selectedCategory = selectedBooking?.event_requirements?.category || selectedBooking?.booking_type || 'Booking'
   const SelectedIcon = bookingIconMap[selectedCategory] ?? CalendarDays
   const selectedRequirement = selectedBooking?.event_requirements
+  const selectedRequestVendor = getRequestVendorMeta(selectedBooking)
+  const selectedRequirementFields = useMemo(() => parseStructuredNotes(selectedRequirement?.notes), [selectedRequirement?.notes])
+  const organizerBrief = useMemo(() => buildOrganizerBriefSections(selectedRequirementFields), [selectedRequirementFields])
+  const organizerMessage = selectedRequestVendor?.request_message || selectedBooking?.notes || ''
 
   return (
     <DashboardShell>
@@ -263,12 +481,12 @@ export function VendorBookingsView({
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] items-start">
-          <section className="flex flex-col gap-4">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] items-start">
+          <section className="flex flex-col gap-3">
             {loading ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-32 animate-pulse rounded-[24px] bg-slate-100" />
+                  <div key={index} className="h-24 animate-pulse rounded-[20px] bg-slate-100" />
                 ))}
               </div>
             ) : requestCards.length === 0 ? (
@@ -277,40 +495,48 @@ export function VendorBookingsView({
                 description="Organizer booking requests will appear here when procurement starts."
               />
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-3">
                 {requestCards.map((card) => {
                   const isSelected = selectedBooking?.id === card.booking.id
+                  const services = card.requestedServices.slice(0, 3)
+
                   return (
-                    <div
+                    <button
                       key={card.booking.id}
-                      role="button"
-                      tabIndex={0}
+                      type="button"
                       onClick={() => onSelectBooking(card.booking.id)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectBooking(card.booking.id) } }}
-                      className={`overflow-hidden rounded-[24px] border text-left transition-all duration-300 ${
-                        isSelected 
-                          ? 'border-brand-300 bg-brand-50 shadow-md ring-4 ring-brand-500/10' 
+                      className={`group w-full overflow-hidden rounded-[20px] border text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:ring-offset-2 ${
+                        isSelected
+                          ? 'border-brand-300 bg-brand-50 shadow-md ring-4 ring-brand-500/10'
                           : 'border-slate-100 bg-white hover:border-slate-300 hover:shadow-sm'
                       }`}
                     >
-                      <div className="p-5 flex flex-col gap-4">
+                      <div className="p-4">
                         <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className={`text-base font-bold ${isSelected ? 'text-brand-900' : 'text-slate-900'}`}>{card.title}</h3>
-                            <p className="mt-1 text-sm text-slate-500 font-medium flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                              {card.organizer}
-                            </p>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className={`text-base font-bold ${isSelected ? 'text-brand-900' : 'text-slate-900'}`}>
+                                {card.title}
+                              </h3>
+                              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                                {card.category}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-sm font-medium text-slate-500">{card.organizer}</p>
                           </div>
                           <StatusBadge status={card.booking.status} size="sm" />
                         </div>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
+
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                           <BookingChip label="Date" value={formatDate(card.eventDate)} />
-                          <BookingChip label="Budget" value={card.budget ? `$${card.budget.toLocaleString()}` : 'N/A'} />
+                          <BookingChip label="Budget" value={card.budget != null ? formatMoney(card.budget) : 'N/A'} />
+                          <BookingChip label="Venue" value={card.venue} />
+                          <BookingChip label="Guests" value={card.guests ? card.guests.toLocaleString() : 'N/A'} />
                         </div>
-                        {card.requestedServices.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {card.requestedServices.map((service) => (
+
+                        {services.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {services.map((service) => (
                               <span
                                 key={service.id}
                                 className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700"
@@ -318,218 +544,265 @@ export function VendorBookingsView({
                                 {service.serviceName}
                               </span>
                             ))}
+                            {card.requestedServices.length > services.length && (
+                              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                                +{card.requestedServices.length - services.length} more
+                              </span>
+                            )}
                           </div>
                         )}
-                        {isSelected && (card.booking.status === 'pending' || card.booking.status === 'sent' || card.booking.status === 'viewed') && (
-                          <div className="grid gap-2 sm:grid-cols-3 pt-1">
-                            <Button
-                              type="button"
-                              onClick={(event) => {
-                                event.preventDefault()
-                                event.stopPropagation()
-                                void onUpdateStatus(card.booking.id, 'accepted')
-                              }}
-                              loading={submitting}
-                              className="w-full"
-                            >
-                              Accept
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              onClick={(event) => {
-                                event.preventDefault()
-                                event.stopPropagation()
-                                setNegotiateOpen(true)
-                                setNegotiationReason('')
-                              }}
-                              loading={submitting}
-                              className="w-full"
-                            >
-                              Negotiate
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="danger"
-                              onClick={(event) => {
-                                event.preventDefault()
-                                event.stopPropagation()
-                                setConfirmDecline(card.booking.id)
-                              }}
-                              loading={submitting}
-                              className="w-full"
-                            >
-                              Reject
-                            </Button>
-                          </div>
-                        )}
+
+                        <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                          <span className="font-medium">Open request</span>
+                          <span className="text-slate-400 group-hover:text-brand-500">View details</span>
+                        </div>
                       </div>
-                    </div>
+                    </button>
                   )
                 })}
               </div>
             )}
           </section>
 
-          <section className="sticky top-24 rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <section className="rounded-[24px] border border-slate-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-8rem)] lg:flex-col lg:overflow-hidden">
             {selectedBooking ? (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-600 border border-brand-100">
-                      <SelectedIcon className="w-7 h-7" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedBooking.large_events?.title || 'Event'}</h3>
-                      <p className="text-slate-500 font-medium">{selectedBooking.organizer_profiles?.organization_name}</p>
+              <>
+                <div className="border-b border-slate-100 px-4 py-4 sm:px-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-brand-100 bg-brand-50 text-brand-600">
+                          <SelectedIcon className="h-6 w-6" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="truncate text-xl font-bold tracking-tight text-slate-900">
+                            {selectedBooking.large_events?.title || 'Event'}
+                          </h3>
+                          <p className="truncate text-sm font-medium text-slate-500">
+                            {selectedBooking.organizer_profiles?.organization_name || 'Organizer'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">
+                          {selectedCategory}
+                        </span>
+                        {selectedRequestVendor?.deadline && (
+                          <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                            Due {formatDeadline(selectedRequestVendor.deadline)}
+                          </span>
+                        )}
+                        <StatusBadge status={selectedBooking.status} size="sm" />
+                      </div>
                     </div>
                   </div>
-                  <StatusBadge status={selectedBooking.status} />
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <BookingChip label="Service Required" value={selectedCategory} />
-                  <BookingChip label="Event Date" value={selectedBooking.large_events?.event_date ? formatDate(selectedBooking.large_events.event_date) : 'N/A'} />
-                  <BookingChip label="Venue" value={selectedBooking.large_events?.venue || 'N/A'} />
-                  <BookingChip label="Expected Guests" value={selectedBooking.large_events?.expected_guests ? selectedBooking.large_events.expected_guests.toLocaleString() : 'N/A'} />
-                </div>
-
-                {selectedBooking.requestedServices && selectedBooking.requestedServices.length > 0 && (
-                  <div className="rounded-[24px] border border-slate-100 bg-slate-50/70 p-5">
+                <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-5">
+                  <section className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <h4 className="font-bold text-slate-900">Requested Services</h4>
+                      <h4 className="font-bold text-slate-900">Request Snapshot</h4>
                       <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        {selectedBooking.requestedServices.length} selected
+                        {selectedRequirement?.quantity ? `${selectedRequirement.quantity} needed` : 'Booking overview'}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedBooking.requestedServices.map((service) => (
-                        <span
-                          key={service.id}
-                          className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700"
-                        >
-                          {service.serviceName}
-                        </span>
-                      ))}
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      <BookingChip label="Service required" value={selectedCategory} />
+                      <BookingChip
+                        label="Event date"
+                        value={selectedBooking.large_events?.event_date ? formatDate(selectedBooking.large_events.event_date) : 'N/A'}
+                      />
+                      <BookingChip label="Venue" value={selectedBooking.large_events?.venue || 'N/A'} />
+                      <BookingChip
+                        label="Guests"
+                        value={selectedBooking.large_events?.expected_guests ? selectedBooking.large_events.expected_guests.toLocaleString() : 'N/A'}
+                      />
+                      <BookingChip label="Budget" value={formatBudgetRange(selectedRequestVendor, selectedBooking.requested_budget)} />
+                      <BookingChip label="Requirement status" value={selectedRequirement?.requirement_status || 'open'} />
                     </div>
-                  </div>
-                )}
+                  </section>
 
-                <div className="rounded-[24px] border border-slate-100 bg-slate-50/70 p-5">
-                  <div className="flex items-center justify-between gap-3 mb-4">
-                    <h4 className="font-bold text-slate-900">Organizer Requirements</h4>
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-                      {selectedRequirement?.quantity ? `${selectedRequirement.quantity} needed` : 'Requirement'}
-                    </span>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <BookingChip label="Category" value={selectedRequirement?.category || selectedCategory} />
-                    <BookingChip label="Minimum Budget" value={selectedRequirement?.min_budget ? `$${Number(selectedRequirement.min_budget).toLocaleString()}` : 'Not set'} />
-                    <BookingChip label="Maximum Budget" value={selectedRequirement?.max_budget ? `$${Number(selectedRequirement.max_budget).toLocaleString()}` : 'Not set'} />
-                    <BookingChip label="Requirement Status" value={selectedRequirement?.requirement_status || 'open'} />
-                  </div>
-                  <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Requirement Notes</p>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      {selectedRequirement?.notes || selectedBooking.notes || 'No additional notes provided.'}
-                    </p>
+                  {selectedBooking.requestedServices && selectedBooking.requestedServices.length > 0 && (
+                    <section className="rounded-2xl border border-brand-100 bg-brand-50/40 p-4">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <h4 className="font-bold text-slate-900">Requested Services</h4>
+                        <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                          {selectedBooking.requestedServices.length} selected
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedBooking.requestedServices.map((service) => (
+                          <span
+                            key={service.id}
+                            className="inline-flex items-center rounded-full border border-brand-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-brand-700 shadow-sm"
+                          >
+                            {service.serviceName}
+                          </span>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  {(organizerBrief.sections.length > 0 || organizerBrief.fallbackFields.length > 0) && (
+                    <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_6px_18px_rgba(15,23,42,0.03)]">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <h4 className="font-bold text-slate-900">Event Builder Summary</h4>
+                        <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                          Organizer choices
+                        </span>
+                      </div>
+                      <div className="space-y-4">
+                        {organizerBrief.sections.map((section) => (
+                          <div key={section.title} className="space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <h5 className="text-sm font-semibold text-slate-900">{section.title}</h5>
+                                <p className="text-xs text-slate-500">{section.subtitle}</p>
+                              </div>
+                              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                                {section.fields.length} field{section.fields.length === 1 ? '' : 's'}
+                              </span>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                              {section.fields.map((field) => (
+                                <DetailTile
+                                  key={`${section.title}-${field.label}`}
+                                  label={field.label}
+                                  value={field.value}
+                                  className={field.wide ? 'sm:col-span-2 xl:col-span-3' : ''}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+
+                        {organizerBrief.fallbackFields.length > 0 && (
+                          <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-3">
+                            <div className="mb-3 flex items-center justify-between gap-3">
+                              <div>
+                                <h5 className="text-sm font-semibold text-slate-900">Legacy / other notes</h5>
+                                <p className="text-xs text-slate-500">Fields that were not part of the structured brief</p>
+                              </div>
+                              <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                                {organizerBrief.fallbackFields.length} field{organizerBrief.fallbackFields.length === 1 ? '' : 's'}
+                              </span>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                              {organizerBrief.fallbackFields.map((field) => (
+                                <DetailTile
+                                  key={`legacy-${field.label}-${field.value.slice(0, 24)}`}
+                                  label={field.label}
+                                  value={field.value}
+                                  className="sm:col-span-2 xl:col-span-3"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  )}
+
+                  {organizerMessage && (
+                    <section className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <h4 className="font-bold text-slate-900">Organizer Message</h4>
+                        <Mail className="h-4 w-4 text-slate-400" />
+                      </div>
+                      <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-wrap break-words">
+                        {organizerMessage}
+                      </p>
+                    </section>
+                  )}
+
+                  <section className="rounded-2xl border border-slate-100 bg-slate-50/40 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <h4 className="font-bold text-slate-900">Contract Status</h4>
+                      <Button variant="ghost" onClick={() => onLoadContract(selectedBooking.id)} className="px-0 text-brand-600 hover:text-brand-700">
+                        {contract ? 'Refresh' : 'View contract'}
+                      </Button>
+                    </div>
+                    <div className="mt-3">
+                      {contractLoading ? (
+                        <div className="h-20 animate-pulse rounded-2xl bg-slate-100" />
+                      ) : contract ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                            <p className="text-sm font-semibold text-slate-700">
+                              {contract.contract_number ? `Ref: #${contract.contract_number}` : 'Standard Contract'}
+                            </p>
+                            <StatusBadge status={contract.contract_status} size="sm" />
+                          </div>
+                          {contract.terms_summary && <p className="text-sm leading-relaxed text-slate-600">{contract.terms_summary}</p>}
+                          <div className="rounded-2xl border border-slate-100 bg-white p-4">
+                            <ContractTimeline steps={buildContractTimeline(contract)} />
+                          </div>
+                          {contract.contract_status === 'organizer_signed' && (
+                            <Button onClick={() => onSignVendorContract(contract.id)} loading={submitting} fullWidth>
+                              Sign Contract
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="py-4 text-center">
+                          <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100">
+                            <Mail className="h-5 w-5 text-slate-400" />
+                          </div>
+                          <p className="text-sm font-medium text-slate-900">No Contract Issued</p>
+                          <p className="mt-1 text-sm text-slate-500">The organizer will prepare the contract once terms are agreed.</p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    <section className="rounded-2xl border border-slate-100 bg-white p-4">
+                      <h4 className="mb-3 font-bold text-slate-900">Messages</h4>
+                      <BookingMessageThread messages={bookingMessages} onSendMessage={onSendBookingMessage} userRole={userRole} />
+                    </section>
+                    <section className="rounded-2xl border border-slate-100 bg-white p-4">
+                      <h4 className="mb-3 font-bold text-slate-900">Audit Trail</h4>
+                      <AuditTimeline activities={auditActivities} emptyText="No activity recorded yet." />
+                    </section>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 flex justify-between items-center">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-600">Proposed Budget</p>
-                    <p className="mt-1 text-2xl font-bold text-emerald-900">
-                      {selectedBooking.requested_budget ? `$${Number(selectedBooking.requested_budget).toLocaleString()}` : 'Negotiable'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-[24px] border border-brand-100 bg-brand-50/40 p-5">
-                  <div className="mb-4">
-                    <h4 className="font-bold text-slate-900">Respond to Request</h4>
-                    <p className="text-sm text-slate-500 mt-1">Accept, negotiate, or reject this booking request.</p>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
+                <div className="border-t border-slate-100 bg-white px-4 py-4 sm:px-5">
+                  <div className="grid gap-2 sm:grid-cols-3">
                     <Button onClick={() => onUpdateStatus(selectedBooking.id, 'accepted')} loading={submitting} className="w-full">
                       Accept
                     </Button>
-                    <Button variant="secondary" onClick={() => {
-                      setNegotiateOpen(true)
-                      setNegotiationReason('')
-                    }} loading={submitting} className="w-full">
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setNegotiateOpen(true)
+                        setNegotiationReason('')
+                      }}
+                      loading={submitting}
+                      className="w-full"
+                    >
                       Negotiate
                     </Button>
-                    <Button variant="danger" onClick={() => setConfirmDecline(selectedBooking.id)} loading={submitting} className="w-full">
+                    <Button
+                      variant="danger"
+                      onClick={() => setConfirmDecline(selectedBooking.id)}
+                      loading={submitting}
+                      className="w-full"
+                    >
                       Reject
                     </Button>
                   </div>
                 </div>
-
-                {selectedBooking.notes && (
-                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Organizer Notes</p>
-                    <p className="text-sm text-slate-700 leading-relaxed">{selectedBooking.notes}</p>
-                  </div>
-                )}
-
-                <div className="rounded-[24px] border border-slate-100 bg-slate-50/30 p-6">
-                  <div className="flex items-center justify-between gap-3 mb-6">
-                    <h4 className="font-bold text-slate-900">Contract Status</h4>
-                    <Button variant="ghost" onClick={() => onLoadContract(selectedBooking.id)} className="text-brand-600 hover:text-brand-700">
-                      {contract ? 'Refresh' : 'View contract'}
-                    </Button>
-                  </div>
-                  {contractLoading ? (
-                    <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
-                  ) : contract ? (
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                        <p className="text-sm font-semibold text-slate-700">
-                          {contract.contract_number ? `Ref: #${contract.contract_number}` : 'Standard Contract'}
-                        </p>
-                        <StatusBadge status={contract.contract_status} size="sm" />
-                      </div>
-                      {contract.terms_summary && <p className="text-sm text-slate-600 leading-relaxed">{contract.terms_summary}</p>}
-                      <div className="bg-white p-5 rounded-2xl border border-slate-100">
-                        <ContractTimeline steps={buildContractTimeline(contract)} />
-                      </div>
-                      {contract.contract_status === 'organizer_signed' && (
-                        <Button onClick={() => onSignVendorContract(contract.id)} loading={submitting} fullWidth>
-                          Sign Contract
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6">
-                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
-                        <Mail className="w-5 h-5 text-slate-400" />
-                      </div>
-                      <p className="text-sm font-medium text-slate-900">No Contract Issued</p>
-                      <p className="text-sm text-slate-500 mt-1">The organizer will prepare the contract once terms are agreed.</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid gap-6">
-                  <div>
-                    <h4 className="font-bold text-slate-900 mb-4">Messages</h4>
-                    <BookingMessageThread messages={bookingMessages} onSendMessage={onSendBookingMessage} userRole={userRole} />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 mb-4">Audit Trail</h4>
-                    <AuditTimeline activities={auditActivities} emptyText="No activity recorded yet." />
-                  </div>
-                </div>
-
-              </div>
+              </>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
-                <div className="w-20 h-20 rounded-full bg-brand-50 flex items-center justify-center mb-6">
-                  <Wallet className="w-8 h-8 text-brand-300" />
+              <div className="flex min-h-[320px] flex-col items-center justify-center px-6 py-10 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-50">
+                  <Wallet className="h-7 w-7 text-brand-300" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Select a Request</h3>
-                <p className="text-slate-500 max-w-sm">Choose a booking from the queue to review organizer details, contract status, and communication.</p>
+                <h3 className="mb-2 text-xl font-bold text-slate-900">Select a Request</h3>
+                <p className="max-w-sm text-slate-500">
+                  Choose a booking from the queue to review organizer details, event-builder choices, contract status, and communication.
+                </p>
               </div>
             )}
           </section>

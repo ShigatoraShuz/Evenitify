@@ -90,6 +90,9 @@ export const vendorService = {
     serviceAddress?: string
   }) => api.post<VendorService>('/vendor/services', payload),
 
+  deleteService: (serviceId: string) =>
+    api.delete<{ id: string; deleted: boolean }>(`/vendor/services/${serviceId}`),
+
   uploadServiceImage: (formData: FormData) =>
     api.postForm<{ imageUrl: string }>('/vendor/services/upload-image', formData)
 }

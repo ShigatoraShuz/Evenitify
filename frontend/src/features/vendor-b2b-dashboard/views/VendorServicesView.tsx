@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { CalendarDays, Plus, Package } from 'lucide-react'
+import { Plus, Package, Trash2 } from 'lucide-react'
 import { Button } from '../../../shared/components/Button'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { DashboardShell } from '../../../shared/components/DashboardShell'
 import { Modal } from '../../../shared/components/Modal'
+import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { ServicePackageForm } from '../components/ServicePackageForm'
 import type { VendorService } from '../../../services/vendorService'
 
@@ -21,6 +22,7 @@ interface VendorServicesViewProps {
     basePrice: number
     availabilityStatus: string
   }, imageFile?: File) => Promise<void>
+  onDeleteServicePackage: (serviceId: string) => Promise<void>
   onClearError: () => void
 }
 
@@ -28,19 +30,37 @@ export function VendorServicesView({
   services,
   loading,
   submitting,
+  error,
   onCreateServicePackage,
+  onDeleteServicePackage,
+  onClearError,
 }: VendorServicesViewProps) {
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false)
+  const [serviceToDelete, setServiceToDelete] = useState<VendorService | null>(null)
 
   const handleCreate = async (data: Parameters<typeof onCreateServicePackage>[0], imageFile?: File) => {
-    // Call viewmodel – any error will be thrown back for the form to handle
     await onCreateServicePackage(data, imageFile)
-    // Success: close modal after the short success animation in the form
-    // (the form does setTimeout 1200ms then calls onCancel itself)
+  }
+
+  const handleDelete = async () => {
+    if (!serviceToDelete) return
+    await onDeleteServicePackage(serviceToDelete.id)
+    setServiceToDelete(null)
   }
 
   return (
     <DashboardShell>
+      <ConfirmDialog
+        open={!!serviceToDelete}
+        title="Delete service"
+        message={`Delete "${serviceToDelete?.service_name || 'this service'}"? This will remove it from your vendor profile.`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={submitting}
+        onConfirm={handleDelete}
+        onCancel={() => setServiceToDelete(null)}
+      />
+
       <div className="space-y-8">
         <PageHeader
           title="Services"
@@ -51,6 +71,15 @@ export function VendorServicesView({
             </Button>
           }
         />
+
+        {error && (
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
+            <span>{error}</span>
+            <button type="button" onClick={onClearError} className="font-medium text-rose-500 hover:text-rose-700">
+              Dismiss
+            </button>
+          </div>
+        )}
 
         <section>
           {loading && services.length === 0 ? (
@@ -70,14 +99,16 @@ export function VendorServicesView({
               }
             />
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {services.map((service) => {
                 let parsedDesc: { text: string; image: string | null } = { text: service.description || '', image: null }
                 try {
                   if (service.description?.startsWith('{')) {
                     parsedDesc = JSON.parse(service.description)
                   }
-                } catch (e) { }
+                } catch {
+                  parsedDesc = { text: service.description || '', image: null }
+                }
 
                 const statusColorMap: Record<string, string> = {
                   available: 'bg-emerald-50 border-emerald-100',
@@ -89,55 +120,76 @@ export function VendorServicesView({
                 return (
                   <div
                     key={service.id}
-                    className="group rounded-[28px] border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col"
+                    className="group flex h-full flex-col overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                   >
                     {parsedDesc.image ? (
-                      <div className="w-full h-52 bg-slate-100 relative overflow-hidden">
+                      <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
                         <img
                           src={parsedDesc.image}
                           alt={service.service_name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent" />
                         <div className="absolute bottom-4 left-4">
-                          <span className="text-xs font-bold uppercase tracking-widest text-white/90 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/30">
+                          <span className="rounded-full border border-white/30 bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white/90 backdrop-blur-sm">
                             {service.category}
                           </span>
                         </div>
                       </div>
                     ) : (
-                      <div className={`w-full h-52 flex flex-col items-center justify-center border-b ${cardAccent} transition-colors group-hover:bg-brand-50`}>
-                        <Package className="w-14 h-14 text-slate-200 group-hover:text-brand-200 transition-colors mb-2" />
-                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400 group-hover:text-brand-400 transition-colors">
+                      <div
+                        className={`flex aspect-[16/10] flex-col items-center justify-center border-b ${cardAccent} transition-colors group-hover:bg-brand-50`}
+                      >
+                        <Package className="mb-1.5 h-10 w-10 text-slate-200 transition-colors group-hover:text-brand-200" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 transition-colors group-hover:text-brand-400">
                           {service.category}
                         </span>
                       </div>
                     )}
 
-                    <div className="p-6 flex flex-col flex-1">
-                      <div className="flex justify-between items-start gap-4 mb-3">
-                        <h3 className="font-bold text-lg text-slate-900 leading-tight">{service.service_name}</h3>
-                        <span className="text-sm font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full whitespace-nowrap border border-emerald-100 shrink-0">
-                          ₱{service.base_price?.toLocaleString() || '0'}
+                    <div className="flex flex-1 flex-col p-4">
+                      <div className="mb-2.5 flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="truncate text-[15px] font-bold leading-tight text-slate-900">{service.service_name}</h3>
+                          <p className="mt-0.5 truncate text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
+                            Service package
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap text-emerald-700">
+                          PHP {service.base_price?.toLocaleString() || '0'}
                         </span>
                       </div>
 
                       {parsedDesc.text ? (
-                        <p className="text-sm text-slate-500 mb-5 flex-1 line-clamp-2 leading-relaxed">
+                        <p className="mb-4 flex-1 text-[13px] leading-5 text-slate-500 line-clamp-2">
                           {parsedDesc.text}
                         </p>
                       ) : (
-                        <p className="text-sm text-slate-300 italic mb-5 flex-1">No description provided.</p>
+                        <p className="mb-4 flex-1 text-[13px] italic text-slate-300">No description provided.</p>
                       )}
 
-                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
-                        {!parsedDesc.image && (
-                          <span className="text-xs font-semibold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">
-                            {service.category}
-                          </span>
-                        )}
-                        <div className={!parsedDesc.image ? '' : 'ml-auto'}>
+                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-50 pt-3">
+                        <div className="min-w-0">
+                          {!parsedDesc.image && (
+                            <span className="inline-flex items-center rounded-lg border border-slate-100 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-400">
+                              {service.category}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
                           <StatusBadge status={service.availability_status} size="sm" />
+                          <button
+                            type="button"
+                            onClick={() => setServiceToDelete(service)}
+                            disabled={submitting}
+                            className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-600 transition-colors hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            aria-label={`Delete ${service.service_name}`}
+                            title={`Delete ${service.service_name}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Delete
+                          </button>
                         </div>
                       </div>
                     </div>

@@ -45,8 +45,6 @@ interface VendorProcurementViewProps {
   onSubmitBooking: (payload: { notes?: string; requestedBudget?: number }) => Promise<void>
   onSaveDraft: () => void
   onClearError: () => void
-  onNavigateToCompare?: () => void
-  onNavigateToPortfolio?: () => void
 }
 
 const STEP_LABELS: Record<ProcurementStep, string> = {
@@ -83,9 +81,7 @@ export function VendorProcurementView({
   onUpdateFilters,
   onSubmitBooking,
   onSaveDraft,
-  onClearError,
-  onNavigateToCompare,
-  onNavigateToPortfolio
+  onClearError
 }: VendorProcurementViewProps) {
   const [showReqForm, setShowReqForm] = useState(false)
   const [category, setCategory] = useState<RequirementCategory>('Catering')
@@ -341,10 +337,7 @@ export function VendorProcurementView({
               <h2 className="text-lg font-semibold text-gray-900">
                 Vendors for {selectedRequirement.category}
               </h2>
-              <div className="flex items-center gap-2">
-                <Button variant="secondary" onClick={onNavigateToCompare}>Compare Vendors</Button>
-                <Button onClick={onSearchVendors} loading={loading}>Search Vendors</Button>
-              </div>
+              <Button onClick={onSearchVendors} loading={loading}>Search Vendors</Button>
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -483,9 +476,6 @@ export function VendorProcurementView({
           <p className="text-gray-500 mb-6">The vendor will review and respond to your request.</p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button onClick={() => onSetStep('requirements')}>Add Another Requirement</Button>
-            <Button variant="secondary" onClick={onNavigateToPortfolio}>
-              View Event Portfolio
-            </Button>
           </div>
         </div>
       )}

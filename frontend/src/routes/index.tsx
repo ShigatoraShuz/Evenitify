@@ -16,6 +16,7 @@ const VendorMarketplaceView = lazy(() => import('../features/organizer/vendor-ma
 const VendorB2BDashboardView = lazy(() => import('../features/vendor-b2b-dashboard/views/VendorB2BDashboardViewWrapper'))
 const VendorServicesView = lazy(() => import('../features/vendor-b2b-dashboard/views/VendorServicesViewWrapper'))
 const VendorBookingsView = lazy(() => import('../features/vendor-b2b-dashboard/views/VendorBookingsViewWrapper'))
+const VendorEventsView = lazy(() => import('../features/vendor-b2b-dashboard/views/VendorEventsViewWrapper'))
 const VendorAvailabilityView = lazy(() => import('../features/vendor-b2b-dashboard/views/VendorAvailabilityViewWrapper'))
 const EventPortfolioView = lazy(() => import('../features/contract-booking/views/EventPortfolioViewWrapper'))
 const AdminDashboardView = lazy(() => import('../features/admin-operations/views/AdminDashboardViewWrapper'))
@@ -234,6 +235,13 @@ export function AppRoutes({
           <SuspenseWrapper>
             <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
               <PageTransition><VendorBookingsView /></PageTransition>
+            </RouteGuard>
+          </SuspenseWrapper>
+        } />
+        <Route path="/vendor/events" element={
+          <SuspenseWrapper>
+            <RouteGuard loading={loading} authenticated={!!user} role={userRole} roles={userRoles} roleChosen={roleChosen} requiredRole={['vendor']} profileComplete={profileComplete}>
+              <PageTransition><VendorEventsView /></PageTransition>
             </RouteGuard>
           </SuspenseWrapper>
         } />

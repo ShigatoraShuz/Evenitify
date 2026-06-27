@@ -39,6 +39,11 @@ const updateService = asyncHandler(async (req, res) => {
   return sendSuccess(res, service);
 });
 
+const deleteService = asyncHandler(async (req, res) => {
+  const result = await vendorService.deleteService(req.user, req.validated.params.serviceId);
+  return sendSuccess(res, result);
+});
+
 const listB2BBookings = asyncHandler(async (req, res) => {
   const bookings = await vendorService.listB2BBookings(req.user, req.query.status, req.query.type);
   return sendSuccess(res, bookings);
@@ -104,6 +109,7 @@ module.exports = {
   createService,
   uploadServiceImage,
   updateService,
+  deleteService,
   listB2BBookings,
   listVendorRequests,
   getBookingDetail,

@@ -94,6 +94,19 @@ async function updateService(serviceId, vendorId, input) {
   return data;
 }
 
+async function deleteService(serviceId, vendorId) {
+  const { data, error } = await supabase
+    .from('vendor_services')
+    .delete()
+    .eq('id', serviceId)
+    .eq('vendor_id', vendorId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
 async function searchVendors(filters) {
   let query = supabase
     .from('vendor_profiles')
@@ -172,7 +185,7 @@ function applyVendorFilter(query, column, vendorIds) {
   return query.in(column, ids);
 }
 
-async function listVendorRequests(vendorIds, statusFilter, requestTypeFilter) {
+async function listVendorRequests(vendorIds, statusFilter) {
   const ids = [...new Set((vendorIds || []).filter(Boolean))];
   if (ids.length === 0) return [];
 
@@ -212,19 +225,12 @@ async function listVendorRequests(vendorIds, statusFilter, requestTypeFilter) {
     .in('id', requestIds)
     .order('updated_at', { ascending: false });
 
-  if (requestTypeFilter && requestTypeFilter !== 'all') {
-    // Organizer B2B requests are stored as procurement requests and should not be
-    // filtered by event lifecycle status. Keep this branch as a no-op until we
-    // have a real request-type column to target.
-    query = query;
-  }
-
   const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
 
-async function listVendorBookings(vendorIds, statusFilter, requestTypeFilter) {
+async function listVendorBookings(vendorIds, statusFilter) {
   let query = supabase
     .from('bookings')
     .select(`
@@ -237,12 +243,6 @@ async function listVendorBookings(vendorIds, statusFilter, requestTypeFilter) {
     .order('requested_at', { ascending: false });
 
   query = applyVendorFilter(query, 'vendor_id', vendorIds);
-
-  if (requestTypeFilter && requestTypeFilter !== 'all') {
-    // Vendor booking types are not represented by event lifecycle status.
-    // Keep all vendor bookings here so organizer RFQs and legacy bookings stay visible.
-    query = query;
-  }
 
   if (statusFilter && statusFilter !== 'all') {
     if (statusFilter === 'pending') {
@@ -259,10 +259,10 @@ async function listVendorBookings(vendorIds, statusFilter, requestTypeFilter) {
   return data || [];
 }
 
-async function listVendorB2BRequests(vendorIds, statusFilter, requestTypeFilter) {
+async function listVendorB2BRequests(vendorIds, statusFilter) {
   const [requests, bookings] = await Promise.all([
-    listVendorRequests(vendorIds, statusFilter, requestTypeFilter),
-    listVendorBookings(vendorIds, statusFilter, requestTypeFilter)
+    listVendorRequests(vendorIds, statusFilter),
+    listVendorBookings(vendorIds, statusFilter)
   ]);
 
   return [...requests, ...bookings];
@@ -452,6 +452,7 @@ module.exports = {
   listServices,
   createService,
   updateService,
+  deleteService,
   searchVendors,
   searchVendorServices,
   getVendorWithServices,

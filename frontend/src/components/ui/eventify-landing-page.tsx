@@ -73,6 +73,7 @@ const sectionCard = 'rounded-3xl border border-slate-200 bg-white p-6 shadow-sm'
 const sectionHeading = 'text-sm font-bold uppercase tracking-[0.22em] text-brand-700'
 const sectionTitle = 'text-2xl sm:text-3xl font-extrabold text-slate-950'
 const sectionBody = 'text-sm sm:text-base leading-6 text-slate-700'
+const compactCard = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm'
 
 function SoftButton({ children, variant = 'primary', onClick }: SoftButtonProps) {
   const base =
@@ -232,74 +233,79 @@ export default function EventifyLandingPage({
           className="pt-28 pb-10 lg:pt-32 lg:pb-16"
         />
 
-        <section id="solutions" className="py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl">
-              <p className={sectionHeading}>Platform</p>
-              <h2 className={`mt-4 ${sectionTitle}`}>One platform for organizers, vendors, and admins.</h2>
-              <p className={`mt-4 ${sectionBody}`}>
-                Eventify keeps the full procurement workflow in one connected system so teams can create event plans,
-                browse vendor services, manage requests, and track progress without moving across separate tools.
-              </p>
-            </div>
-          </div>
-        </section>
+        <section id="solutions" className="bg-white py-12">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-8 xl:grid-cols-[0.92fr_1.08fr] xl:items-start">
+              <div className="max-w-xl">
+                <p className={sectionHeading}>Platform</p>
+                <h2 className={`mt-3 ${sectionTitle}`}>One platform for organizers, vendors, and admins.</h2>
+                <p className={`mt-3 ${sectionBody}`}>
+                  Eventify keeps planning, vendor discovery, request handling, and progress tracking in one connected
+                  system.
+                </p>
+              </div>
 
-        <section id="vendors" className="py-16 bg-slate-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-6 md:grid-cols-3">
-              {[
-                {
-                  title: 'Vendor Marketplace',
-                  text: 'Organizers can browse vendor categories, compare services, and request bookings from one marketplace.',
-                },
-                {
-                  title: 'Vendor Dashboard',
-                  text: 'Vendors manage profiles, availability, incoming requests, and event communication in one place.',
-                },
-                {
-                  title: 'Admin Oversight',
-                  text: 'Admins oversee users, bookings, and platform activity with a clear view of the whole system.',
-                },
-              ].map((item) => (
-                <div key={item.title} className={sectionCard}>
-                  <h3 className="text-lg font-bold text-slate-950">{item.title}</h3>
-                  <p className={`mt-3 ${sectionBody}`}>{item.text}</p>
+              <div id="vendors" className="space-y-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className={sectionHeading}>Marketplace</p>
+                    <h3 className="mt-2 text-xl font-extrabold text-slate-950">
+                      Vendor discovery and management.
+                    </h3>
+                  </div>
+                  <p className="max-w-2xl text-sm leading-6 text-slate-700">
+                    Organizers browse categories, compare services, and request bookings from one marketplace.
+                    Vendors manage profiles, availability, incoming requests, and event communication in one place.
+                  </p>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        <section id="events" className="py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="rounded-3xl bg-gradient-to-br from-brand-700 to-brand-900 p-8 text-white shadow-sm border border-brand-700/20">
-                <h2 className="text-2xl font-extrabold">Event planning and booking status</h2>
-                <p className="mt-3 text-white/85 leading-relaxed">
-                  Organizers can create large event plans, send booking requests, track vendor responses, and manage
-                  event requirements from draft to confirmed booking.
+                <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                  {[
+                    {
+                      title: 'Vendor Marketplace',
+                      text: 'Browse vendor categories, compare services, and request bookings from one marketplace.',
+                    },
+                    {
+                      title: 'Vendor Dashboard',
+                      text: 'Manage profiles, availability, incoming requests, and event communication in one place.',
+                    },
+                    {
+                      title: 'Admin Oversight',
+                      text: 'Oversee users, bookings, and platform activity with a clear view of the system.',
+                    },
+                  ].map((item) => (
+                    <div key={item.title} className={compactCard}>
+                      <h4 className="text-base font-bold text-slate-950">{item.title}</h4>
+                      <p className="mt-2 text-sm leading-6 text-slate-700">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div id="events" className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-brand-700/20 bg-gradient-to-br from-brand-700 to-brand-900 p-6 text-white shadow-sm">
+                <h3 className="text-xl font-extrabold">Event planning and booking status</h3>
+                <p className="mt-2 text-sm leading-6 text-white/85">
+                  Organizers create event plans, send booking requests, track vendor responses, and manage
+                  requirements from draft to confirmed booking.
                 </p>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-                <h2 className="text-2xl font-extrabold text-slate-950">Communication and contracts</h2>
-                <p className="mt-3 text-slate-700 leading-relaxed">
-                  Eventify supports communication, booking review, and contract management so every request remains
-                  traceable and easy to follow through the full procurement cycle.
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="text-xl font-extrabold text-slate-950">Communication and contracts</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  Eventify keeps communication, booking review, and contract management in one traceable flow through
+                  the procurement cycle.
                 </p>
               </div>
             </div>
-          </div>
-        </section>
 
-        <section id="how-it-works" className="py-16 bg-slate-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-6 md:grid-cols-3">
+            <div id="how-it-works" className="mt-6 grid gap-4 md:grid-cols-3">
               {[
                 {
                   step: '01',
                   title: 'Create the event plan',
-                  text: 'Organizers draft requirements, budgets, and service needs for the event.',
+                  text: 'Draft requirements, budgets, and service needs for the event.',
                 },
                 {
                   step: '02',
@@ -312,10 +318,10 @@ export default function EventifyLandingPage({
                   text: 'Approve bookings, manage schedules, and keep communication aligned until the event is done.',
                 },
               ].map((item) => (
-                <div key={item.step} className={sectionCard}>
-                  <p className="text-sm font-bold tracking-[0.3em] text-brand-700">{item.step}</p>
-                  <h3 className="mt-3 text-lg font-bold text-slate-950">{item.title}</h3>
-                  <p className={`mt-3 ${sectionBody}`}>{item.text}</p>
+                <div key={item.step} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <p className="text-xs font-bold tracking-[0.28em] text-brand-700">{item.step}</p>
+                  <h3 className="mt-2 text-base font-bold text-slate-950">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-700">{item.text}</p>
                 </div>
               ))}
             </div>

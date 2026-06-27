@@ -3,6 +3,35 @@ const { supabase, supabaseAdmin } = require('../config/supabase');
 const vendorRepository = require('./vendor-b2b-dashboard.repository');
 const logger = require('../shared/utils/logger');
 
+const REQUEST_SIZE_GUEST_LIMIT = 20;
+
+function getBookingGuestCount(item) {
+  const rawGuests = item?.large_events?.expected_guests;
+  if (rawGuests == null || rawGuests === '') return null;
+
+  const guests = Number(rawGuests);
+  if (!Number.isFinite(guests) || guests <= 0) return null;
+
+  return guests;
+}
+
+function matchesRequestTypeFilter(item, requestTypeFilter) {
+  if (!requestTypeFilter || requestTypeFilter === 'all') return true;
+
+  const guestCount = getBookingGuestCount(item);
+  if (guestCount == null) return false;
+
+  if (requestTypeFilter === 'large_event') {
+    return guestCount > REQUEST_SIZE_GUEST_LIMIT;
+  }
+
+  if (requestTypeFilter === 'personal') {
+    return guestCount <= REQUEST_SIZE_GUEST_LIMIT;
+  }
+
+  return true;
+}
+
 async function getProfile(actor) {
   const profile = await vendorRepository.findByUserId(actor.id);
   if (!profile) {
@@ -88,6 +117,20 @@ async function updateService(actor, serviceId, payload) {
   }
 
   return updated;
+}
+
+async function deleteService(actor, serviceId) {
+  const profile = await vendorRepository.findByUserId(actor.id);
+  if (!profile) {
+    throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
+  }
+
+  const deleted = await vendorRepository.deleteService(serviceId, profile.id);
+  if (!deleted) {
+    throw new AppError('Service not found or access denied', 404, 'SERVICE_NOT_FOUND');
+  }
+
+  return { id: deleted.id, deleted: true };
 }
 
 async function searchVendors(filters) {
@@ -348,14 +391,14 @@ async function loadRequest(actor, requestId) {
   return { profile, request, vendorIds };
 }
 
-async function listB2BBookings(actor, statusFilter, bookingTypeFilter) {
+async function listB2BBookings(actor, statusFilter, requestTypeFilter) {
   const profile = await vendorRepository.findByUserId(actor.id);
   if (!profile) {
     throw new AppError('Vendor profile not found', 404, 'VENDOR_NOT_FOUND');
   }
   const vendorIds = buildVendorIds(profile, actor);
 
-  const merged = await vendorRepository.listVendorB2BRequests(vendorIds, statusFilter, bookingTypeFilter);
+  const merged = await vendorRepository.listVendorB2BRequests(vendorIds, statusFilter, requestTypeFilter);
   const hydrated = await hydrateRequestedServices(merged);
   const normalized = hydrated.map((item) => (
     Object.prototype.hasOwnProperty.call(item, 'requirement_id')
@@ -365,6 +408,10 @@ async function listB2BBookings(actor, statusFilter, bookingTypeFilter) {
 
   const seen = new Set();
   return normalized.filter((item) => {
+    if (!matchesRequestTypeFilter(item, requestTypeFilter)) {
+      return false;
+    }
+
     if (seen.has(item.id)) return false;
     seen.add(item.id);
     return true;
@@ -517,6 +564,7 @@ module.exports = {
   createService,
   uploadServiceImage,
   updateService,
+  deleteService,
   searchVendors,
   getVendorProfile,
   listB2BBookings,
@@ -527,5 +575,7 @@ module.exports = {
   acceptRequest,
   rejectRequest,
   requestChanges,
-  mapRequestToNormalized
+  mapRequestToNormalized,
+  getBookingGuestCount,
+  matchesRequestTypeFilter
 };

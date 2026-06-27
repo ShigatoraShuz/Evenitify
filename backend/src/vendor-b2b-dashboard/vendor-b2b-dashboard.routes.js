@@ -30,6 +30,7 @@ router.get('/services', authenticate, requireRole('vendor'), controller.listServ
 router.post('/services', authenticate, requireRole('vendor'), validate(createServiceSchema), controller.createService);
 router.post('/services/upload-image', authenticate, requireRole('vendor'), upload.single('image'), controller.uploadServiceImage);
 router.patch('/services/:serviceId', authenticate, requireRole('vendor'), validate(updateServiceSchema), controller.updateService);
+router.delete('/services/:serviceId', authenticate, requireRole('vendor'), validate(serviceIdSchema), controller.deleteService);
 
 router.get('/bookings', authenticate, requireRole('vendor'), controller.listB2BBookings);
 router.get('/bookings/:bookingId', authenticate, requireRole('vendor'), validate(bookingIdSchema), controller.getBookingDetail);

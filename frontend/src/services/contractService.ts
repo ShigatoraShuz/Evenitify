@@ -63,6 +63,9 @@ export const contractService = {
   updateContractStatus: (contractId: string, payload: { status: string; reason?: string | null }) =>
     api.patch<ContractDetail>(`/contracts/${contractId}/status`, payload),
 
+  completeContract: (contractId: string, reason?: string | null) =>
+    api.patch<ContractDetail>(`/contracts/${contractId}/status`, { status: 'completed', reason }),
+
   signContractOrganizer: (contractId: string, payload: { termsAccepted: boolean }) =>
     api.patch<ContractDetail>(`/contracts/${contractId}/sign-organizer`, payload),
 

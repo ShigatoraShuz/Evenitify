@@ -50,6 +50,7 @@ export const API_CONTRACTS: ApiContract[] = [
   { method: 'GET', path: '/vendor/services', description: 'List own services', auth: true, roles: ['vendor'], status: 'live' },
   { method: 'POST', path: '/vendor/services', description: 'Create service listing', auth: true, roles: ['vendor'], status: 'live' },
   { method: 'PATCH', path: '/vendor/services/:serviceId', description: 'Update service listing', auth: true, roles: ['vendor'], status: 'live' },
+  { method: 'DELETE', path: '/vendor/services/:serviceId', description: 'Delete service listing', auth: true, roles: ['vendor'], status: 'live' },
 
   // Bookings
   { method: 'POST', path: '/procurement-requests', description: 'Create B2B booking request', auth: true, roles: ['organizer'], status: 'live' },

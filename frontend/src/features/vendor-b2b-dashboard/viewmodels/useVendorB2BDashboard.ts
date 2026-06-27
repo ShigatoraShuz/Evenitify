@@ -257,6 +257,22 @@ export function useVendorB2BDashboard() {
     }
   }, [])
 
+  const deleteServicePackage = useCallback(async (serviceId: string) => {
+    if (submittingRef.current) return
+    submittingRef.current = true
+    setState((s) => ({ ...s, submitting: true, error: null }))
+    try {
+      await vendorService.deleteService(serviceId)
+      const services = await vendorService.listServices()
+      setState((s) => ({ ...s, services, submitting: false }))
+      addToast('success', 'Service deleted successfully')
+    } catch (err) {
+      setState((s) => ({ ...s, submitting: false, error: (err as Error).message }))
+    } finally {
+      submittingRef.current = false
+    }
+  }, [addToast])
+
   const clearError = useCallback(() => {
     setState((s) => ({ ...s, error: null }))
   }, [])
@@ -296,6 +312,7 @@ export function useVendorB2BDashboard() {
     signVendorContract,
     updateAvailabilityStatus,
     createServicePackage,
+    deleteServicePackage,
     clearError,
     sendBookingMessage
   }

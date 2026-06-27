@@ -193,6 +193,57 @@ function normalizeEventDate(value: string): string | null {
   return parsed.toISOString().slice(0, 10)
 }
 
+function toLabelValue(value: string | number | null | undefined, fallback = 'Not provided') {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(value) : fallback
+  }
+
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : fallback
+}
+
+function formatSetupMode(value?: string | null) {
+  const label = toLabelValue(value)
+  if (label === 'Not provided') return label
+  return label.replace(/\b\w/g, (character) => character.toUpperCase())
+}
+
+function summarizeList(values: string[], maxItems = 3) {
+  if (values.length === 0) return 'None selected'
+  if (values.length <= maxItems) return values.join(', ')
+  return `${values.slice(0, maxItems).join(', ')} (+${values.length - maxItems} more)`
+}
+
+function compactValue(value: string | number | null | undefined, fallback = 'Not provided', maxLength = 120) {
+  const text = toLabelValue(value, fallback)
+  if (text === fallback || text.length <= maxLength) return text
+  return `${text.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`
+}
+
+function limitLength(value: string, maxLength = 500) {
+  if (value.length <= maxLength) return value
+  return `${value.slice(0, Math.max(0, maxLength - 1)).trimEnd()}…`
+}
+
+export function buildRequirementNotes(
+  form: PlanEventFormState,
+  eventTypeLabel: string,
+  selectedServices: string[],
+  serviceFocus: string
+) {
+  const notes = [
+    `Event type: ${toLabelValue(eventTypeLabel)}`,
+    `Date and time: ${[toLabelValue(form.eventDate), toLabelValue(form.eventTime)].filter((item) => item !== 'Not provided').join(' · ') || 'Not provided'}`,
+    `Theme: ${toLabelValue(form.theme)} | Palette: ${toLabelValue(form.colorPalette)} | Mode: ${formatSetupMode(form.setupMode)}`,
+    `Services: ${summarizeList(selectedServices)}`,
+    `Focus: ${toLabelValue(serviceFocus)}`,
+    `Special requirements: ${compactValue(form.specialRequirements, 'Not provided', 140)}`,
+    `Vendor notes: ${compactValue(form.vendorNotes, 'Not provided', 140)}`
+  ]
+
+  return limitLength(notes.join('\n'), 500)
+}
+
 function mapCompletedBriefs(events: Awaited<ReturnType<typeof eventService.listEvents>>): CompletedBrief[] {
   return events
     .filter((event) => event.status !== 'draft')
@@ -226,11 +277,6 @@ export function usePlanEventViewModel() {
   const eventTypeMeta = useMemo(
     () => EVENT_TYPE_OPTIONS.find((option) => option.id === state.form.eventType) ?? EVENT_TYPE_OPTIONS[0],
     [state.form.eventType]
-  )
-
-  const recommendedServices = useMemo(
-    () => Array.from(new Set([...eventTypeMeta.recommendedServices, ...state.form.selectedServices])),
-    [eventTypeMeta.recommendedServices, state.form.selectedServices]
   )
 
   const progress = Math.round(((state.currentStep + 1) / TOTAL_STEPS) * 100)
@@ -532,7 +578,7 @@ export function usePlanEventViewModel() {
         equipmentRentalNeeds: f.equipmentRentalNeeds,
         specialRequirements: f.specialRequirements,
         vendorNotes: f.vendorNotes,
-        selectedServices: recommendedServices
+        selectedServices: f.selectedServices
       }
 
       const createdEvent = await eventService.createEvent({
@@ -549,13 +595,7 @@ export function usePlanEventViewModel() {
           vendorService.createRequirement(createdEvent.id, {
             category: normalizeRequirementCategory(service),
             quantity: 1,
-            notes: [
-              payload.description,
-              `Theme: ${payload.theme}`,
-              `Mood: ${payload.mood}`,
-              payload.specialRequirements,
-              payload.vendorNotes
-            ].filter(Boolean).join(' · ')
+            notes: buildRequirementNotes(f, eventTypeMeta.label, payload.selectedServices, service)
           })
         )
       )
@@ -589,7 +629,7 @@ export function usePlanEventViewModel() {
     } finally {
       submittingRef.current = false
     }
-  }, [state.form, eventTypeMeta.label, recommendedServices, clearDraft, refreshEvents, resetBuilderState])
+  }, [state.form, eventTypeMeta.label, clearDraft, refreshEvents, resetBuilderState])
 
   const reset = useCallback(() => {
     resetBuilderState()
@@ -601,12 +641,12 @@ export function usePlanEventViewModel() {
       errors: state.errors,
       submitted: state.submitted,
     submitting: state.submitting,
-    loading: state.loading,
-    error: state.error,
-    createdEventId: state.createdEventId,
-    pendingMarketplaceBrief: state.pendingMarketplaceBrief,
-    eventTypeMeta,
-    recommendedServices,
+      loading: state.loading,
+      error: state.error,
+      createdEventId: state.createdEventId,
+      pendingMarketplaceBrief: state.pendingMarketplaceBrief,
+      eventTypeMeta,
+      recommendedServices: state.form.selectedServices,
       progress,
       updateForm,
       toggleService,

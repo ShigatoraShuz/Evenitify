@@ -17,6 +17,8 @@ export interface BookingRequest {
     event_date: string
     venue: string
     expected_guests: number
+    budget?: number | null
+    status?: string
   }
   event_requirements?: {
     category: string
@@ -34,7 +36,31 @@ export interface BookingRequest {
   organizer_profiles?: {
     organization_name: string
   }
-  request_vendors?: Record<string, unknown> | null
+  request_vendors?: {
+    id?: string
+    status?: string
+    request_message?: string | null
+    budget_min?: number | null
+    budget_max?: number | null
+    deadline?: string | null
+    viewed_at?: string | null
+    accepted_at?: string | null
+    rejected_at?: string | null
+    changes_requested_at?: string | null
+    responded_at?: string | null
+  } | Array<{
+    id?: string
+    status?: string
+    request_message?: string | null
+    budget_min?: number | null
+    budget_max?: number | null
+    deadline?: string | null
+    viewed_at?: string | null
+    accepted_at?: string | null
+    rejected_at?: string | null
+    changes_requested_at?: string | null
+    responded_at?: string | null
+  }> | null
   vendor_services?: Record<string, unknown> | null
   requestedServices?: Array<{
     id: string

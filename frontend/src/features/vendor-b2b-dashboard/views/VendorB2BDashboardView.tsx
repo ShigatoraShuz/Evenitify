@@ -4,10 +4,8 @@ import {
   ArrowRight,
   BadgeCheck,
   CalendarDays,
-  Mail,
   ShieldCheck,
   Truck,
-  Wallet,
   Music4,
   Camera,
   LayoutPanelTop,
@@ -25,9 +23,7 @@ import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { Modal } from '../../../shared/components/Modal'
 import { Input } from '../../../shared/components/Input'
 import { ContractTimeline, buildContractTimeline } from '../../contract-booking/components/ContractTimeline'
-import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
-import { PlaceholderMedia } from '../../../shared/components/PlaceholderMedia'
-import { B2B_TABS, REQUEST_TYPE_TABS } from '../models/vendor-b2b-dashboard.model'
+import { B2B_TABS, REQUEST_TYPE_TABS, getRequestTypeFromGuests, getRequestTypeLabel } from '../models/vendor-b2b-dashboard.model'
 import type { BookingRequest } from '../../../services/bookingService'
 import type { RealtimeSnapshot } from '../../../services/realtimeService'
 import type { RequestType } from '../models/vendor-b2b-dashboard.model'
@@ -83,9 +79,9 @@ function formatDate(date: string) {
 
 function BookingChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-slate-100 px-3 py-2 text-sm">
-      <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</span>
-      <span className="mt-0.5 block font-semibold text-slate-900">{value}</span>
+    <div className="min-w-0 rounded-xl bg-slate-100 px-2.5 py-1.5 text-[11px] leading-4">
+      <span className="block text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</span>
+      <span className="mt-0.5 block truncate font-semibold text-slate-900">{value}</span>
     </div>
   )
 }
@@ -181,17 +177,22 @@ export function VendorB2BDashboardView({
   }
 
   const getRequestTypeBadge = (booking: BookingRequest) => {
-    const isPersonal = booking.booking_type === 'PERSONAL'
+    const requestType = getRequestTypeFromGuests(booking.large_events?.expected_guests)
+    const isLargeEvent = requestType === 'large_event'
+    const isMicroEvent = requestType === 'personal'
+    const label = getRequestTypeLabel(booking.large_events?.expected_guests)
+    const Icon = isLargeEvent ? Building2 : isMicroEvent ? UserIcon : Users
+    const toneClasses = isLargeEvent
+      ? 'border-blue-200 bg-blue-50 text-blue-700'
+      : isMicroEvent
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+        : 'border-slate-200 bg-slate-50 text-slate-600'
     return (
       <span
-        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-          isPersonal
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-            : 'border-blue-200 bg-blue-50 text-blue-700'
-        }`}
+        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${toneClasses}`}
       >
-        {isPersonal ? <UserIcon className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
-        {isPersonal ? 'Personal' : 'Large Event'}
+        <Icon className="h-3 w-3" />
+        {label}
       </span>
     )
   }
@@ -203,6 +204,15 @@ export function VendorB2BDashboardView({
     if (!confirmDecline) return
     onUpdateStatus(confirmDecline, 'rejected')
     setConfirmDecline(null)
+  }
+
+  const realtimeStatusLabel = realtimeSnapshot?.connected ? 'Realtime ready' : 'Offline'
+  const realtimeUpdatedLabel = realtimeSnapshot?.lastUpdatedAt
+    ? new Date(realtimeSnapshot.lastUpdatedAt).toLocaleTimeString()
+    : 'Not synced'
+  const refreshDashboard = () => {
+    void onRefreshRealtime()
+    void onLoadBookings(activeTab === 'all' ? undefined : activeTab)
   }
 
   return (
@@ -264,29 +274,107 @@ export function VendorB2BDashboardView({
       </Modal>
 
       <div className="space-y-6">
-        <PageHeader
-          title="Vendor Dashboard"
-          subtitle="Separate organizer booking requests from other bookings and manage your B2B event queue with clarity."
-          action={
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => navigate('/vendor/profile')}>
-                Manage services
-              </Button>
-              <Button onClick={() => navigate('/vendor/reports')}>
-                View reports
-              </Button>
-            </div>
-          }
-        />
+        <section className="overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="grid gap-2.5 p-3 xl:grid-cols-[minmax(0,1fr)_minmax(400px,440px)] xl:items-start xl:p-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-brand-600">Eventify</p>
+              <div className="mt-1.5 flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0 max-w-3xl">
+                  <h1 className="text-[1.65rem] font-semibold tracking-tight text-slate-950 md:text-[1.95rem]">Vendor Dashboard</h1>
+                  <p className="mt-1 max-w-2xl text-[13px] leading-5 text-slate-500">
+                    Separate organizer booking requests from other bookings and manage your B2B event queue with clarity.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={() => navigate('/vendor/profile')} className="!px-3.5 !py-2">
+                    Manage services
+                  </Button>
+                  <Button onClick={() => navigate('/vendor/reports')} className="!px-3.5 !py-2">
+                    View reports
+                  </Button>
+                </div>
+              </div>
 
-        <RealtimeIndicator
-          snapshot={realtimeSnapshot}
-          refreshing={realtimeRefreshing || loading}
-          onRefresh={() => {
-            void onRefreshRealtime()
-            void onLoadBookings(activeTab === 'all' ? undefined : activeTab)
-          }}
-        />
+              <div className="mt-2.5 flex flex-wrap items-center gap-2.5 text-[11px] text-slate-500">
+                <span
+                  className={[
+                    'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium',
+                    realtimeSnapshot?.connected
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border-slate-200 bg-slate-50 text-slate-500',
+                  ].join(' ')}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${realtimeSnapshot?.connected ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                  {realtimeStatusLabel}
+                </span>
+                <span>Updated {realtimeUpdatedLabel}</span>
+                <button
+                  type="button"
+                  onClick={refreshDashboard}
+                  className="rounded-md px-2 py-0.5 font-medium text-brand-600 hover:bg-brand-50 disabled:text-slate-400"
+                  disabled={realtimeRefreshing || loading}
+                >
+                  {realtimeRefreshing || loading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
+            </div>
+
+            <div className="w-full self-start justify-self-stretch rounded-[22px] border border-slate-100 bg-slate-50/70 p-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Snapshot</p>
+                  <h2 className="mt-0.5 text-base font-bold text-slate-950">Live overview</h2>
+                </div>
+                <div className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-slate-500">
+                  {bookings.length} requests
+                </div>
+              </div>
+
+              <div className="mt-2.5 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                <div className="flex min-h-[88px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-2">
+                  <div className="mb-1.5 flex min-w-0 items-center gap-1.5 text-slate-500">
+                    <div className="rounded-lg bg-slate-50 p-1">
+                      <Users className="h-3 w-3" />
+                    </div>
+                    <span className="min-w-0 truncate text-[8px] font-bold uppercase tracking-[0.16em]">Requests</span>
+                  </div>
+                  <p className="text-[1.15rem] font-bold leading-none tabular-nums text-slate-900">{bookings.length}</p>
+                </div>
+
+                <div className="flex min-h-[88px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-emerald-400 bg-gradient-to-br from-emerald-500 to-emerald-700 p-2 text-white shadow-[0_8px_30px_rgb(16,185,129,0.2)]">
+                  <div className="mb-1.5 flex min-w-0 items-center gap-1.5 text-emerald-100">
+                    <div className="rounded-lg bg-white/20 p-1 backdrop-blur-sm">
+                      <TrendingUp className="h-3 w-3" />
+                    </div>
+                    <span className="min-w-0 truncate text-[8px] font-bold uppercase tracking-[0.16em]">Pipeline</span>
+                  </div>
+                  <p className="text-[1.15rem] font-bold leading-none tabular-nums">${revenueSummary.requested.toLocaleString()}</p>
+                  <p className="mt-1 text-[9px] leading-4 text-emerald-50/80">Projected request value</p>
+                </div>
+
+                <div className="flex min-h-[88px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-2">
+                  <div className="mb-1.5 flex min-w-0 items-center gap-1.5 text-slate-500">
+                    <div className="rounded-lg bg-indigo-50 p-1 text-indigo-600">
+                      <ShieldCheck className="h-3 w-3" />
+                    </div>
+                    <span className="min-w-0 truncate text-[8px] font-bold uppercase tracking-[0.16em]">Accepted</span>
+                  </div>
+                  <p className="text-[1.15rem] font-bold leading-none tabular-nums text-slate-900">{revenueSummary.accepted}</p>
+                </div>
+
+                <div className="flex min-h-[88px] min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white p-2">
+                  <div className="mb-1.5 flex min-w-0 items-center gap-1.5 text-slate-500">
+                    <div className="rounded-lg bg-amber-50 p-1 text-amber-600">
+                      <BadgeCheck className="h-3 w-3" />
+                    </div>
+                    <span className="min-w-0 truncate text-[8px] font-bold uppercase tracking-[0.16em]">Confirmed</span>
+                  </div>
+                  <p className="text-[1.15rem] font-bold leading-none tabular-nums text-slate-900">{revenueSummary.confirmed}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {error && (
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
@@ -297,91 +385,18 @@ export function VendorB2BDashboardView({
           </div>
         )}
 
-        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          <div className="flex flex-col justify-between rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            <div className="mb-4 flex items-center gap-3 text-slate-500">
-              <div className="rounded-xl bg-slate-50 p-2">
-                <Users className="h-5 w-5" />
-              </div>
-              <span className="text-sm font-bold uppercase tracking-widest">Total Requests</span>
-            </div>
-            <p className="text-4xl font-bold text-slate-900">{bookings.length}</p>
-          </div>
-
-          <div className="flex flex-col justify-between rounded-3xl border border-emerald-400 bg-gradient-to-br from-emerald-500 to-emerald-700 p-6 text-white shadow-[0_8px_30px_rgb(16,185,129,0.2)]">
-            <div className="mb-4 flex items-center gap-3 text-emerald-100">
-              <div className="rounded-xl bg-white/20 p-2 backdrop-blur-sm">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-              <span className="text-sm font-bold uppercase tracking-widest">Pipeline Value</span>
-            </div>
-            <p className="text-4xl font-bold">${revenueSummary.requested.toLocaleString()}</p>
-          </div>
-
-          <div className="flex flex-col justify-between rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            <div className="mb-4 flex items-center gap-3 text-slate-500">
-              <div className="rounded-xl bg-indigo-50 p-2 text-indigo-600">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <span className="text-sm font-bold uppercase tracking-widest">Accepted</span>
-            </div>
-            <p className="text-4xl font-bold text-slate-900">{bookings.filter((b) => b.status === 'accepted').length}</p>
-          </div>
-
-          <div className="flex flex-col justify-between rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            <div className="mb-4 flex items-center gap-3 text-slate-500">
-              <div className="rounded-xl bg-amber-50 p-2 text-amber-600">
-                <BadgeCheck className="h-5 w-5" />
-              </div>
-              <span className="text-sm font-bold uppercase tracking-widest">Confirmed</span>
-            </div>
-            <p className="text-4xl font-bold text-slate-900">{revenueSummary.confirmed}</p>
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-8 text-slate-900 shadow-sm relative overflow-hidden">
-          <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 translate-x-1/4 -translate-y-1/2 rounded-full bg-brand-100/50 blur-3xl" />
-          <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_400px]">
-            <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-100 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-700">
-                <Mail className="h-3.5 w-3.5" /> Workspace Ready
-              </div>
-              <h2 className="text-3xl font-bold tracking-tight text-slate-900">Your clean command center</h2>
-              <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600">
-                We&apos;ve organized your tools into dedicated pages. Create events, respond to incoming bookings, and adjust your availability from the sidebar navigation.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Button onClick={() => navigate('/vendor/bookings')} className="shadow-lg shadow-brand-500/20">
-                  Go to Bookings
-                </Button>
-                <Button variant="secondary" onClick={() => navigate('/vendor/services')}>
-                  Manage Services
-                </Button>
-              </div>
-            </div>
-            <div className="hidden lg:block">
-              <PlaceholderMedia
-                title="Active Workspace"
-                subtitle="Everything is running smoothly."
-                tone="indigo"
-                icon={<LayoutPanelTop className="h-6 w-6" />}
-              />
-            </div>
-          </div>
-        </section>
-
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] items-start">
-          <section className="rounded-3xl border border-slate-100 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            <div className="mb-6 flex items-center justify-between gap-3">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] items-start">
+          <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900">
-                  <BadgeCheck className="h-6 w-6 text-brand-600" /> Large event opportunities
+                <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                  <BadgeCheck className="h-5 w-5 text-brand-600" /> Large event opportunities
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">High-value requests demanding your attention.</p>
+                <p className="mt-1 text-xs text-slate-500">High-value requests demanding your attention.</p>
               </div>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {largeEventOpportunities.length > 0 ? (
                 largeEventOpportunities.map((card) => {
                   const Icon = bookingIconMap[card.category] ?? CalendarDays
@@ -390,40 +405,40 @@ export function VendorB2BDashboardView({
                       key={card.booking.id}
                       type="button"
                       onClick={() => navigate('/vendor/bookings')}
-                      className="group rounded-2xl border border-slate-100 bg-slate-50/50 p-5 text-left transition-all duration-300 hover:border-brand-300 hover:bg-brand-50 hover:shadow-md"
+                      className="group rounded-2xl border border-slate-100 bg-slate-50/50 p-3.5 text-left transition-all duration-300 hover:border-brand-300 hover:bg-brand-50 hover:shadow-md"
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-transform group-hover:scale-110">
-                            <Icon className="h-5 w-5" />
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-transform group-hover:scale-110">
+                            <Icon className="h-4 w-4" />
                           </div>
-                          <div>
-                            <h3 className="text-base font-bold text-slate-900">{card.title}</h3>
-                            <p className="mt-0.5 text-sm font-medium text-slate-500">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-[15px] font-bold text-slate-900">{card.title}</h3>
+                            <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
                               {card.organizer} - {card.category}
                             </p>
                           </div>
                         </div>
                         <StatusBadge status={card.booking.status} size="sm" />
                       </div>
-                      <div className="mt-5 flex items-center gap-6 text-sm">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Budget</span>
-                          <span className="mt-0.5 font-semibold text-slate-900">
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-xl bg-white/70 px-2.5 py-2">
+                          <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-slate-400">Budget</span>
+                          <span className="mt-0.5 block font-semibold text-slate-900">
                             {card.budget ? `$${card.budget.toLocaleString()}` : 'N/A'}
                           </span>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Date</span>
-                          <span className="mt-0.5 font-semibold text-slate-900">{formatDate(card.eventDate)}</span>
+                        <div className="rounded-xl bg-white/70 px-2.5 py-2">
+                          <span className="block text-[9px] font-bold uppercase tracking-[0.22em] text-slate-400">Date</span>
+                          <span className="mt-0.5 block font-semibold text-slate-900">{formatDate(card.eventDate)}</span>
                         </div>
                       </div>
                       {card.requestedServices.length > 0 && (
-                        <div className="mt-4 flex flex-wrap gap-2">
+                        <div className="mt-3 flex flex-wrap gap-1.5">
                           {card.requestedServices.map((service) => (
                             <span
                               key={service.id}
-                              className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700"
+                              className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-700"
                             >
                               {service.serviceName}
                             </span>
@@ -486,9 +501,9 @@ export function VendorB2BDashboardView({
 
             <div className="mt-4 max-h-[860px] overflow-y-auto pr-1">
               {loading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="h-24 animate-pulse rounded-[20px] bg-slate-100" />
+                <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="h-[220px] animate-pulse rounded-[22px] border border-slate-100 bg-slate-100" />
                   ))}
                 </div>
               ) : requestCards.length === 0 ? (
@@ -497,85 +512,71 @@ export function VendorB2BDashboardView({
                   description="Organizer booking requests will appear here when procurement starts."
                 />
               ) : (
-                <div className="grid gap-3">
-                  {requestCards.map((card) => (
-                    <button
-                      key={card.booking.id}
-                      type="button"
-                      onClick={() => onSelectBooking(card.booking.id)}
-                      className="overflow-hidden rounded-[22px] border border-slate-200 bg-slate-50 text-left transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg"
-                    >
-                      <PlaceholderMedia
-                        title={card.title}
-                        subtitle={`${card.organizer} - ${card.category}`}
-                        tone={card.booking.status === 'confirmed' ? 'emerald' : 'indigo'}
-                        icon={<CalendarDays className="h-5 w-5" />}
-                        compact
-                      />
-                      <div className="space-y-3 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h3 className="truncate text-base font-semibold text-slate-950">{card.title}</h3>
-                            <p className="mt-1 truncate text-sm text-slate-500">{card.organizer}</p>
+                <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                  {requestCards.map((card) => {
+                    const Icon = bookingIconMap[card.category] ?? CalendarDays
+                    return (
+                      <button
+                        key={card.booking.id}
+                        type="button"
+                        onClick={() => onSelectBooking(card.booking.id)}
+                        className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-white text-left transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg"
+                      >
+                        <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white px-3.5 py-3">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition-transform group-hover:scale-105">
+                              <Icon className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="truncate text-sm font-semibold text-slate-950">{card.title}</h3>
+                              <p className="mt-0.5 truncate text-[12px] text-slate-500">
+                                {card.organizer} - {card.category}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex shrink-0 items-center gap-2">
+                          <div className="flex shrink-0 flex-col items-end gap-1.5">
                             {getRequestTypeBadge(card.booking)}
                             <StatusBadge status={card.booking.status} size="sm" />
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <BookingChip label="Budget" value={card.budget ? `$${card.budget.toLocaleString()}` : 'N/A'} />
-                          <BookingChip label="Date" value={formatDate(card.eventDate)} />
-                          <BookingChip label="Venue" value={card.venue} />
-                          <BookingChip label="Guests" value={card.guests ? card.guests.toLocaleString() : 'N/A'} />
-                        </div>
-                        {card.requestedServices.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {card.requestedServices.map((service) => (
-                              <span
-                                key={service.id}
-                                className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[11px] font-semibold text-brand-700"
-                              >
-                                {service.serviceName}
-                              </span>
-                            ))}
+                        <div className="flex flex-1 flex-col gap-3 p-3.5">
+                          <div className="grid grid-cols-2 gap-2">
+                            <BookingChip label="Budget" value={card.budget ? `$${card.budget.toLocaleString()}` : 'N/A'} />
+                            <BookingChip label="Date" value={formatDate(card.eventDate)} />
+                            <BookingChip label="Venue" value={card.venue} />
+                            <BookingChip label="Guests" value={card.guests ? card.guests.toLocaleString() : 'N/A'} />
                           </div>
-                        )}
-                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-slate-900">
-                          Open request
-                          <ArrowRight className="h-4 w-4" />
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                          {card.requestedServices.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {card.requestedServices.slice(0, 4).map((service) => (
+                                <span
+                                  key={service.id}
+                                  className="inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-700"
+                                >
+                                  {service.serviceName}
+                                </span>
+                              ))}
+                              {card.requestedServices.length > 4 && (
+                                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                                  +{card.requestedServices.length - 4} more
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <span className="mt-auto inline-flex items-center gap-1 text-sm font-semibold text-slate-900">
+                            Open
+                            <ArrowRight className="h-4 w-4" />
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>
           </section>
         </div>
 
-        <section className="rounded-[24px] border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
-          <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Vendor command line</p>
-              <h2 className="mt-2 text-2xl font-semibold">Keep B2B work separate and actionable</h2>
-              <p className="mt-2 max-w-2xl text-sm text-slate-300">
-                Pending organizer requests, confirmed work, and service availability all live in one calm workspace so you can move faster.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full bg-white/10 px-3 py-1">Organizer requests</span>
-                <span className="rounded-full bg-white/10 px-3 py-1">Large event opportunities</span>
-                <span className="rounded-full bg-white/10 px-3 py-1">Confirmed events</span>
-              </div>
-            </div>
-            <PlaceholderMedia
-              title="Booking summary"
-              subtitle={`${bookings.length} total requests - ${revenueSummary.requested ? `$${revenueSummary.requested.toLocaleString()} requested value` : 'No value yet'}`}
-              tone="slate"
-              icon={<Mail className="h-5 w-5" />}
-            />
-          </div>
-        </section>
       </div>
     </DashboardShell>
   )

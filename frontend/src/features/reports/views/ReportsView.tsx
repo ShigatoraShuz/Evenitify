@@ -1,5 +1,5 @@
 import { DashboardShell } from '../../../shared/components/DashboardShell'
-import { EmptyStateCard, OrganizerCard, OrganizerPage, OrganizerPageHeader, SectionHeader } from '../../../shared/components/OrganizerUI'
+import { EmptyStateCard, OrganizerPage, OrganizerPageHeader } from '../../../shared/components/OrganizerUI'
 import { RealtimeIndicator } from '../../../shared/components/RealtimeIndicator'
 import { ExportActionBar, ReportMetricGrid, ReportTables } from '../../../shared/components/ReportBlocks'
 import { useRealtimeSnapshot } from '../../../shared/hooks/useRealtimeSnapshot'
@@ -42,16 +42,6 @@ export default function ReportsView({ role }: ReportsViewProps) {
       ) : vm.report ? (
         <div className="space-y-6">
           <ReportMetricGrid metrics={vm.report.metrics} />
-          <div className="grid gap-4 lg:grid-cols-3">
-            {['Booking status breakdown', 'Vendor category usage', 'Monthly event activity'].map((title) => (
-              <OrganizerCard key={title}>
-                <SectionHeader title={title} description="Chart renders when backend aggregation data is available." />
-                <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-center text-sm text-slate-500">
-                  No chart data available yet
-                </div>
-              </OrganizerCard>
-            ))}
-          </div>
           <ReportTables report={vm.report} />
         </div>
       ) : (

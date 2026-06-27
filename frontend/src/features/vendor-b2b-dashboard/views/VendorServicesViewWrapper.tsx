@@ -16,6 +16,7 @@ export default function VendorServicesViewWrapper() {
       submitting={vm.submitting}
       error={vm.error}
       onCreateServicePackage={vm.createServicePackage}
+      onDeleteServicePackage={vm.deleteServicePackage}
       onClearError={vm.clearError}
     />
   )

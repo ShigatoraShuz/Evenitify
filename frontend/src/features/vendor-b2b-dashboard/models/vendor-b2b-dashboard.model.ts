@@ -47,8 +47,26 @@ export const B2B_TABS: { key: VendorB2BBookingStatus | 'all'; label: string }[] 
 
 export type RequestType = 'all' | 'large_event' | 'personal'
 
+export const REQUEST_SIZE_GUEST_LIMIT = 20
+
 export const REQUEST_TYPE_TABS: { key: RequestType; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'large_event', label: 'Large Event' },
   { key: 'personal', label: 'Micro Events' }
 ]
+
+export function getRequestTypeFromGuests(expectedGuests?: number | string | null): RequestType | null {
+  if (expectedGuests == null || expectedGuests === '') return null
+
+  const guestCount = Number(expectedGuests)
+  if (!Number.isFinite(guestCount) || guestCount <= 0) return null
+
+  return guestCount > REQUEST_SIZE_GUEST_LIMIT ? 'large_event' : 'personal'
+}
+
+export function getRequestTypeLabel(expectedGuests?: number | string | null) {
+  const requestType = getRequestTypeFromGuests(expectedGuests)
+  if (requestType === 'large_event') return 'Large Event'
+  if (requestType === 'personal') return 'Micro Event'
+  return 'Guest count unavailable'
+}
